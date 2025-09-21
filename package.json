@@ -1,0 +1,16 @@
+{
+  "name": "refyneo",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "cd ProductivityHub\\ProductivityHub && npm run dev",
+    "install-deps": "cd ProductivityHub\\ProductivityHub && npm install"
+  },
+  "dependencies": {
+    "@tabler/icons-react": "^3.34.1",
+    "clsx": "^2.1.1",
+    "katex": "^0.16.22",
+    "motion": "^12.23.12",
+    "prismjs": "^1.30.0",
+    "tailwind-merge": "^3.3.1"
+  }
+}

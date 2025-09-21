@@ -1,0 +1,683 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { z } from "zod";
+import { 
+  insertUserSchema, 
+  insertClassSchema, 
+  insertAssignmentSchema,
+  insertFlashcardSchema,
+  insertMoodEntrySchema,
+  insertJournalEntrySchema,
+  insertPomodoroSessionSchema, 
+  insertAiSummarySchema,
+  insertBellScheduleSchema,
+  insertNoteSchema
+} from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Middleware to extract user ID from request
+  const getUserId = (req: any): string => {
+    // Check for user ID in request headers - authentication required
+    // Firebase token verification is handled by frontend
+    const userId = req.headers['x-user-id'] || req.headers['user-id'];
+    
+    console.log('🔍 Server Debug - Headers:', {
+      'x-user-id': req.headers['x-user-id'],
+      'user-id': req.headers['user-id'],
+      allHeaders: Object.keys(req.headers)
+    });
+    
+    if (userId) {
+      console.log('✅ User ID found:', userId);
+      return userId as string;
+    }
+    
+    // No fallback - require proper authentication
+    console.error('❌ No user ID provided in request headers');
+    throw new Error('Authentication required: No user ID provided');
+  };
+
+  // Firebase to Oracle sync endpoint
+  app.post("/api/auth/sync", async (req, res) => {
+    try {
+      const { uid, email, displayName, photoURL, accessToken } = req.body;
+      
+      if (!uid || !email) {
+        return res.status(400).json({ message: "Missing required user data" });
+      }
+
+      // Check if user already exists
+      let user = await storage.getUser(uid);
+      
+      if (user) {
+        // Update existing user
+        const updateData = {
+          name: displayName || user.name,
+          email,
+          avatar: photoURL || user.avatar,
+          googleAccessToken: accessToken || user.googleAccessToken,
+        };
+        
+        user = await storage.updateUser(uid, updateData);
+        console.log(`✅ Updated user: ${email}`);
+      } else {
+        // Create new user
+        const userData = {
+          name: displayName || email.split('@')[0],
+          email,
+          firstName: displayName?.split(' ')[0] || '',
+          lastName: displayName?.split(' ').slice(1).join(' ') || '',
+          avatar: photoURL || null,
+          googleId: uid,
+          googleAccessToken: accessToken || null,
+        };
+        
+        // Use Firebase UID as the Oracle database user ID
+        user = await storage.createUserWithId(uid, userData);
+        console.log(`✅ Created new user: ${email}`);
+      }
+      
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error('❌ Error syncing user:', error);
+      res.status(500).json({ message: "Failed to sync user" });
+    }
+  });
+
+  // User routes
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      const userData = insertUserSchema.partial().parse(req.body);
+      const user = await storage.updateUser(req.params.id, userData);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Class routes
+  app.get("/api/users/:userId/classes", async (req, res) => {
+    try {
+      const classes = await storage.getClassesByUserId(req.params.userId);
+      res.json(classes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch classes" });
+    }
+  });
+
+  app.post("/api/users/:userId/classes", async (req, res) => {
+    try {
+      const classData = insertClassSchema.parse({ ...req.body, userId: req.params.userId });
+      const newClass = await storage.createClass(classData);
+      res.status(201).json(newClass);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid class data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create class" });
+    }
+  });
+
+  app.delete("/api/classes/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteClass(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete class" });
+    }
+  });
+
+  // Assignment routes
+  app.get("/api/users/:userId/assignments", async (req, res) => {
+    try {
+      const assignments = await storage.getAssignmentsByUserId(req.params.userId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  app.post("/api/users/:userId/assignments", async (req, res) => {
+    try {
+      const assignmentData = insertAssignmentSchema.parse({ ...req.body, userId: req.params.userId });
+      const assignment = await storage.createAssignment(assignmentData);
+      res.status(201).json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create assignment" });
+    }
+  });
+
+  app.put("/api/assignments/:id", async (req, res) => {
+    try {
+      const assignmentData = insertAssignmentSchema.partial().parse(req.body);
+      const assignment = await storage.updateAssignment(req.params.id, assignmentData);
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update assignment" });
+    }
+  });
+
+  app.delete("/api/assignments/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteAssignment(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete assignment" });
+    }
+  });
+
+  // Flashcard routes
+  app.get("/api/users/:userId/flashcards", async (req, res) => {
+    try {
+      const flashcards = await storage.getFlashcardsByUserId(req.params.userId);
+      res.json(flashcards);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch flashcards" });
+    }
+  });
+
+  app.post("/api/users/:userId/flashcards", async (req, res) => {
+    try {
+      const flashcardData = insertFlashcardSchema.parse({ ...req.body, userId: req.params.userId });
+      const flashcard = await storage.createFlashcard(flashcardData);
+      res.status(201).json(flashcard);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid flashcard data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create flashcard" });
+    }
+  });
+
+  app.put("/api/flashcards/:id", async (req, res) => {
+    try {
+      const flashcardData = insertFlashcardSchema.partial().parse(req.body);
+      const flashcard = await storage.updateFlashcard(req.params.id, flashcardData);
+      if (!flashcard) {
+        return res.status(404).json({ message: "Flashcard not found" });
+      }
+      res.json(flashcard);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid flashcard data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update flashcard" });
+    }
+  });
+
+  app.delete("/api/flashcards/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteFlashcard(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Flashcard not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete flashcard" });
+    }
+  });
+
+  // Mood entry routes
+  app.get("/api/users/:userId/mood-entries", async (req, res) => {
+    try {
+      const entries = await storage.getMoodEntriesByUserId(req.params.userId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch mood entries" });
+    }
+  });
+
+  app.post("/api/users/:userId/mood-entries", async (req, res) => {
+    try {
+      console.log('😊 Creating mood entry with data:', { ...req.body, userId: req.params.userId });
+      const entryData = insertMoodEntrySchema.parse({ ...req.body, userId: req.params.userId });
+      const entry = await storage.createMoodEntry(entryData);
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error('😊 Zod validation error:', error.errors);
+        return res.status(400).json({ message: "Invalid mood entry data", errors: error.errors });
+      }
+      console.error('😊 Mood entry creation error:', error);
+      res.status(500).json({ message: "Failed to create mood entry" });
+    }
+  });
+
+  // Journal entry routes
+  app.get("/api/users/:userId/journal-entries", async (req, res) => {
+    try {
+      const entries = await storage.getJournalEntriesByUserId(req.params.userId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch journal entries" });
+    }
+  });
+
+  app.post("/api/users/:userId/journal-entries", async (req, res) => {
+    try {
+      console.log('📓 Creating journal entry with data:', { ...req.body, userId: req.params.userId });
+      const entryData = insertJournalEntrySchema.parse({ ...req.body, userId: req.params.userId });
+      const entry = await storage.createJournalEntry(entryData);
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error('📓 Zod validation error:', error.errors);
+        return res.status(400).json({ message: "Invalid journal entry data", errors: error.errors });
+      }
+      console.error('📓 Journal entry creation error:', error);
+      res.status(500).json({ message: "Failed to create journal entry" });
+    }
+  });
+
+  app.put("/api/journal-entries/:id", async (req, res) => {
+    try {
+      const entryData = insertJournalEntrySchema.partial().parse(req.body);
+      const entry = await storage.updateJournalEntry(req.params.id, entryData);
+      if (!entry) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      res.json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid journal entry data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update journal entry" });
+    }
+  });
+
+  app.delete("/api/journal-entries/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteJournalEntry(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete journal entry" });
+    }
+  });
+
+  // Pomodoro session routes
+  app.get("/api/users/:userId/pomodoro-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getPomodoroSessionsByUserId(req.params.userId);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch pomodoro sessions" });
+    }
+  });
+
+  app.post("/api/users/:userId/pomodoro-sessions", async (req, res) => {
+    try {
+      const sessionData = insertPomodoroSessionSchema.parse({ ...req.body, userId: req.params.userId });
+      const session = await storage.createPomodoroSession(sessionData);
+      res.status(201).json(session);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid pomodoro session data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create pomodoro session" });
+    }
+  });
+
+  // AI summary routes
+  app.get("/api/users/:userId/ai-summaries", async (req, res) => {
+    try {
+      const summaries = await storage.getAiSummariesByUserId(req.params.userId);
+      res.json(summaries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch AI summaries" });
+    }
+  });
+
+  app.post("/api/users/:userId/ai-summaries", async (req, res) => {
+    try {
+      const summaryData = insertAiSummarySchema.parse({ ...req.body, userId: req.params.userId });
+      const summary = await storage.createAiSummary(summaryData);
+      res.status(201).json(summary);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid AI summary data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create AI summary" });
+    }
+  });
+
+  app.delete("/api/ai-summaries/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteAiSummary(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "AI summary not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete AI summary" });
+    }
+  });
+
+  // Bell schedule routes
+  app.get("/api/users/:userId/bell-schedule", async (req, res) => {
+    try {
+      const schedule = await storage.getBellScheduleByUserId(req.params.userId);
+      res.json(schedule);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch bell schedule" });
+    }
+  });
+
+  app.post("/api/users/:userId/bell-schedule", async (req, res) => {
+    try {
+      console.log('🔔 Creating bell schedule with data:', { ...req.body, userId: req.params.userId });
+      const scheduleData = insertBellScheduleSchema.parse({ ...req.body, userId: req.params.userId });
+      const schedule = await storage.createBellSchedule(scheduleData);
+      res.status(201).json(schedule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error('🔔 Zod validation error:', error.errors);
+        return res.status(400).json({ message: "Invalid bell schedule data", errors: error.errors });
+      }
+      console.error('🔔 Bell schedule creation error:', error);
+      res.status(500).json({ message: "Failed to create bell schedule" });
+    }
+  });
+
+  app.put("/api/bell-schedule/:id", async (req, res) => {
+    try {
+      const scheduleData = insertBellScheduleSchema.partial().parse(req.body);
+      const schedule = await storage.updateBellSchedule(req.params.id, scheduleData);
+      if (!schedule) {
+        return res.status(404).json({ message: "Bell schedule not found" });
+      }
+      res.json(schedule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid bell schedule data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update bell schedule" });
+    }
+  });
+
+  app.delete("/api/bell-schedule/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteBellSchedule(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Bell schedule not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete bell schedule" });
+    }
+  });
+
+  // Notes routes - Updated to use real authentication
+  app.get("/api/notes", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      console.log('📝 Fetching notes for user:', userId);
+      const notes = await storage.getNotesByUserId(userId);
+      console.log('✅ Found notes:', notes.length);
+      res.json(notes);
+    } catch (error) {
+      console.error('❌ Error fetching notes:', error);
+      res.status(500).json({ message: "Failed to fetch notes" });
+    }
+  });
+
+  app.post("/api/notes", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const noteData = insertNoteSchema.parse({ ...req.body, userId });
+      const note = await storage.createNote(noteData);
+      res.status(201).json(note);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid note data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create note" });
+    }
+  });
+
+  app.put("/api/notes/:id", async (req, res) => {
+    try {
+      const noteData = insertNoteSchema.partial().parse(req.body);
+      const note = await storage.updateNote(req.params.id, noteData);
+      if (!note) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      res.json(note);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid note data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update note" });
+    }
+  });
+
+  app.delete("/api/notes/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteNote(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete note" });
+    }
+  });
+
+  // Classes route for notes page
+  app.get("/api/classes", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const classes = await storage.getClassesByUserId(userId);
+      res.json(classes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch classes" });
+    }
+  });
+
+  // Session-based assignment routes
+  app.post("/api/assignments", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const assignmentData = insertAssignmentSchema.parse({ ...req.body, userId });
+      const assignment = await storage.createAssignment(assignmentData);
+      res.status(201).json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create assignment" });
+    }
+  });
+
+  // Session-based class routes
+  app.post("/api/classes", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const classData = insertClassSchema.parse({ ...req.body, userId });
+      const newClass = await storage.createClass(classData);
+      res.status(201).json(newClass);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid class data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create class" });
+    }
+  });
+
+  // YouTube transcript route
+  app.post("/api/youtube-transcript", async (req, res) => {
+    try {
+      const { videoId } = req.body;
+      if (!videoId) {
+        return res.status(400).json({ message: "Video ID is required" });
+      }
+
+      // In a real implementation, you would use a YouTube transcript API
+      // For now, return a placeholder response
+      const transcript = `This is a placeholder transcript for video ${videoId}. In a real implementation, this would fetch the actual transcript using a service like youtube-transcript-api or similar.`;
+      
+      res.json({ transcript });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch YouTube transcript" });
+    }
+  });
+
+  // Analytics routes
+  app.get("/api/users/:userId/analytics", async (req, res) => {
+    try {
+      const analytics = await storage.getUserAnalytics(req.params.userId);
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Calendar OAuth callback routes
+  app.post("/api/auth/calendar/callback", async (req, res) => {
+    try {
+      const { code, provider, redirectUri } = req.body;
+      
+      if (!code || !provider) {
+        return res.status(400).json({ message: "Missing code or provider" });
+      }
+
+      let tokenResponse;
+      
+      if (provider === 'google') {
+        // Exchange Google OAuth code for access token
+        const tokenUrl = 'https://oauth2.googleapis.com/token';
+        const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+        const clientSecret = process.env.GOOGLE_CLIENT_SECRET; // Server-side secret
+        
+        if (!clientId || !clientSecret) {
+          return res.status(500).json({ message: "Google OAuth not configured" });
+        }
+
+        tokenResponse = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            code,
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code',
+          }),
+        });
+      } else if (provider === 'outlook') {
+        // Exchange Microsoft OAuth code for access token
+        const tokenUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+        const clientId = process.env.VITE_MICROSOFT_CLIENT_ID;
+        const clientSecret = process.env.MICROSOFT_CLIENT_SECRET; // Server-side secret
+        
+        if (!clientId || !clientSecret) {
+          return res.status(500).json({ message: "Microsoft OAuth not configured" });
+        }
+
+        tokenResponse = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            code,
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code',
+            scope: 'https://graph.microsoft.com/calendars.read https://graph.microsoft.com/calendars.readwrite',
+          }),
+        });
+      } else {
+        return res.status(400).json({ message: "Unsupported provider" });
+      }
+
+      if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.text();
+        console.error(`${provider} token exchange error:`, errorData);
+        return res.status(400).json({ message: `Failed to exchange ${provider} authorization code` });
+      }
+
+      const tokenData = await tokenResponse.json();
+      
+      res.json({
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresIn: tokenData.expires_in,
+      });
+    } catch (error) {
+      console.error('Calendar OAuth callback error:', error);
+      res.status(500).json({ message: "OAuth callback failed" });
+    }
+  });
+
+  // Test endpoint to check calendar configuration
+  app.get("/api/test/calendar-config", async (req, res) => {
+    try {
+      const config = {
+        googleClientId: process.env.VITE_GOOGLE_CLIENT_ID ? 'Configured' : 'Missing',
+        googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'Configured' : 'Missing',
+        microsoftClientId: process.env.VITE_MICROSOFT_CLIENT_ID ? 'Configured' : 'Missing',
+        microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET ? 'Configured' : 'Missing',
+      };
+      
+      res.json(config);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check configuration" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
