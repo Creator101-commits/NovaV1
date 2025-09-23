@@ -17,8 +17,6 @@ import type {
   InsertPomodoroSession,
   AiSummary,
   InsertAiSummary,
-  BellSchedule,
-  InsertBellSchedule,
   Note,
   InsertNote
 } from "@shared/schema";
@@ -848,7 +846,7 @@ export class OracleStorage {
       userId: row.USER_ID,
       mood: row.MOOD,
       notes: row.NOTES,
-      date: row.DATE,
+      date: row.DATE_ENTRY,
       createdAt: row.CREATED_AT
     }));
   }
@@ -862,7 +860,7 @@ export class OracleStorage {
     console.log('😊 Creating mood entry:', { id, ...entry });
     
     const sql = `
-      INSERT INTO mood_entries (id, user_id, mood, notes, date, created_at)
+      INSERT INTO mood_entries (id, user_id, mood, notes, date_entry, created_at)
       VALUES (:id, :userId, :mood, :notes, :dateValue, :createdAt)
     `;
     
@@ -908,7 +906,7 @@ export class OracleStorage {
       id: row.ID,
       userId: row.USER_ID,
       content: row.CONTENT,
-      date: row.DATE,
+      date: row.DATE_ENTRY,
       createdAt: row.CREATED_AT
     }));
   }
@@ -922,7 +920,7 @@ export class OracleStorage {
     console.log('📓 Creating journal entry:', { id, ...entry });
     
     const sql = `
-      INSERT INTO journal_entries (id, user_id, content, date, created_at)
+      INSERT INTO journal_entries (id, user_id, content, date_entry, created_at)
       VALUES (:id, :userId, :content, :dateValue, :createdAt)
     `;
     
@@ -983,7 +981,7 @@ export class OracleStorage {
       id: row.ID,
       userId: row.USER_ID,
       content: row.CONTENT,
-      date: row.DATE,
+      date: row.DATE_ENTRY,
       createdAt: row.CREATED_AT
     };
   }
@@ -1145,129 +1143,6 @@ export class OracleStorage {
     return success;
   }
   
-  // Bell Schedule methods
-  async getBellScheduleByUserId(userId: string): Promise<BellSchedule[]> {
-    await this.initialize();
-    console.log('🔔 Fetching bell schedule for user:', userId);
-    
-    const result = await executeQuery(
-      'SELECT * FROM bell_schedule WHERE user_id = :userId',
-      { userId }
-    );
-    
-    if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No bell schedule found for user:', userId);
-      return [];
-    }
-    
-    console.log('✅ Found bell schedule entries:', result.rows.length);
-    
-    return result.rows.map((row: any) => ({
-      id: row.ID,
-      userId: row.USER_ID,
-      periodName: row.PERIOD_NAME,
-      startTime: row.START_TIME,
-      endTime: row.END_TIME
-    }));
-  }
-
-  async createBellSchedule(schedule: InsertBellSchedule): Promise<BellSchedule> {
-    await this.initialize();
-    const id = randomUUID();
-    
-    console.log('🔔 Creating bell schedule:', { id, ...schedule });
-    
-    const sql = `
-      INSERT INTO bell_schedule (id, user_id, period_name, start_time, end_time)
-      VALUES (:id, :userId, :periodName, :startTime, :endTime)
-    `;
-    
-    await executeQuery(sql, {
-      id,
-      userId: schedule.userId,
-      periodName: schedule.periodName,
-      startTime: schedule.startTime,
-      endTime: schedule.endTime
-    });
-    
-    console.log('✅ Bell schedule created successfully');
-    
-    return {
-      id,
-      userId: schedule.userId,
-      periodName: schedule.periodName,
-      startTime: schedule.startTime,
-      endTime: schedule.endTime
-    };
-  }
-
-  async updateBellSchedule(id: string, schedule: Partial<InsertBellSchedule>): Promise<BellSchedule | undefined> {
-    await this.initialize();
-    console.log('🔔 Updating bell schedule:', id, schedule);
-    
-    const setParts = [];
-    const params: any = { id };
-    
-    if (schedule.periodName !== undefined) {
-      setParts.push('period_name = :periodName');
-      params.periodName = schedule.periodName;
-    }
-    if (schedule.startTime !== undefined) {
-      setParts.push('start_time = :startTime');
-      params.startTime = schedule.startTime;
-    }
-    if (schedule.endTime !== undefined) {
-      setParts.push('end_time = :endTime');
-      params.endTime = schedule.endTime;
-    }
-    if (schedule.dayOfWeek !== undefined) {
-      setParts.push('day_of_week = :dayOfWeek');
-      params.dayOfWeek = schedule.dayOfWeek;
-    }
-    
-    if (setParts.length === 0) {
-      console.log('⚠️ No fields to update');
-      return undefined;
-    }
-    
-    const sql = `UPDATE bell_schedule SET ${setParts.join(', ')} WHERE id = :id`;
-    await executeQuery(sql, params);
-    
-    // Return updated bell schedule
-    const result = await executeQuery('SELECT * FROM bell_schedule WHERE id = :id', { id });
-    if (!result.rows || result.rows.length === 0) {
-      console.log('❌ Bell schedule not found after update');
-      return undefined;
-    }
-    
-    const row = result.rows[0] as any;
-    console.log('✅ Bell schedule updated successfully');
-    
-    return {
-      id: row.ID,
-      userId: row.USER_ID,
-      periodName: row.PERIOD_NAME,
-      startTime: row.START_TIME,
-      endTime: row.END_TIME,
-      dayOfWeek: row.DAY_OF_WEEK
-    };
-  }
-
-  async deleteBellSchedule(id: string): Promise<boolean> {
-    await this.initialize();
-    console.log('🔔 Deleting bell schedule:', id);
-    
-    const result = await executeQuery('DELETE FROM bell_schedule WHERE id = :id', { id });
-    const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
-    
-    if (success) {
-      console.log('✅ Bell schedule deleted successfully');
-    } else {
-      console.log('❌ Bell schedule not found');
-    }
-    
-    return success;
-  }
   
   async getUserAnalytics(userId: string): Promise<any> { return {}; }
 }

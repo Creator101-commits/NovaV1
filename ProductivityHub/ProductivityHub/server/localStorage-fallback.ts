@@ -19,8 +19,6 @@ import type {
   InsertPomodoroSession,
   AiSummary,
   InsertAiSummary,
-  BellSchedule,
-  InsertBellSchedule,
   Note,
   InsertNote
 } from "@shared/schema";
@@ -411,23 +409,6 @@ export class LocalStorageFallback {
     return newAssignment;
   }
 
-  // Bell Schedule methods
-  async getBellScheduleByUserId(userId: string): Promise<BellSchedule[]> {
-    return this.getFromStorage<BellSchedule>(userId, 'bell_schedule');
-  }
-
-  async createBellSchedule(schedule: InsertBellSchedule): Promise<BellSchedule> {
-    const newSchedule: BellSchedule = {
-      id: randomUUID(),
-      ...schedule
-    };
-    
-    const schedules = this.getFromStorage<BellSchedule>(schedule.userId, 'bell_schedule');
-    schedules.push(newSchedule);
-    this.saveToStorage(schedule.userId, 'bell_schedule', schedules);
-    
-    return newSchedule;
-  }
 
   // Analytics method
   async getUserAnalytics(userId: string): Promise<any> {
@@ -539,31 +520,4 @@ export class LocalStorageFallback {
     return false;
   }
 
-  async updateBellSchedule(id: string, scheduleData: Partial<InsertBellSchedule>): Promise<BellSchedule | undefined> {
-    const users = this.getFromStorage<User>('system', 'users');
-    for (const user of users) {
-      const schedules = this.getFromStorage<BellSchedule>(user.id, 'bell_schedule');
-      const scheduleIndex = schedules.findIndex(s => s.id === id);
-      if (scheduleIndex !== -1) {
-        schedules[scheduleIndex] = { ...schedules[scheduleIndex], ...scheduleData };
-        this.saveToStorage(user.id, 'bell_schedule', schedules);
-        return schedules[scheduleIndex];
-      }
-    }
-    return undefined;
-  }
-
-  async deleteBellSchedule(id: string): Promise<boolean> {
-    const users = this.getFromStorage<User>('system', 'users');
-    for (const user of users) {
-      const schedules = this.getFromStorage<BellSchedule>(user.id, 'bell_schedule');
-      const scheduleIndex = schedules.findIndex(s => s.id === id);
-      if (scheduleIndex !== -1) {
-        schedules.splice(scheduleIndex, 1);
-        this.saveToStorage(user.id, 'bell_schedule', schedules);
-        return true;
-      }
-    }
-    return false;
-  }
 }

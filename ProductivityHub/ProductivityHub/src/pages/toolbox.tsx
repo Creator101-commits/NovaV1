@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PomodoroTimer } from "@/components/tools/PomodoroTimer";
 import { Flashcards } from "@/components/tools/Flashcards";
 import { MoodTracker } from "@/components/tools/MoodTracker";
-import { BellScheduleComponent } from "@/components/tools/BellSchedule";
 import { DailyJournal } from "@/components/tools/DailyJournal";
 import { AiSummaryHistory } from "@/components/tools/AiSummaryHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +10,6 @@ import {
   Clock,
   Brain,
   Smile,
-  Bell,
   BookOpen,
   Wrench,
   Bot,
@@ -44,14 +42,6 @@ export default function Toolbox() {
       icon: Smile,
       color: "text-yellow-500",
       component: MoodTracker,
-    },
-    {
-      id: "schedule",
-      title: "Bell Schedule",
-      description: "View your school period timings",
-      icon: Bell,
-      color: "text-blue-500",
-          component: BellScheduleComponent,
     },
     {
       id: "journal",
@@ -100,7 +90,7 @@ export default function Toolbox() {
 
       {/* Tools Tabs */}
       <Tabs defaultValue="pomodoro" className="space-y-6" onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           {tools.map((tool) => {
             const Icon = tool.icon;
             return (

@@ -15,8 +15,6 @@ import {
   type InsertPomodoroSession,
   type AiSummary,
   type InsertAiSummary,
-  type BellSchedule,
-  type InsertBellSchedule,
   type Note,
   type InsertNote,
   users,
@@ -27,7 +25,6 @@ import {
   journalEntries,
   pomodoroSessions,
   aiSummaries,
-  bellSchedule,
   notes
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -87,11 +84,6 @@ export interface IStorage {
   createAiSummary(summary: InsertAiSummary): Promise<AiSummary>;
   deleteAiSummary(id: string): Promise<boolean>;
   
-  // Bell schedule methods
-  getBellScheduleByUserId(userId: string): Promise<BellSchedule[]>;
-  createBellSchedule(schedule: InsertBellSchedule): Promise<BellSchedule>;
-  updateBellSchedule(id: string, schedule: Partial<InsertBellSchedule>): Promise<BellSchedule | undefined>;
-  deleteBellSchedule(id: string): Promise<boolean>;
 
   // Notes methods
   getNotesByUserId(userId: string): Promise<Note[]>;
@@ -115,7 +107,6 @@ export class MemStorage implements IStorage {
   private journalEntries: Map<string, JournalEntry>;
   private pomodoroSessions: Map<string, PomodoroSession>;
   private aiSummaries: Map<string, AiSummary>;
-  private bellSchedules: Map<string, BellSchedule>;
   private notes: Map<string, Note>;
 
   constructor() {
@@ -127,7 +118,6 @@ export class MemStorage implements IStorage {
     this.journalEntries = new Map();
     this.pomodoroSessions = new Map();
     this.aiSummaries = new Map();
-    this.bellSchedules = new Map();
     this.notes = new Map();
   }
 
@@ -365,36 +355,6 @@ export class MemStorage implements IStorage {
     return this.aiSummaries.delete(id);
   }
 
-  // Bell schedule methods
-  async getBellScheduleByUserId(userId: string): Promise<BellSchedule[]> {
-    return Array.from(this.bellSchedules.values()).filter(schedule => schedule.userId === userId);
-  }
-
-  async createBellSchedule(scheduleData: InsertBellSchedule): Promise<BellSchedule> {
-    const id = randomUUID();
-    const schedule: BellSchedule = { 
-      ...scheduleData, 
-      id 
-    };
-    this.bellSchedules.set(id, schedule);
-    return schedule;
-  }
-
-  async updateBellSchedule(id: string, scheduleData: Partial<InsertBellSchedule>): Promise<BellSchedule | undefined> {
-    const schedule = this.bellSchedules.get(id);
-    if (!schedule) return undefined;
-
-    const updatedSchedule: BellSchedule = { 
-      ...schedule, 
-      ...scheduleData 
-    };
-    this.bellSchedules.set(id, updatedSchedule);
-    return updatedSchedule;
-  }
-
-  async deleteBellSchedule(id: string): Promise<boolean> {
-    return this.bellSchedules.delete(id);
-  }
 
   // Notes methods
   async getNotesByUserId(userId: string): Promise<Note[]> {
@@ -613,25 +573,6 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  // Bell Schedule methods
-  async getBellScheduleByUserId(userId: string): Promise<BellSchedule[]> {
-    return await db.select().from(bellSchedule).where(eq(bellSchedule.userId, userId));
-  }
-
-  async createBellSchedule(scheduleEntry: InsertBellSchedule): Promise<BellSchedule> {
-    const result = await db.insert(bellSchedule).values(scheduleEntry).returning();
-    return result[0];
-  }
-
-  async updateBellSchedule(id: string, scheduleData: Partial<InsertBellSchedule>): Promise<BellSchedule | undefined> {
-    const result = await db.update(bellSchedule).set(scheduleData).where(eq(bellSchedule.id, id)).returning();
-    return result[0];
-  }
-
-  async deleteBellSchedule(id: string): Promise<boolean> {
-    const result = await db.delete(bellSchedule).where(eq(bellSchedule.id, id));
-    return result.length > 0;
-  }
 
   // Notes methods
   async getNotesByUserId(userId: string): Promise<Note[]> {

@@ -27,6 +27,7 @@ export const useGoogleClassroom = () => {
 
     try {
       let googleData: { courses: any[], assignments: any[] } = { courses: [], assignments: [] };
+      let databaseClasses: any[] = [];
       
       // Fetch Google Classroom data if authenticated
       if (userData?.googleAccessToken) {
@@ -38,6 +39,21 @@ export const useGoogleClassroom = () => {
         }
       }
 
+      // Fetch custom classes from database
+      if (user?.uid) {
+        try {
+          const response = await fetch(`/api/users/${user.uid}/classes`);
+          if (response.ok) {
+            databaseClasses = await response.json();
+            console.log('Fetched database classes:', databaseClasses.length);
+          } else {
+            console.warn('Failed to fetch database classes:', response.status);
+          }
+        } catch (dbError) {
+          console.warn('Failed to fetch database classes:', dbError);
+        }
+      }
+
       // Fetch custom assignments from localStorage
       let customAssignments = [];
       if (user?.uid) {
@@ -45,15 +61,18 @@ export const useGoogleClassroom = () => {
         customAssignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
       }
 
-      // Merge Google Classroom data with custom data
-      const allCourses = [...googleData.courses];
+      // Merge Google Classroom data with database classes
+      const allCourses = [...googleData.courses, ...databaseClasses];
       const allAssignments = [...googleData.assignments, ...customAssignments];
       
-      console.log('Google Classroom sync results:', {
+      console.log('Classroom sync results:', {
         googleCourses: googleData.courses.length,
+        databaseClasses: databaseClasses.length,
         googleAssignments: googleData.assignments.length,
         customAssignments: customAssignments.length,
+        totalCourses: allCourses.length,
         totalAssignments: allAssignments.length,
+        sampleCourse: allCourses[0], // Log first course for debugging
         sampleAssignment: allAssignments[0] // Log first assignment for debugging
       });
       
@@ -68,7 +87,7 @@ export const useGoogleClassroom = () => {
       if (showToast) {
         toast({
           title: "Sync Successful",
-          description: `Synced ${allCourses.length} courses and ${allAssignments.length} assignments.`,
+          description: `Synced ${allCourses.length} classes and ${allAssignments.length} assignments.`,
         });
       }
 
@@ -99,12 +118,12 @@ export const useGoogleClassroom = () => {
     });
   };
 
-  // Auto-sync on component mount (silent sync)
+  // Auto-sync on component mount and when user changes (silent sync)
   useEffect(() => {
-    if (data.courses.length === 0 && !data.isLoading) {
+    if (user?.uid && data.courses.length === 0 && !data.isLoading) {
       syncClassroomData(false).catch(console.error); // false = no toast notifications
     }
-  }, []);
+  }, [user?.uid]); // Re-sync when user changes
 
   return {
     ...data,

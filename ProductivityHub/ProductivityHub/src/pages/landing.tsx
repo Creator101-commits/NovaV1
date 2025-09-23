@@ -27,20 +27,20 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/95 backdrop-blur-sm border-b border-gray-100" : "bg-transparent"
+        isScrolled ? "bg-background/95 backdrop-blur-sm" : "bg-transparent"
       }`}>
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">StudySync</div>
+            <div className="text-2xl font-medium tracking-wide">Refyneo</div>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-black transition-colors">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-black transition-colors">Pricing</a>
+              <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Features</a>
+              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Pricing</a>
               <button 
                 onClick={handleSignIn}
-                className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                className="bg-foreground text-background px-4 py-1.5 rounded-md text-sm font-medium hover:bg-foreground/90 transition-all duration-200 btn-hover"
               >
                 Sign In
               </button>
@@ -59,21 +59,23 @@ export default function Landing() {
       <section className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-5xl mx-auto text-center">
           <div className="space-y-12 animate-fade-in">
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-none">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-normal tracking-tight leading-none">
               Study<br />
-              <span className="text-blue-600">Smarter</span>
+              <span className="relative">
+                Smarter
+              </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
               AI-powered productivity tools for academic excellence
             </p>
             
             <button 
               onClick={handleSignIn}
-              className="group inline-flex items-center bg-black text-white px-8 py-4 text-lg rounded-lg hover:bg-gray-800 transition-all duration-300"
+              className="group inline-flex items-center bg-foreground text-background px-6 py-3 text-base font-medium rounded-md hover:bg-foreground/90 transition-all duration-200 btn-hover"
             >
               Get Started
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
@@ -82,12 +84,12 @@ export default function Landing() {
       {/* Features Section */}
       <section id="features" className="py-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6">Everything you need</h2>
-            <p className="text-xl text-gray-600">Simple tools, powerful results</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-normal mb-4 tracking-tight">Everything you need</h2>
+            <p className="text-lg text-muted-foreground">Simple tools, powerful results</p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
             {[
               { label: "AI Summaries" },
               { label: "Smart Calendar" },
@@ -100,11 +102,11 @@ export default function Landing() {
             ].map((feature, index) => (
               <div 
                 key={index} 
-                className="text-center space-y-4 opacity-0 animate-slide-up"
+                className="text-center space-y-3 opacity-0 animate-slide-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-12 h-12 bg-blue-600 rounded-lg mx-auto"></div>
-                <p className="text-lg font-medium">{feature.label}</p>
+                <div className="w-10 h-10 bg-muted rounded-md mx-auto"></div>
+                <p className="text-base font-normal">{feature.label}</p>
               </div>
             ))}
           </div>
@@ -112,53 +114,55 @@ export default function Landing() {
       </section>
 
       {/* Social Proof */}
-      <section className="py-32 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-2xl md:text-3xl text-gray-600 mb-16">
-            "StudySync transformed how I manage my coursework. My productivity increased by 300%."
-          </p>
-          <div className="space-y-2">
-            <p className="font-medium">Sarah Chen</p>
-            <p className="text-gray-500">Computer Science, Stanford</p>
+      <section className="py-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="p-8">
+            <p className="text-xl md:text-2xl text-foreground mb-6 font-normal leading-relaxed">
+              "Refyneo transformed how I manage my coursework. My productivity increased by 300%."
+            </p>
+            <div className="space-y-1">
+              <p className="text-lg font-medium">Sarah Chen</p>
+              <p className="text-base text-muted-foreground">Computer Science, Stanford</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Used By Section */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-lg text-gray-600">Used by 10,000+ students worldwide</p>
+      <section className="py-16 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-base text-muted-foreground">Used by 10,000+ students worldwide</p>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-6xl font-bold mb-8">Ready to start?</h2>
-          <p className="text-xl text-gray-600 mb-12">Join thousands of students already using StudySync</p>
+      <section className="py-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-normal mb-6 tracking-tight">Ready to start?</h2>
+          <p className="text-lg text-muted-foreground mb-8">Join thousands of students already using Refyneo</p>
           <button 
             onClick={handleSignIn}
-            className="group inline-flex items-center bg-black text-white px-8 py-4 text-lg rounded-lg hover:bg-gray-800 transition-all duration-300"
+            className="group inline-flex items-center bg-foreground text-background px-6 py-3 text-base font-medium rounded-md hover:bg-foreground/90 transition-all duration-200 btn-hover"
           >
             Get Started Free
-            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-8 md:space-y-0">
-            <div className="text-2xl font-bold">StudySync</div>
-            <div className="flex space-x-8">
-              <a href="#" className="text-gray-600 hover:text-black transition-colors">Privacy</a>
-              <a href="#" className="text-gray-600 hover:text-black transition-colors">Terms</a>
-              <a href="#" className="text-gray-600 hover:text-black transition-colors">Support</a>
+      <footer className="py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+            <div className="text-lg font-medium">Refyneo</div>
+            <div className="flex space-x-6">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover text-sm">Privacy</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover text-sm">Terms</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover text-sm">Support</a>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-gray-100 text-center text-gray-500">
-            <p>&copy; 2025 StudySync. All rights reserved.</p>
+          <div className="mt-6 text-center text-muted-foreground">
+            <p className="text-xs">&copy; 2025 Refyneo. All rights reserved.</p>
           </div>
         </div>
       </footer>

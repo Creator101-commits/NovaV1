@@ -94,14 +94,6 @@ export const aiSummaries = pgTable("ai_summaries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const bellSchedule = pgTable("bell_schedule", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  periodName: text("period_name").notNull(),
-  startTime: text("start_time").notNull(),
-  endTime: text("end_time").notNull(),
-  dayOfWeek: integer("day_of_week").notNull(), // 0-6, Sunday = 0
-});
 
 export const notes = pgTable("notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -126,7 +118,6 @@ export const insertMoodEntrySchema = createInsertSchema(moodEntries).omit({ id: 
 export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({ id: true, createdAt: true });
 export const insertPomodoroSessionSchema = createInsertSchema(pomodoroSessions).omit({ id: true });
 export const insertAiSummarySchema = createInsertSchema(aiSummaries).omit({ id: true, createdAt: true });
-export const insertBellScheduleSchema = createInsertSchema(bellSchedule).omit({ id: true });
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Types
@@ -146,7 +137,5 @@ export type PomodoroSession = typeof pomodoroSessions.$inferSelect;
 export type InsertPomodoroSession = z.infer<typeof insertPomodoroSessionSchema>;
 export type AiSummary = typeof aiSummaries.$inferSelect;
 export type InsertAiSummary = z.infer<typeof insertAiSummarySchema>;
-export type BellSchedule = typeof bellSchedule.$inferSelect;
-export type InsertBellSchedule = z.infer<typeof insertBellScheduleSchema>;
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = z.infer<typeof insertNoteSchema>;

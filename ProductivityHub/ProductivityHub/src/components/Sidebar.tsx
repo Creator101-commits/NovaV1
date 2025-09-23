@@ -28,8 +28,8 @@ export const Sidebar = () => {
   const [location] = useLocation();
 
   return (
-    <aside className="w-64 bg-card border-r border-border p-6 h-full">
-      <nav className="space-y-2">
+    <aside className="w-64 bg-background p-4 h-full">
+      <nav className="space-y-1">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href;
@@ -38,13 +38,13 @@ export const Sidebar = () => {
             <Link key={item.href} href={item.href}>
               <a
                 className={cn(
-                  "flex items-center space-x-3 p-3 rounded-lg transition-colors",
+                  "flex items-center space-x-3 p-2.5 rounded-md notion-hover transition-all duration-200 text-sm font-medium",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-4 w-4" />
                 <span>{item.label}</span>
               </a>
             </Link>

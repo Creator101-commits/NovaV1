@@ -11,7 +11,6 @@ import {
   insertJournalEntrySchema,
   insertPomodoroSessionSchema, 
   insertAiSummarySchema,
-  insertBellScheduleSchema,
   insertNoteSchema
 } from "@shared/schema";
 
@@ -402,59 +401,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bell schedule routes
-  app.get("/api/users/:userId/bell-schedule", async (req, res) => {
-    try {
-      const schedule = await storage.getBellScheduleByUserId(req.params.userId);
-      res.json(schedule);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch bell schedule" });
-    }
-  });
-
-  app.post("/api/users/:userId/bell-schedule", async (req, res) => {
-    try {
-      console.log('🔔 Creating bell schedule with data:', { ...req.body, userId: req.params.userId });
-      const scheduleData = insertBellScheduleSchema.parse({ ...req.body, userId: req.params.userId });
-      const schedule = await storage.createBellSchedule(scheduleData);
-      res.status(201).json(schedule);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error('🔔 Zod validation error:', error.errors);
-        return res.status(400).json({ message: "Invalid bell schedule data", errors: error.errors });
-      }
-      console.error('🔔 Bell schedule creation error:', error);
-      res.status(500).json({ message: "Failed to create bell schedule" });
-    }
-  });
-
-  app.put("/api/bell-schedule/:id", async (req, res) => {
-    try {
-      const scheduleData = insertBellScheduleSchema.partial().parse(req.body);
-      const schedule = await storage.updateBellSchedule(req.params.id, scheduleData);
-      if (!schedule) {
-        return res.status(404).json({ message: "Bell schedule not found" });
-      }
-      res.json(schedule);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid bell schedule data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to update bell schedule" });
-    }
-  });
-
-  app.delete("/api/bell-schedule/:id", async (req, res) => {
-    try {
-      const deleted = await storage.deleteBellSchedule(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ message: "Bell schedule not found" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete bell schedule" });
-    }
-  });
 
   // Notes routes - Updated to use real authentication
   app.get("/api/notes", async (req, res) => {

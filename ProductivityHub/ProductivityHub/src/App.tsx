@@ -49,12 +49,12 @@ function AppNavigation() {
   const [, setLocation] = useLocation();
 
   return (
-    <nav className="bg-card border-b border-border px-6 py-4">
+    <nav className="bg-background px-6 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold gradient-text">Refyneo</span>
+          <div className="flex items-center space-x-3">
+            <GraduationCap className="h-6 w-6 text-muted-foreground" />
+            <span className="text-lg font-medium text-foreground">Refyneo</span>
           </div>
         </div>
         
@@ -71,13 +71,13 @@ function AppNavigation() {
           {user && (
             <div className="flex items-center space-x-3">
               {/* Sync Status Indicator */}
-              <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${
+              <div className={`flex items-center space-x-2 px-2 py-1 rounded text-xs font-medium ${
                 hasGoogleAccess 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                  ? 'text-foreground' 
+                  : 'text-muted-foreground'
               }`}>
-                <div className={`w-2 h-2 rounded-full ${hasGoogleAccess ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                {hasGoogleAccess ? 'Sync Enabled' : 'Basic Mode'}
+                <div className={`w-1 h-1 rounded-full ${hasGoogleAccess ? 'bg-foreground' : 'bg-muted-foreground'}`} />
+                {hasGoogleAccess ? 'Connected' : 'Offline'}
               </div>
 
               <DropdownMenu>
@@ -98,7 +98,7 @@ function AppNavigation() {
                   {!hasGoogleAccess && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-blue-600" onClick={() => setLocation("/auth")}>
+                      <DropdownMenuItem className="font-bold" onClick={() => setLocation("/auth")}>
                         Upgrade to Google Sync
                       </DropdownMenuItem>
                     </>
@@ -132,9 +132,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-6 right-6">
         <Button
           size="icon"
-          className="w-14 h-14 gradient-bg text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          className="w-10 h-10 bg-foreground text-background rounded-lg shadow-sm hover:shadow-md transition-all duration-150"
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -146,10 +146,10 @@ function Router() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <GraduationCap className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Loading...</p>
+          <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+          <p className="text-lg font-medium text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
