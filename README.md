@@ -1,8 +1,67 @@
 # RefyneoV1 - AI-Powered Student Productivity Platform
 
+RefyneoV1 is a comprehensive, AI-powered productivity platform designed specifically for students. It combines intelligent note-taking, calendar management, assignment tracking, and AI assistance to create a unified academic workspace.
+
 ![Architecture Diagram](ProductivityHub/ProductivityHub/images/software_architecture_diagram.png)
 
-RefyneoV1 is a comprehensive, AI-powered productivity platform designed specifically for students. It combines intelligent note-taking, calendar management, assignment tracking, and AI assistance to create a unified academic workspace.
+## 🏗️ System Architecture
+
+RefyneoV1 follows a modern, cloud-native architecture designed for scalability, performance, and reliability. The system is built using a microservices approach with clear separation between frontend, backend, and data layers.
+
+### Architecture Overview
+
+The application architecture consists of six main components working together to deliver a seamless user experience:
+
+**1. Front-End Deployment Layer**
+- **Vercel**: Primary hosting platform for the React application, providing global CDN, automatic deployments, and serverless functions
+- **Cloudflare**: Additional security layer offering DDoS protection, web application firewall (WAF), and performance optimization
+- **Google Analytics**: User behavior tracking and application usage insights
+
+**2. Front-End Technology Stack**
+- **TypeScript**: Type-safe development ensuring code reliability and maintainability
+- **Vite**: Lightning-fast build tool and development server for optimal developer experience
+- **React**: Component-based UI framework for building interactive user interfaces
+- **Tailwind CSS**: Utility-first CSS framework for rapid, consistent styling
+
+**3. Authentication & External APIs**
+- **Firebase SSO**: Secure authentication service supporting multiple login methods (Google, email/password)
+- **Firebase SDK**: Client-side integration for real-time features and user management
+- **Groq AI API**: Advanced AI capabilities for content summarization, chat assistance, and smart study recommendations
+- **Google API Services**: Integration with Google Calendar, Classroom, and other productivity tools
+
+**4. Back-End Technology Stack**
+- **Node.js**: JavaScript runtime environment for server-side application logic
+- **Express.js**: Minimalist web framework for building robust APIs and handling HTTP requests
+- **Drizzle ORM**: Type-safe database toolkit for seamless database operations and migrations
+- **WebSocket**: Real-time bidirectional communication for live updates and collaborative features
+
+**5. Back-End Deployment Infrastructure**
+- **Render**: Cloud platform hosting the Node.js backend with automatic scaling and deployment
+- **Vercel Edge Network**: Global content delivery network ensuring low-latency API responses worldwide
+
+**6. Database Layer**
+- **Oracle Cloud Database**: Primary production database offering enterprise-grade reliability, security, and performance
+- **PostgreSQL**: Development and backup database solution providing flexibility and local development support
+
+### Data Flow Architecture
+
+The system follows a unidirectional data flow pattern:
+
+1. **User Interaction**: Users interact with the React frontend hosted on Vercel
+2. **Authentication**: Firebase handles user authentication and session management
+3. **API Communication**: Frontend communicates with the Express.js backend via RESTful APIs
+4. **External Services**: Backend integrates with AI services (Groq) and Google APIs for enhanced functionality
+5. **Data Persistence**: All application data is stored in Oracle Cloud Database with PostgreSQL as fallback
+6. **Real-time Updates**: WebSocket connections enable live collaboration and instant notifications
+
+### Infrastructure Benefits
+
+**Scalability**: The architecture can handle growing user loads through cloud-native scaling
+**Performance**: Global CDN and edge computing ensure fast response times worldwide  
+**Reliability**: Multiple database options and cloud providers minimize downtime risk
+**Security**: Multi-layered security with Cloudflare protection and Firebase authentication
+**Developer Experience**: Modern tooling and TypeScript ensure maintainable, bug-free code
+**Cost Efficiency**: Optimized use of free tiers and pay-as-you-scale pricing models
 
 ## 🌟 Features
 
