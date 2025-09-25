@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { Spotlight } from "@/components/ui/spotlight";
 
 export default function Landing() {
   const { user } = useAuth();
@@ -37,7 +38,18 @@ export default function Landing() {
             <div className="text-2xl font-medium tracking-wide">Refyneo</div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Features</a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Pricing</a>
+              <button 
+                onClick={() => setLocation("/spotlight-demo")}
+                className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover"
+              >
+                Spotlight Demo
+              </button>
+              <button 
+                onClick={() => setLocation("/signin-demo")}
+                className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover"
+              >
+                Sign-In Demo
+              </button>
               <button 
                 onClick={handleSignIn}
                 className="bg-foreground text-background px-4 py-1.5 rounded-md text-sm font-medium hover:bg-foreground/90 transition-all duration-200 btn-hover"
@@ -55,9 +67,15 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center px-6">
-        <div className="max-w-5xl mx-auto text-center">
+      {/* Hero Section with Spotlight */}
+      <section className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+        {/* Spotlight Effect */}
+        <Spotlight
+          className="-top-40 left-0 md:left-60 md:-top-20"
+          fill="white"
+        />
+        
+        <div className="max-w-5xl mx-auto text-center relative z-10">
           <div className="space-y-12 animate-fade-in">
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-normal tracking-tight leading-none">
               Study<br />

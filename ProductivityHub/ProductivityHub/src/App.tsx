@@ -28,6 +28,7 @@ import { GraduationCap, Moon, Sun, Plus } from "lucide-react";
 // Pages
 import Landing from "@/pages/landing";
 import AuthPage from "@/pages/auth";
+import SignupPage from "@/pages/signup";
 import Dashboard from "@/pages/dashboard";
 import Calendar from "@/pages/calendar";
 import CalendarCallback from "@/pages/calendar-callback";
@@ -41,6 +42,8 @@ import Profile from "@/pages/profile";
 import Habits from "@/pages/habits";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
+import SpotlightDemo from "@/pages/spotlight-demo";
+import SignInDemo from "@/pages/signin-demo";
 import NotFound from "@/pages/not-found";
 
 function AppNavigation() {
@@ -159,6 +162,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/signup" component={SignupPage} />
       
       {/* OAuth Callback Routes */}
       <Route path="/auth/calendar/google" component={CalendarCallback} />
@@ -248,6 +252,10 @@ function Router() {
       {/* Legal Pages - Public access */}
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
+      
+      {/* Demo Pages - Public access */}
+      <Route path="/spotlight-demo" component={SpotlightDemo} />
+      <Route path="/signin-demo" component={SignInDemo} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
