@@ -130,6 +130,21 @@ CREATE TABLE ai_summaries (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Create User Preferences table
+CREATE TABLE user_preferences (
+    id VARCHAR2(36) PRIMARY KEY,
+    user_id VARCHAR2(36) NOT NULL,
+    theme VARCHAR2(10) DEFAULT 'dark',
+    color_scheme CLOB,
+    typography CLOB,
+    layout CLOB,
+    workspace CLOB,
+    features CLOB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_notes_user_id ON notes(user_id);
 CREATE INDEX idx_notes_class_id ON notes(class_id);

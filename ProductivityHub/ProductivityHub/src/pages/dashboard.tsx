@@ -3,6 +3,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  CalendarWidget,
+  AssignmentsWidget,
+  PomodoroWidget,
+  AnalyticsWidget,
+  NotesWidget,
+  FlashcardsWidget,
+  WidgetGallery
+} from '@/components/DashboardWidgets';
 import { 
   Clock, 
   Calendar, 
@@ -23,52 +33,12 @@ import {
   ArrowRight,
   MoreHorizontal,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  Grid3X3
 } from 'lucide-react';
 
-// Mock data - replace with actual API calls
-const mockRecentlyVisited = [
-  { id: 1, name: "Study Scheduler", icon: Calendar, lastVisited: "Jul 2, 2024", color: "bg-blue-500" },
-  { id: 2, name: "Notes Overview", icon: FileText, lastVisited: "Mar 27", color: "bg-green-500" },
-  { id: 3, name: "Flashcards", icon: Brain, lastVisited: "Jul 2, 2024", color: "bg-purple-500" },
-  { id: 4, name: "Spanish", icon: BookOpen, lastVisited: "Jul 2, 2024", color: "bg-orange-500" },
-  { id: 5, name: "Manual", icon: FileText, lastVisited: "Dec 2, 2024", color: "bg-red-500" },
-  { id: 6, name: "AI Chat", icon: Brain, lastVisited: "Jun 15", color: "bg-indigo-500" }
-];
-
-const mockUpcomingEvents = [
-  { id: 1, title: "Math Exam", date: "Tomorrow", time: "2:00 PM", type: "exam" },
-  { id: 2, title: "Spanish Presentation", date: "Friday", time: "10:00 AM", type: "presentation" },
-  { id: 3, title: "Chemistry Lab", date: "Next Week", time: "9:00 AM", type: "lab" }
-];
-
-const mockDailyActivities = [
-  { id: 1, name: "Wake up and freshen up", status: "done", icon: "🌅" },
-  { id: 2, name: "Have breakfast", status: "done", icon: "🍳" },
-  { id: 3, name: "Work or study", status: "in-progress", icon: "📚" },
-  { id: 4, name: "Have lunch", status: "not-started", icon: "🍽️" },
-  { id: 5, name: "Exercise", status: "not-started", icon: "🏃" }
-];
-
-const mockLearningResources = [
-  { id: 1, title: "The ultimate guide to study techniques", type: "read", time: "5m read", thumbnail: "📖" },
-  { id: 2, title: "Customize & organize your notes", type: "watch", time: "9m watch", thumbnail: "🎥" },
-  { id: 3, title: "Getting started with flashcards", type: "read", time: "8m read", thumbnail: "🧠" },
-  { id: 4, title: "Using AI to boost your productivity", type: "watch", time: "3m watch", thumbnail: "🤖" }
-];
-
-const mockFeaturedTemplates = [
-  { id: 1, name: "Study Planner", description: "Organize your study schedule", icon: Calendar, color: "bg-blue-500" },
-  { id: 2, name: "Note Templates", description: "Structured note-taking", icon: FileText, color: "bg-green-500" },
-  { id: 3, name: "Grade Tracker", description: "Track your academic progress", icon: TrendingUp, color: "bg-purple-500" },
-  { id: 4, name: "Budget Planner", description: "Manage your student finances", icon: Calculator, color: "bg-orange-500" }
-];
-
-const mockPinnedDatabases = [
-  { id: 1, name: "Study Notes", icon: FileText, count: 24 },
-  { id: 2, name: "Flashcards", icon: Brain, count: 156 },
-  { id: 3, name: "Assignments", icon: Target, count: 8 }
-];
+// Clean dashboard - no mock data needed
 
 // Calendar Component
 function CalendarComponent() {
@@ -228,48 +198,119 @@ function CalendarComponent() {
           </div>
         </div>
 
-        {/* Upcoming Events Summary */}
-        {events && events.length > 0 ? (
-          <div className="mt-6 pt-4 border-t border-border">
-            <h3 className="text-sm font-medium text-foreground mb-3">Upcoming Events</h3>
-            <div className="space-y-2">
-              {events.slice(0, 3).map((event, index) => (
-                <div key={index} className="flex items-center gap-3 p-2 rounded-lg notion-hover cursor-pointer transition-all duration-200 hover:bg-muted/50">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(event.startTime).toLocaleDateString()} at {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
+        {/* Quick Access Section */}
+        <div className="mt-6 pt-4 border-t border-border">
+          <h3 className="text-sm font-medium text-foreground mb-3">Quick Access</h3>
+          <div className="flex gap-2">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors flex-1">
+              <Calendar className="h-4 w-4 text-blue-500" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Today's Schedule</div>
+                <div className="text-xs text-muted-foreground">View your calendar</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors flex-1">
+              <Plus className="h-4 w-4 text-green-500" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Add Event</div>
+                <div className="text-xs text-muted-foreground">Create new event</div>
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="mt-6 pt-4 border-t border-border text-center">
-            <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground mb-2">No upcoming events</p>
-            <Button variant="ghost" size="sm" className="text-xs hover:bg-muted/50 transition-colors duration-200">
-              <Plus className="w-3 h-3 mr-1" />
-              Add event
-            </Button>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
+// Widget type definition
+interface DashboardWidget {
+  id: string;
+  type: 'calendar' | 'assignments' | 'habits' | 'notes' | 'pomodoro' | 'analytics' | 'flashcards';
+  title: string;
+  size: 'small' | 'medium' | 'large';
+  position: { x: number; y: number };
+  isVisible: boolean;
+}
+
+// Default dashboard widgets
+const defaultWidgets: DashboardWidget[] = [
+  { id: 'assignments', type: 'assignments', title: 'Assignments', size: 'medium', position: { x: 0, y: 0 }, isVisible: true },
+  { id: 'pomodoro', type: 'pomodoro', title: 'Study Sessions', size: 'small', position: { x: 2, y: 0 }, isVisible: true },
+  { id: 'notes', type: 'notes', title: 'Notes', size: 'small', position: { x: 0, y: 1 }, isVisible: true },
+  { id: 'flashcards', type: 'flashcards', title: 'Flashcards', size: 'small', position: { x: 1, y: 1 }, isVisible: true },
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [widgets, setWidgets] = useState(defaultWidgets);
+  const [showWidgetGallery, setShowWidgetGallery] = useState(false);
 
   // Update time every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // Load saved widgets from localStorage
+  useEffect(() => {
+    if (user?.uid) {
+      const savedWidgets = localStorage.getItem(`dashboard-widgets-${user.uid}`);
+      if (savedWidgets) {
+        setWidgets(JSON.parse(savedWidgets));
+      }
+    }
+  }, [user?.uid]);
+
+  // Save widgets to localStorage
+  useEffect(() => {
+    if (user?.uid && widgets.length > 0) {
+      localStorage.setItem(`dashboard-widgets-${user.uid}`, JSON.stringify(widgets));
+    }
+  }, [widgets, user?.uid]);
+
+  const addWidget = (type: DashboardWidget['type'], title: string) => {
+    const newWidget: DashboardWidget = {
+      id: `${type}-${Date.now()}`,
+      type,
+      title,
+      size: 'small',
+      position: { x: 0, y: 0 },
+      isVisible: true,
+    };
+    setWidgets(prev => [...prev, newWidget]);
+    setShowWidgetGallery(false);
+  };
+
+  const removeWidget = (widgetId: string) => {
+    setWidgets(prev => prev.filter(w => w.id !== widgetId));
+  };
+
+  const resizeWidget = (widgetId: string, newSize: 'small' | 'medium' | 'large') => {
+    setWidgets(prev => prev.map(w => 
+      w.id === widgetId ? { ...w, size: newSize } : w
+    ));
+  };
+
+  const renderWidget = (widget: DashboardWidget) => {
+    switch (widget.type) {
+      case 'calendar':
+        return <CalendarWidget widget={widget} />;
+      case 'assignments':
+        return <AssignmentsWidget widget={widget} />;
+      case 'pomodoro':
+        return <PomodoroWidget widget={widget} />;
+      case 'analytics':
+        return <AnalyticsWidget widget={widget} />;
+      case 'notes':
+        return <NotesWidget widget={widget} />;
+      case 'flashcards':
+        return <FlashcardsWidget widget={widget} />;
+      default:
+        return null;
+    }
+  };
 
   // Get dynamic greeting based on time
   const getGreeting = () => {
@@ -281,176 +322,75 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header Section - Dynamic Greeting */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-normal text-foreground">
-            {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}
-          </h1>
-          <p className="text-base text-muted-foreground">Welcome Home</p>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Header Section - Centered Greeting */}
+        <div className="relative flex items-center justify-center">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-normal text-foreground">
+              {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}
+            </h1>
+          </div>
           
-          {/* Left Column - Recently Visited */}
-          <div className="space-y-6">
-            
-            {/* Recently Visited */}
-            <Card className="notion-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  Recently visited
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {mockRecentlyVisited.slice(0, 4).map((item) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex-shrink-0 w-40 p-3 rounded-lg notion-hover cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:scale-[1.02]"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-6 h-6 rounded ${item.color} flex items-center justify-center`}>
-                            <IconComponent className="w-3 h-3 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-foreground text-sm truncate">{item.name}</h3>
-                            <p className="text-xs text-muted-foreground">{item.lastVisited}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Featured Templates */}
-            <Card className="notion-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
-                  <Star className="w-4 h-4 text-muted-foreground" />
-                  Featured templates
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {mockFeaturedTemplates.slice(0, 3).map((template) => {
-                    const IconComponent = template.icon;
-                    return (
-                      <div
-                        key={template.id}
-                        className="flex-shrink-0 w-36 p-3 rounded-lg notion-hover cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:scale-[1.02]"
-                      >
-                        <div className="space-y-2">
-                          <div className="w-full h-12 bg-muted rounded flex items-center justify-center">
-                            <div className={`w-6 h-6 rounded ${template.color} flex items-center justify-center`}>
-                              <IconComponent className="w-3 h-3 text-white" />
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-foreground text-xs">{template.name}</h3>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Upcoming Events */}
-          <div className="space-y-6">
-            
-            {/* Upcoming Events */}
-            <Card className="notion-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  Upcoming events
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {mockUpcomingEvents.length > 0 ? (
-                  <div className="space-y-2">
-                    {mockUpcomingEvents.slice(0, 3).map((event) => (
-                       <div
-                         key={event.id}
-                         className="p-3 rounded-lg notion-hover cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:scale-[1.01]"
-                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-foreground text-sm">{event.title}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-muted-foreground">{event.date}</span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground">{event.time}</span>
-                            </div>
-                          </div>
-                          <div className={`w-2 h-2 rounded-full ${
-                            event.type === 'exam' ? 'bg-red-500' : 
-                            event.type === 'presentation' ? 'bg-blue-500' : 'bg-green-500'
-                          }`} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground mb-2">No upcoming events</p>
-                     <Button variant="ghost" size="sm" className="text-xs hover:bg-muted/50 transition-colors duration-200">
-                       <Plus className="w-3 h-3 mr-1" />
-                       New event
-                     </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Access */}
-            <Card className="notion-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
-                  <Pin className="w-4 h-4 text-muted-foreground" />
-                  Quick access
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {mockPinnedDatabases.slice(0, 4).map((db) => {
-                    const IconComponent = db.icon;
-                    return (
-                      <div
-                        key={db.id}
-                        className="p-3 rounded-lg notion-hover cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:scale-[1.01]"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded bg-muted flex items-center justify-center">
-                            <IconComponent className="w-3 h-3 text-foreground" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-foreground text-xs">{db.name}</h3>
-                            <p className="text-xs text-muted-foreground">{db.count} items</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="absolute right-0 flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowWidgetGallery(!showWidgetGallery)}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Customize
+            </Button>
           </div>
         </div>
 
-        {/* Wide Calendar Component - Positioned at bottom */}
-        <CalendarComponent />
+        {/* Widget Gallery */}
+        {showWidgetGallery && (
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Add Widgets</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowWidgetGallery(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+              <WidgetGallery onAddWidget={addWidget} />
+            </div>
+          </Card>
+        )}
+
+        {/* Dashboard Widgets Grid - Centered and 30% Wider */}
+        <div className="flex flex-col items-center space-y-8">
+          {/* First Row: Assignments and Notes */}
+          <div className="flex gap-6">
+            <div className="w-[500px] h-72">
+              {renderWidget({ id: 'assignments', type: 'assignments', title: 'Assignments', size: 'small', position: { x: 0, y: 0 }, isVisible: true })}
+            </div>
+            <div className="w-[500px] h-72">
+              {renderWidget({ id: 'notes', type: 'notes', title: 'Notes', size: 'small', position: { x: 0, y: 1 }, isVisible: true })}
+            </div>
+          </div>
+
+          {/* Second Row: Study Sessions and Flashcards */}
+          <div className="flex gap-6">
+            <div className="w-[500px] h-72">
+              {renderWidget({ id: 'pomodoro', type: 'pomodoro', title: 'Study Sessions', size: 'small', position: { x: 2, y: 0 }, isVisible: true })}
+            </div>
+            <div className="w-[500px] h-72">
+              {renderWidget({ id: 'flashcards', type: 'flashcards', title: 'Flashcards', size: 'small', position: { x: 1, y: 1 }, isVisible: true })}
+            </div>
+          </div>
+
+          {/* Third Row: Calendar Component */}
+          <div className="w-full max-w-7xl">
+            <CalendarComponent />
+          </div>
+        </div>
       </div>
     </div>
   );
