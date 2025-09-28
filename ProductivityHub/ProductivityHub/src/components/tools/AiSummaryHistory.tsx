@@ -137,7 +137,7 @@ export const AiSummaryHistory = () => {
       case "bullet":
         return "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+        return "bg-muted text-foreground";
     }
   };
 

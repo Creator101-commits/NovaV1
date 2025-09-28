@@ -109,6 +109,51 @@ export const flashcardAPI = {
   },
 };
 
+// Class API functions
+export const classAPI = {
+  // Get all classes for a user
+  getClasses: async () => {
+    return makeAuthenticatedRequest('/api/classes', { method: 'GET' });
+  },
+
+  // Create a new class
+  createClass: async (classData: {
+    name: string;
+    section?: string;
+    description?: string;
+    teacherName?: string;
+    teacherEmail?: string;
+    color?: string;
+  }) => {
+    return makeAuthenticatedRequest('/api/classes', {
+      method: 'POST',
+      body: JSON.stringify(classData),
+    });
+  },
+
+  // Update a class
+  updateClass: async (id: string, updates: {
+    name?: string;
+    section?: string;
+    description?: string;
+    teacherName?: string;
+    teacherEmail?: string;
+    color?: string;
+  }) => {
+    return makeAuthenticatedRequest(`/api/classes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // Delete a class
+  deleteClass: async (id: string) => {
+    return makeAuthenticatedRequest(`/api/classes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Generic API functions for backward compatibility
 export const apiGet = async (endpoint: string) => {
   return makeAuthenticatedRequest(endpoint, { method: 'GET' });

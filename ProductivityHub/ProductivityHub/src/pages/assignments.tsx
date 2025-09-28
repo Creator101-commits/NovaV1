@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { useGoogleClassroom } from '@/hooks/useGoogleClassroom';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePersistentData } from '@/hooks/usePersistentData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Calendar, 
@@ -33,6 +34,7 @@ export default function Assignments() {
   const { assignments, courses, isLoading, error, syncClassroomData, isAuthenticated } = useGoogleClassroom();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isRestoring, isRestored } = usePersistentData();
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -337,11 +339,11 @@ export default function Assignments() {
 
           <Button 
             onClick={handleSync} 
-            disabled={isLoading || isSyncing}
+            disabled={isLoading || isSyncing || isRestoring}
             className="flex items-center gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Sync Assignments'}
+            <RefreshCw className={`h-4 w-4 ${(isLoading || isSyncing || isRestoring) ? 'animate-spin' : ''}`} />
+            {isRestoring ? 'Restoring...' : isSyncing ? 'Syncing...' : 'Sync Assignments'}
           </Button>
         </div>
       </div>
@@ -412,10 +414,17 @@ export default function Assignments() {
         </CardContent>
       </Card>
 
-      {isLoading && !assignments.length && (
+      {(isLoading || isRestoring) && !assignments.length && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your assignments...</p>
+          <p className="text-muted-foreground">
+            {isRestoring ? 'Restoring your assignments...' : 'Loading your assignments...'}
+          </p>
+          {isRestoring && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Fetching your Google Classroom data from cache
+            </p>
+          )}
         </div>
       )}
 

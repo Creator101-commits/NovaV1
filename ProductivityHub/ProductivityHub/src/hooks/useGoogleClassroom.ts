@@ -12,7 +12,7 @@ interface ClassroomData {
 }
 
 export const useGoogleClassroom = () => {
-  const { userData, user } = useAuth();
+  const { userData, user, restoreUserData } = useAuth();
   const { toast } = useToast();
   const [data, setData] = useState<ClassroomData>({
     courses: [],
@@ -84,6 +84,27 @@ export const useGoogleClassroom = () => {
         lastSynced: new Date(),
       }));
 
+      // Save to localStorage for persistence
+      if (user?.uid) {
+        try {
+          const dataToCache = {
+            courses: allCourses,
+            assignments: allAssignments,
+            cachedAt: new Date().toISOString()
+          };
+          localStorage.setItem(`classroom_data_${user.uid}`, JSON.stringify(dataToCache));
+          
+          // Also update global cache for immediate access
+          (window as any).cachedClassroomData = {
+            courses: allCourses,
+            assignments: allAssignments,
+            lastSynced: new Date()
+          };
+        } catch (error) {
+          console.warn('Failed to save classroom data to localStorage:', error);
+        }
+      }
+
       if (showToast) {
         toast({
           title: "Sync Successful",
@@ -121,9 +142,48 @@ export const useGoogleClassroom = () => {
   // Auto-sync on component mount and when user changes (silent sync)
   useEffect(() => {
     if (user?.uid && data.courses.length === 0 && !data.isLoading) {
-      syncClassroomData(false).catch(console.error); // false = no toast notifications
+      // First try to load from cached data if available
+      const cachedData = (window as any).cachedClassroomData;
+      if (cachedData) {
+        console.log('✅ Loading Google Classroom data from cache');
+        setData(prev => ({
+          ...prev,
+          courses: cachedData.courses || [],
+          assignments: cachedData.assignments || [],
+          lastSynced: cachedData.lastSynced || null,
+        }));
+      } else {
+        // No cached data, sync fresh data
+        syncClassroomData(false).catch(console.error); // false = no toast notifications
+      }
     }
   }, [user?.uid]); // Re-sync when user changes
+
+  // Listen for auth restoration and update data accordingly
+  useEffect(() => {
+    const handleAuthRestore = () => {
+      const cachedData = (window as any).cachedClassroomData;
+      if (cachedData && user?.uid) {
+        console.log('✅ Auth restored, updating Google Classroom data');
+        setData(prev => ({
+          ...prev,
+          courses: cachedData.courses || [],
+          assignments: cachedData.assignments || [],
+          lastSynced: cachedData.lastSynced || null,
+        }));
+      }
+    };
+
+    // Check if data is available after auth restoration
+    const interval = setInterval(() => {
+      const cachedData = (window as any).cachedClassroomData;
+      if (cachedData && data.courses.length === 0 && user?.uid) {
+        handleAuthRestore();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [user?.uid, data.courses.length]);
 
   return {
     ...data,

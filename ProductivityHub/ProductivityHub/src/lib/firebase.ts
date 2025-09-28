@@ -61,7 +61,7 @@ googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 googleProvider.addScope('https://www.googleapis.com/auth/classroom.courses.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
 
-export const signInWithGoogle = async () => {
+export const signInWithGoogle = async (enableSync: boolean = true) => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -77,22 +77,26 @@ export const signInWithGoogle = async () => {
           firstName: user.displayName?.split(' ')[0] || '',
           lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
           avatar: user.photoURL,
-          googleAccessToken: token,
+          googleAccessToken: enableSync ? token : null,
           authProvider: 'google',
-          hasGoogleAccess: true, // Key flag to enable sync features
-          hasGoogleCalendar: true, // New flag for calendar access
+          hasGoogleAccess: enableSync, // Key flag to enable sync features
+          hasGoogleCalendar: enableSync, // New flag for calendar access
           updatedAt: new Date(),
         }, { merge: true });
         console.log('User data saved to Firestore');
 
-        // Automatically sync Google Calendar data
-        try {
-          console.log('Starting Google Calendar sync...');
-          const calendarData = await syncGoogleCalendarOnLogin(token, user.uid);
-          console.log(`Synced ${calendarData.calendars.length} calendars and ${calendarData.events.length} events`);
-        } catch (calendarError) {
-          console.warn('Failed to sync Google Calendar data during login:', calendarError);
-          // Don't fail the login if calendar sync fails
+        // Only sync Google Calendar data if sync is enabled
+        if (enableSync) {
+          try {
+            console.log('Starting Google Calendar sync...');
+            const calendarData = await syncGoogleCalendarOnLogin(token, user.uid);
+            console.log(`Synced ${calendarData.calendars.length} calendars and ${calendarData.events.length} events`);
+          } catch (calendarError) {
+            console.warn('Failed to sync Google Calendar data during login:', calendarError);
+            // Don't fail the login if calendar sync fails
+          }
+        } else {
+          console.log('Google sync disabled - skipping data synchronization');
         }
 
         // Sync user to Oracle database
@@ -108,7 +112,7 @@ export const signInWithGoogle = async () => {
               email: user.email,
               displayName: user.displayName,
               photoURL: user.photoURL,
-              accessToken: token,
+              accessToken: enableSync ? token : null,
             }),
           });
 
@@ -129,7 +133,7 @@ export const signInWithGoogle = async () => {
       console.warn('Firestore not available - user data not saved');
     }
     
-    return { user, token };
+    return { user, token: enableSync ? token : null };
   } catch (error: any) {
     console.error('Error signing in with Google:', error);
     // Fallback to redirect for mobile devices or if popup is blocked

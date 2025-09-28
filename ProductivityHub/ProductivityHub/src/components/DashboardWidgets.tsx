@@ -245,7 +245,7 @@ export const HabitsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) 
             <span>Study 2 hours</span>
             <span>1.5/2</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+          <div className="w-full bg-muted rounded-full h-2">
             <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
           </div>
         </div>
@@ -254,7 +254,7 @@ export const HabitsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) 
             <span>Exercise</span>
             <span>✓</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+          <div className="w-full bg-muted rounded-full h-2">
             <div className="bg-green-600 h-2 rounded-full" style={{ width: '100%' }}></div>
           </div>
         </div>

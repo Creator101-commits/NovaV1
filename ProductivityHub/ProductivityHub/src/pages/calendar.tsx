@@ -241,11 +241,11 @@ export default function Calendar() {
   const calendarDays = getCalendarDays();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-background min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Calendar</h1>
+          <h1 className="text-3xl font-bold text-foreground">Calendar</h1>
           <p className="text-muted-foreground">
             Manage your schedule and track important events
           </p>
@@ -428,7 +428,7 @@ export default function Calendar() {
           <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h2 className="text-2xl font-semibold min-w-48 text-center">
+          <h2 className="text-2xl font-semibold min-w-48 text-center text-foreground">
             {format(currentDate, "MMMM yyyy")}
           </h2>
           <Button variant="outline" size="icon" onClick={goToNextMonth}>
@@ -438,10 +438,10 @@ export default function Calendar() {
       </div>
 
       {/* Calendar Grid */}
-      <Card>
-        <CardContent className="p-0">
+      <Card className="bg-card border-border">
+        <CardContent className="p-0 bg-card">
           {/* Header Row */}
-          <div className="grid grid-cols-7 border-b dark:border-gray-700">
+          <div className="grid grid-cols-7 border-b border-border">
             {weekDays.map((day) => (
               <div
                 key={day}
@@ -463,8 +463,8 @@ export default function Calendar() {
               return (
                 <div
                   key={day.toISOString()}
-                  className={`min-h-32 p-2 border-r border-b dark:border-gray-700 cursor-pointer hover:bg-accent/50 transition-colors ${
-                    !isCurrentMonth ? "bg-muted/20 text-muted-foreground" : ""
+                  className={`min-h-32 p-2 border-r border-b border-border cursor-pointer hover:bg-accent/50 transition-colors bg-card ${
+                    !isCurrentMonth ? "bg-muted/20 text-muted-foreground" : "bg-card text-foreground"
                   } ${isSelected ? "bg-primary/10" : ""}`}
                   onClick={() => setSelectedDate(day)}
                 >

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { SignInPage, Testimonial } from "@/components/ui/sign-in";
+import { EnhancedSignInPage } from "@/components/ui/enhanced-sign-in";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useEffect } from "react";
 
@@ -52,11 +52,11 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (enableSync?: boolean) => {
     try {
       setIsLoading(true);
       setError("");
-      await signIn();
+      await signIn(enableSync);
     } catch (error: any) {
       console.error("Google sign in error:", error);
       if (error?.code === 'auth/popup-blocked') {
@@ -84,7 +84,7 @@ export default function AuthPage() {
 
   return (
     <div className={`${theme === 'dark' ? 'bg-black' : 'bg-gray-50'}`}>
-      <SignInPage
+      <EnhancedSignInPage
         title={<span className="font-light text-foreground tracking-tighter">Welcome to Refyneo</span>}
         description="Your AI-powered productivity companion. Sign in to access your dashboard and continue your journey."
         heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
@@ -100,8 +100,8 @@ export default function AuthPage() {
       )}
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-lg">
-            <p className="text-gray-900 dark:text-white">Signing in...</p>
+          <div className="bg-card px-6 py-4 rounded-lg shadow-lg">
+            <p className="text-card-foreground">Signing in...</p>
           </div>
         </div>
       )}

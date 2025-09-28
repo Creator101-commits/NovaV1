@@ -11,15 +11,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { SyncFeatureWrapper } from '@/components/SyncFeatureWrapper';
 import { useGoogleClassroom } from '@/hooks/useGoogleClassroom';
 import { useToast } from '@/hooks/use-toast';
+import { usePersistentData } from '@/hooks/usePersistentData';
+import { useClassManagement } from '@/hooks/useClassManagement';
 import { apiGet, apiPost } from '@/lib/api';
-import { RefreshCw, BookOpen, Users, Calendar, ExternalLink, AlertCircle, CheckCircle, Plus, Palette } from 'lucide-react';
+import { RefreshCw, BookOpen, Users, Calendar, ExternalLink, AlertCircle, CheckCircle, Plus, Palette, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Classes() {
   const { courses, isLoading, error, syncClassroomData, isAuthenticated } = useGoogleClassroom();
   const { toast } = useToast();
+  const { isRestoring } = usePersistentData();
+  const { createClass, confirmDeleteClass, isDeleting, isCreating } = useClassManagement();
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isAddingClass, setIsAddingClass] = useState(false);
   const [newClass, setNewClass] = useState({
     name: '',
     section: '',
@@ -51,27 +54,17 @@ export default function Classes() {
       return;
     }
 
-    setIsAddingClass(true);
     try {
       const classData = {
         name: newClass.name,
-        section: newClass.section || null,
-        description: newClass.description || null,
-        teacherName: newClass.teacherName || null,
-        teacherEmail: newClass.teacherEmail || null,
+        section: newClass.section || undefined,
+        description: newClass.description || undefined,
+        teacherName: newClass.teacherName || undefined,
+        teacherEmail: newClass.teacherEmail || undefined,
         color: newClass.color,
       };
 
-      const response = await apiPost('/api/classes', classData);
-
-      if (!response.ok) {
-        throw new Error('Failed to create class');
-      }
-
-      toast({
-        title: "Success!",
-        description: "Class created successfully.",
-      });
+      await createClass(classData);
 
       // Reset form
       setNewClass({
@@ -87,13 +80,31 @@ export default function Classes() {
       await syncClassroomData(false); // Silent refresh to include new class
       
     } catch (error: any) {
+      // Error handling is done in the hook
+      console.error('Error creating class:', error);
+    }
+  };
+
+  const handleDeleteClass = async (course: any) => {
+    // Only allow deletion of custom classes (not Google Classroom classes)
+    if (course.googleClassroomId || course.courseState) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create class.",
+        title: "Cannot Delete",
+        description: "Google Classroom classes cannot be deleted from this interface.",
         variant: "destructive",
       });
-    } finally {
-      setIsAddingClass(false);
+      return;
+    }
+
+    try {
+      const deleted = await confirmDeleteClass(course.id, course.name);
+      if (deleted) {
+        // Refresh data after successful deletion
+        await syncClassroomData(false);
+      }
+    } catch (error: any) {
+      // Error handling is done in the hook
+      console.error('Error deleting class:', error);
     }
   };
 
@@ -193,9 +204,9 @@ export default function Classes() {
                   </DialogTrigger>
                   <Button 
                     onClick={handleCreateClass}
-                    disabled={isAddingClass}
+                    disabled={isCreating}
                   >
-                    {isAddingClass ? 'Creating...' : 'Create Class'}
+                    {isCreating ? 'Creating...' : 'Create Class'}
                   </Button>
                 </div>
               </div>
@@ -208,11 +219,11 @@ export default function Classes() {
           >
             <Button 
               onClick={handleSync} 
-              disabled={isLoading || isSyncing}
+              disabled={isLoading || isSyncing || isRestoring}
               className="flex items-center gap-2"
             >
-              <RefreshCw className={`h-4 w-4 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync Classes'}
+              <RefreshCw className={`h-4 w-4 ${(isLoading || isSyncing || isRestoring) ? 'animate-spin' : ''}`} />
+              {isRestoring ? 'Restoring...' : isSyncing ? 'Syncing...' : 'Sync Classes'}
             </Button>
           </SyncFeatureWrapper>
         </div>
@@ -274,6 +285,23 @@ export default function Classes() {
                     <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
                       Custom
                     </Badge>
+                  )}
+                  
+                  {/* Delete button for custom classes only */}
+                  {!course.courseState && !course.googleClassroomId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClass(course)}
+                      disabled={isDeleting === course.id}
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      {isDeleting === course.id ? (
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>

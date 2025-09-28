@@ -115,8 +115,8 @@ function CalendarComponent() {
                         currentDate.getFullYear() === today.getFullYear();
 
   return (
-    <Card className="notion-card">
-      <CardHeader className="pb-4">
+    <Card className="bg-card border-border">
+      <CardHeader className="pb-4 bg-card">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg font-medium">
             <Calendar className="w-5 h-5 text-muted-foreground" />
@@ -147,7 +147,7 @@ function CalendarComponent() {
           </h2>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-card">
         {/* Calendar Grid */}
         <div className="space-y-2">
           {/* Day headers */}
@@ -172,10 +172,10 @@ function CalendarComponent() {
               return (
                 <div
                   key={day}
-                  className={`h-10 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-200 ${
+                  className={`h-10 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-200 bg-card text-foreground ${
                     isToday 
                       ? 'bg-foreground text-background font-medium hover:bg-foreground/90' 
-                      : 'notion-hover hover:bg-muted/50 hover:shadow-sm hover:scale-105'
+                      : 'hover:bg-muted/50 hover:shadow-sm hover:scale-105'
                   }`}
                 >
                   <span className="text-sm">{day}</span>

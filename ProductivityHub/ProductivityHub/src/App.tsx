@@ -7,13 +7,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ColorCustomizationProvider } from "@/contexts/ColorCustomizationContext";
 import { CalendarProvider } from "@/contexts/CalendarContext";
 import { ActivityProvider } from "@/contexts/ActivityContext";
+import { usePersistentData } from "@/hooks/usePersistentData";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DockNavigation } from "@/components/DockNavigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useColorCustomization } from "@/contexts/ColorCustomizationContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
-import { GraduationCap, Moon, Sun, Plus } from "lucide-react";
+import { GraduationCap, Moon, Sun, Plus, Palette } from "lucide-react";
 
 // Pages
 import Landing from "@/pages/landing";
@@ -40,6 +43,7 @@ import AiChat from "@/pages/ai-chat";
 import Analytics from "@/pages/analytics";
 import Profile from "@/pages/profile";
 import Habits from "@/pages/habits";
+import Settings from "@/pages/settings";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import SpotlightDemo from "@/pages/spotlight-demo";
@@ -50,6 +54,8 @@ function AppNavigation() {
   const { user, userData, signOut, hasGoogleAccess } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [, setLocation] = useLocation();
+  const { isRestoring } = usePersistentData();
+  const { customization } = useColorCustomization();
 
   return (
     <nav className="bg-background px-6 py-3">
@@ -65,8 +71,18 @@ function AppNavigation() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setLocation("/settings")}
+            className="rounded-lg"
+            title="Color Customization"
+          >
+            <Palette className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleTheme}
             className="rounded-lg"
+            title="Toggle Theme"
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -75,12 +91,20 @@ function AppNavigation() {
             <div className="flex items-center space-x-3">
               {/* Sync Status Indicator */}
               <div className={`flex items-center space-x-2 px-2 py-1 rounded text-xs font-medium ${
-                hasGoogleAccess 
-                  ? 'text-foreground' 
-                  : 'text-muted-foreground'
+                isRestoring 
+                  ? 'text-blue-500' 
+                  : hasGoogleAccess 
+                    ? 'text-foreground' 
+                    : 'text-muted-foreground'
               }`}>
-                <div className={`w-1 h-1 rounded-full ${hasGoogleAccess ? 'bg-foreground' : 'bg-muted-foreground'}`} />
-                {hasGoogleAccess ? 'Connected' : 'Offline'}
+                <div className={`w-1 h-1 rounded-full ${
+                  isRestoring 
+                    ? 'bg-blue-500 animate-pulse' 
+                    : hasGoogleAccess 
+                      ? 'bg-foreground' 
+                      : 'bg-muted-foreground'
+                }`} />
+                {isRestoring ? 'Restoring...' : hasGoogleAccess ? 'Connected' : 'Offline'}
               </div>
 
               <DropdownMenu>
@@ -97,7 +121,7 @@ function AppNavigation() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setLocation("/profile")}>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/settings")}>Settings</DropdownMenuItem>
                   {!hasGoogleAccess && (
                     <>
                       <DropdownMenuSeparator />
@@ -118,10 +142,16 @@ function AppNavigation() {
   );
 }
 
+function DataRestorationHandler() {
+  usePersistentData();
+  return null;
+}
+
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen flex flex-col">
       <AppNavigation />
+      <DataRestorationHandler />
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 p-8 overflow-y-auto bg-background pb-32">
           {children}
@@ -249,6 +279,14 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
+      <Route path="/settings">
+        <ProtectedRoute fallback={<Landing />}>
+          <AppLayout>
+            <Settings />
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+      
       {/* Legal Pages - Public access */}
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
@@ -267,16 +305,18 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <ActivityProvider>
-            <CalendarProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </CalendarProvider>
-          </ActivityProvider>
-        </AuthProvider>
+        <ColorCustomizationProvider>
+          <AuthProvider>
+            <ActivityProvider>
+              <CalendarProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </CalendarProvider>
+            </ActivityProvider>
+          </AuthProvider>
+        </ColorCustomizationProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
