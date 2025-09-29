@@ -58,80 +58,67 @@ function AppNavigation() {
   const { customization } = useColorCustomization();
 
   return (
-    <nav className="bg-background px-6 py-3">
+    <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-3">
-            <GraduationCap className="h-6 w-6 text-muted-foreground" />
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <GraduationCap className="h-5 w-5 text-primary" />
             <span className="text-lg font-medium text-foreground">Refyneo</span>
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/settings")}
-            className="rounded-lg"
-            title="Color Customization"
-          >
-            <Palette className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="rounded-lg"
-            title="Toggle Theme"
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          
+        <div className="flex items-center space-x-3">
           {user && (
             <div className="flex items-center space-x-3">
-              {/* Sync Status Indicator */}
-              <div className={`flex items-center space-x-2 px-2 py-1 rounded text-xs font-medium ${
+              {/* Gentle Status Indicator */}
+              <div className={`flex items-center space-x-1.5 px-2 py-1 rounded-full text-xs ${
                 isRestoring 
-                  ? 'text-blue-500' 
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
                   : hasGoogleAccess 
-                    ? 'text-foreground' 
-                    : 'text-muted-foreground'
+                    ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' 
+                    : 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
               }`}>
-                <div className={`w-1 h-1 rounded-full ${
+                <div className={`w-1.5 h-1.5 rounded-full ${
                   isRestoring 
                     ? 'bg-blue-500 animate-pulse' 
                     : hasGoogleAccess 
-                      ? 'bg-foreground' 
-                      : 'bg-muted-foreground'
+                      ? 'bg-green-500' 
+                      : 'bg-gray-400'
                 }`} />
-                {isRestoring ? 'Restoring...' : hasGoogleAccess ? 'Connected' : 'Offline'}
+                {isRestoring ? 'Syncing...' : hasGoogleAccess ? 'Connected' : 'Offline'}
               </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 px-2">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" className="flex items-center space-x-2 px-2 hover:bg-muted/50 transition-colors">
+                    <Avatar className="h-7 w-7">
                       <AvatarImage src={user.photoURL || ""} alt={user.displayName || ""} />
-                      <AvatarFallback>
+                      <AvatarFallback className="text-xs">
                         {user.displayName?.split(' ').map(n => n[0]).join('') || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{user.displayName}</span>
+                    <span className="font-light text-sm">{user.displayName}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLocation("/profile")}>Profile</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLocation("/settings")}>Settings</DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setLocation("/profile")} className="text-sm">
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/settings")} className="text-sm">
+                    Settings
+                  </DropdownMenuItem>
                   {!hasGoogleAccess && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="font-bold" onClick={() => setLocation("/auth")}>
-                        Upgrade to Google Sync
+                      <DropdownMenuItem className="text-sm text-primary font-medium" onClick={() => setLocation("/auth")}>
+                        Connect Google
                       </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut}>Sign Out</DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut} className="text-sm">
+                    Sign Out
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

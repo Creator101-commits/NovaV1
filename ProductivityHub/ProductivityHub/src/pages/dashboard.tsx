@@ -116,44 +116,38 @@ function CalendarComponent() {
 
   return (
     <Card className="bg-card border-border">
-      <CardHeader className="pb-4 bg-card">
+      <CardHeader className="pb-3 bg-card">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg font-medium">
-            <Calendar className="w-5 h-5 text-muted-foreground" />
-            Calendar
-          </CardTitle>
-          <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground">
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </h3>
+          <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => navigateMonth('prev')}
-              className="h-8 w-8 p-0 hover:bg-muted/50 transition-colors duration-200"
+              className="h-7 w-7 p-0 hover:bg-muted/50"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3 h-3" />
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => navigateMonth('next')}
-              className="h-8 w-8 p-0 hover:bg-muted/50 transition-colors duration-200"
+              className="h-7 w-7 p-0 hover:bg-muted/50"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3 h-3" />
             </Button>
           </div>
-        </div>
-        <div className="text-center">
-          <h2 className="text-xl font-medium text-foreground">
-            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h2>
         </div>
       </CardHeader>
       <CardContent className="bg-card">
         {/* Calendar Grid */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-1">
             {dayNames.map(day => (
-              <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+              <div key={day} className="text-center text-xs text-muted-foreground py-2">
                 {day}
               </div>
             ))}
@@ -163,7 +157,7 @@ function CalendarComponent() {
           <div className="grid grid-cols-7 gap-1">
             {days.map((day, index) => {
               if (day === null) {
-                return <div key={index} className="h-10" />;
+                return <div key={index} className="h-8" />;
               }
               
               const dayEvents = getEventsForDay(day);
@@ -172,50 +166,19 @@ function CalendarComponent() {
               return (
                 <div
                   key={day}
-                  className={`h-10 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-200 bg-card text-foreground ${
+                  className={`h-8 flex items-center justify-center rounded cursor-pointer transition-colors bg-card text-foreground ${
                     isToday 
-                      ? 'bg-foreground text-background font-medium hover:bg-foreground/90' 
-                      : 'hover:bg-muted/50 hover:shadow-sm hover:scale-105'
+                      ? 'bg-foreground text-background font-medium' 
+                      : 'hover:bg-muted/50'
                   }`}
                 >
                   <span className="text-sm">{day}</span>
                   {dayEvents.length > 0 && (
-                    <div className="flex gap-0.5 mt-1">
-                      {dayEvents.slice(0, 2).map((_, eventIndex) => (
-                        <div 
-                          key={eventIndex} 
-                          className="w-1 h-1 rounded-full bg-foreground"
-                        />
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      )}
-                    </div>
+                    <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-foreground/60" />
                   )}
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Quick Access Section */}
-        <div className="mt-6 pt-4 border-t border-border">
-          <h3 className="text-sm font-medium text-foreground mb-3">Quick Access</h3>
-          <div className="flex gap-2">
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors flex-1">
-              <Calendar className="h-4 w-4 text-blue-500" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Today's Schedule</div>
-                <div className="text-xs text-muted-foreground">View your calendar</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors flex-1">
-              <Plus className="h-4 w-4 text-green-500" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Add Event</div>
-                <div className="text-xs text-muted-foreground">Create new event</div>
-              </div>
-            </div>
           </div>
         </div>
       </CardContent>
@@ -321,73 +284,30 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-6 py-8">
         
-        {/* Header Section - Centered Greeting */}
-        <div className="relative flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-normal text-foreground">
-              {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}
-            </h1>
-          </div>
-          
-          <div className="absolute right-0 flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowWidgetGallery(!showWidgetGallery)}
-              className="flex items-center gap-2"
-            >
-              <Grid3X3 className="h-4 w-4" />
-              Customize
-            </Button>
-          </div>
+        {/* Simple Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-medium text-foreground mb-2">
+            {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Here's what you have today
+          </p>
         </div>
 
-        {/* Widget Gallery */}
-        {showWidgetGallery && (
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Add Widgets</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowWidgetGallery(false)}
-                >
-                  ✕
-                </Button>
-              </div>
-              <WidgetGallery onAddWidget={addWidget} />
-            </div>
-          </Card>
-        )}
-
-        {/* Dashboard Widgets Grid - Centered and 30% Wider */}
-        <div className="flex flex-col items-center space-y-8">
-          {/* First Row: Assignments and Notes */}
-          <div className="flex gap-6">
-            <div className="w-[500px] h-72">
-              {renderWidget({ id: 'assignments', type: 'assignments', title: 'Assignments', size: 'small', position: { x: 0, y: 0 }, isVisible: true })}
-            </div>
-            <div className="w-[500px] h-72">
-              {renderWidget({ id: 'notes', type: 'notes', title: 'Notes', size: 'small', position: { x: 0, y: 1 }, isVisible: true })}
-            </div>
+        {/* Simple Widget Grid */}
+        <div className="space-y-6">
+          {/* Top Row - Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {renderWidget({ id: 'assignments', type: 'assignments', title: 'Assignments', size: 'small', position: { x: 0, y: 0 }, isVisible: true })}
+            {renderWidget({ id: 'pomodoro', type: 'pomodoro', title: 'Study Time', size: 'small', position: { x: 1, y: 0 }, isVisible: true })}
+            {renderWidget({ id: 'notes', type: 'notes', title: 'Notes', size: 'small', position: { x: 2, y: 0 }, isVisible: true })}
           </div>
 
-          {/* Second Row: Study Sessions and Flashcards */}
-          <div className="flex gap-6">
-            <div className="w-[500px] h-72">
-              {renderWidget({ id: 'pomodoro', type: 'pomodoro', title: 'Study Sessions', size: 'small', position: { x: 2, y: 0 }, isVisible: true })}
-            </div>
-            <div className="w-[500px] h-72">
-              {renderWidget({ id: 'flashcards', type: 'flashcards', title: 'Flashcards', size: 'small', position: { x: 1, y: 1 }, isVisible: true })}
-            </div>
-          </div>
-
-          {/* Third Row: Calendar Component */}
-          <div className="w-full max-w-7xl">
+          {/* Calendar */}
+          <div className="w-full">
             <CalendarComponent />
           </div>
         </div>

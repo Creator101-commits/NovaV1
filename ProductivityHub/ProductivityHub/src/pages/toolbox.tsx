@@ -75,28 +75,26 @@ export default function Toolbox() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center">
-          <Wrench className="h-8 w-8 mr-3 text-primary" />
-          Productivity Toolbox
+    <div className="max-w-4xl mx-auto py-8 px-6">
+      {/* Gentle Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-foreground mb-2">
+          Study Tools
         </h1>
-        <p className="text-muted-foreground">
-          Essential tools to enhance your study sessions and track your progress
+        <p className="text-sm text-muted-foreground">
+          Tools to help you study better and stay focused
         </p>
       </div>
 
-
-      {/* Tools Tabs */}
+      {/* Simple Tools */}
       <Tabs defaultValue="pomodoro" className="space-y-6" onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-5">
           {tools.map((tool) => {
             const Icon = tool.icon;
             return (
-              <TabsTrigger key={tool.id} value={tool.id} className="flex items-center space-x-2">
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tool.title}</span>
+              <TabsTrigger key={tool.id} value={tool.id} className="text-xs">
+                <Icon className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">{tool.title.split(' ')[0]}</span>
               </TabsTrigger>
             );
           })}

@@ -73,37 +73,34 @@ export const ColorCustomizationSettings = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Enhanced Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-          <Palette className="w-6 h-6 text-primary" />
-        </div>
-        <h2 className="text-3xl font-bold mb-2">
-          Background Themes
-        </h2>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Choose a beautiful background theme that matches your style and improves your productivity experience
+    <div className="space-y-6">
+      {/* Simple Header */}
+      <div>
+        <h3 className="text-lg font-medium text-foreground mb-2">
+          Background Theme
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Choose your preferred theme
         </p>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-center gap-3">
+      <div className="flex gap-2">
         <Button
           variant="outline"
+          size="sm"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2"
+          className="text-xs"
         >
-          <Eye className="w-4 h-4" />
-          {showPreview ? 'Hide' : 'Show'} Live Preview
+          {showPreview ? 'Hide' : 'Show'} Preview
         </Button>
         <Button
           variant="outline"
+          size="sm"
           onClick={handleReset}
-          className="flex items-center gap-2"
+          className="text-xs"
         >
-          <RotateCcw className="w-4 h-4" />
-          Reset to Default
+          Reset
         </Button>
       </div>
 
@@ -154,151 +151,55 @@ export const ColorCustomizationSettings = () => {
       )}
 
       {/* Background Themes */}
-      <Card className="border-2">
-        <CardHeader className="text-center pb-6">
-          <CardTitle className="text-xl flex items-center justify-center gap-2">
-            <Palette className="w-5 h-5" />
-            Choose Your Background Theme
-          </CardTitle>
-          <p className="text-muted-foreground">
-            Select a theme that feels right for your productivity journey
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(BACKGROUND_THEMES).map(([key, theme]) => (
-              <button
-                key={key}
-                onClick={() => handleBackgroundThemeChange(key)}
-                className={`relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
-                  customization.backgroundTheme === key 
-                    ? 'border-primary ring-2 ring-primary/20 shadow-lg scale-105' 
-                    : 'border-border hover:border-primary/50'
-                }`}
-                style={{
-                  backgroundColor: theme.background,
-                  color: theme.foreground,
-                }}
-              >
-                <div className="text-center">
-                  <div className="text-sm font-semibold mb-1">{theme.name}</div>
-                  <div className="text-xs opacity-80">Theme Preview</div>
-                </div>
-                {customization.backgroundTheme === key && (
-                  <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                    <svg className="w-4 h-4 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-          
-          <Separator />
-          
-          <div className="space-y-4">
-            <div className="text-center">
-              <Label className="text-lg font-medium">Custom Background Color</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                Want something unique? Set a custom background color
-              </p>
-            </div>
-            <div className="flex justify-center gap-3">
-              <ColorPicker
-                value={customization.customBackgroundColor || '#000000'}
-                onChange={handleCustomBackgroundChange}
-                showCustomInput={true}
-              />
-              <Button
-                variant="outline"
-                onClick={() => updateCustomization({ customBackgroundColor: undefined })}
-                className="flex items-center gap-2"
-              >
-                Clear Custom
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Settings Management */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-2">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-lg flex items-center justify-center gap-2">
-              <Download className="w-5 h-5" />
-              Backup & Restore
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Save your settings or restore from a backup
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              variant="outline" 
-              onClick={handleExportSettings}
-              className="w-full flex items-center justify-center gap-2"
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Object.entries(BACKGROUND_THEMES).map(([key, theme]) => (
+            <button
+              key={key}
+              onClick={() => handleBackgroundThemeChange(key)}
+              className={`relative p-3 rounded-lg border transition-colors ${
+                customization.backgroundTheme === key 
+                  ? 'border-primary ring-1 ring-primary/20' 
+                  : 'border-border hover:border-primary/50'
+              }`}
+              style={{
+                backgroundColor: theme.background,
+                color: theme.foreground,
+              }}
             >
-              <Download className="w-4 h-4" />
-              Export Settings
+              <div className="text-center">
+                <div className="text-sm font-medium">{theme.name}</div>
+              </div>
+              {customization.backgroundTheme === key && (
+                <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                  <svg className="w-2.5 h-2.5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        
+        {/* Custom Color */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Custom Background Color</Label>
+          <div className="flex gap-2">
+            <ColorPicker
+              value={customization.customBackgroundColor || '#000000'}
+              onChange={handleCustomBackgroundChange}
+              showCustomInput={true}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateCustomization({ customBackgroundColor: undefined })}
+              className="text-xs"
+            >
+              Clear
             </Button>
-            <div className="relative">
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportSettings}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <Button 
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                Import Settings
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Current Settings Info */}
-        <Card className="border-2 bg-gradient-to-br from-muted/30 to-muted/10">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-lg">Current Theme</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Your active customization settings
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-              <span className="font-medium">Background Theme:</span>
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded-full border"
-                  style={{ backgroundColor: BACKGROUND_THEMES[customization.backgroundTheme].background }}
-                />
-                <span className="text-sm">{BACKGROUND_THEMES[customization.backgroundTheme].name}</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-              <span className="font-medium">Custom Background:</span>
-              <div className="flex items-center gap-2">
-                {customization.customBackgroundColor ? (
-                  <>
-                    <div 
-                      className="w-4 h-4 rounded-full border"
-                      style={{ backgroundColor: customization.customBackgroundColor }}
-                    />
-                    <span className="text-sm text-green-600">Active</span>
-                  </>
-                ) : (
-                  <span className="text-sm text-muted-foreground">Not set</span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

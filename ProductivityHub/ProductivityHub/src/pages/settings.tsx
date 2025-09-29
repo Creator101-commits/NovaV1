@@ -11,42 +11,27 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-12 max-w-6xl px-4">
-        {/* Enhanced Header */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <SettingsIcon className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+      <div className="max-w-2xl mx-auto py-8 px-6">
+        {/* Simple Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">
             Settings
           </h1>
-          <p className="text-muted-foreground mt-3 text-lg max-w-2xl mx-auto">
-            Customize your Refyneo experience with personalized settings and preferences
+          <p className="text-sm text-muted-foreground">
+            Customize your experience
           </p>
         </div>
 
-        {/* Enhanced Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted/50 rounded-xl">
-            <TabsTrigger 
-              value="appearance" 
-              className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-            >
-              <Palette className="w-4 h-4" />
+        {/* Simple Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="appearance" className="text-sm">
               Appearance
             </TabsTrigger>
-            <TabsTrigger 
-              value="sync" 
-              className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-            >
-              <RefreshCw className="w-4 h-4" />
+            <TabsTrigger value="sync" className="text-sm">
               Google Sync
             </TabsTrigger>
-            <TabsTrigger 
-              value="account" 
-              className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-            >
-              <User className="w-4 h-4" />
+            <TabsTrigger value="account" className="text-sm">
               Account
             </TabsTrigger>
           </TabsList>

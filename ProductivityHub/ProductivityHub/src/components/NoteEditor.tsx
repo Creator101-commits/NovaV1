@@ -48,7 +48,7 @@ import {
 } from "lucide-react";
 import { createEditor, Descendant, Editor, BaseEditor, Transforms, Element as SlateElement, Text } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react';
-import { withHistory } from 'slate-history';
+import { withHistory, HistoryEditor } from 'slate-history';
 import DOMPurify from 'dompurify';
 import type { Note, InsertNote, Class } from "../../shared/schema";
 
@@ -180,19 +180,21 @@ const isAlignmentActive = (editor: Editor, alignment: CustomElement['align']) =>
 };
 
 const undo = (editor: Editor) => {
-  editor.undo();
+  // Use Slate's built-in undo functionality
+  (editor as any).undo();
 };
 
 const redo = (editor: Editor) => {
-  editor.redo();
+  // Use Slate's built-in redo functionality
+  (editor as any).redo();
 };
 
 const canUndo = (editor: Editor) => {
-  return editor.history.undos.length > 0;
+  return (editor as any).history?.undos?.length > 0;
 };
 
 const canRedo = (editor: Editor) => {
-  return editor.history.redos.length > 0;
+  return (editor as any).history?.redos?.length > 0;
 };
 
 // Serialize Slate value to HTML

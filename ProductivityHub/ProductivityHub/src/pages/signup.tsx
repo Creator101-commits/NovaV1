@@ -88,10 +88,10 @@ export default function SignupPage() {
   };
 
   return (
-    <div className={`${theme === 'dark' ? 'bg-black' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-background">
       <EnhancedSignInPage
-        title={<span className="font-light text-foreground tracking-tighter">Create Your Account</span>}
-        description="Join Refyneo and start your productivity journey. Create your account to access all features."
+        title={<span className="font-medium text-foreground">Create Your Account</span>}
+        description="Join Refyneo to organize your studies and stay on track with your assignments."
         heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
         onSignIn={handleSignUp}
         onGoogleSignIn={handleGoogleSignIn}

@@ -241,20 +241,23 @@ export default function Calendar() {
   const calendarDays = getCalendarDays();
 
   return (
-    <div className="space-y-6 bg-background min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Calendar</h1>
-          <p className="text-muted-foreground">
-            Manage your schedule and track important events
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={goToToday}>
-            Today
-          </Button>
-          <DropdownMenu>
+    <div className="max-w-4xl mx-auto py-8 px-6">
+      {/* Gentle Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-foreground mb-2">
+          Your Calendar
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Keep track of your schedule and important dates
+        </p>
+      </div>
+
+      {/* Simple Actions */}
+      <div className="flex gap-3 mb-6">
+        <Button variant="outline" size="sm" onClick={goToToday} className="text-sm">
+          Today
+        </Button>
+        <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
                 <Link className="h-4 w-4 mr-2" />
@@ -420,7 +423,6 @@ export default function Calendar() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
       {/* Calendar Navigation */}
       <div className="flex items-center justify-between">

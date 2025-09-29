@@ -373,57 +373,44 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto py-8 px-6">
+        {/* Gentle Header */}
         <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <h1 className="text-4xl font-bold text-foreground flex items-center gap-3">
-              <div className="p-2 rounded-2xl bg-primary/10 text-primary">
-                <StickyNote className="h-8 w-8" />
-              </div>
-              Notes
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              {notes.length} {notes.length === 1 ? 'note' : 'notes'} • Capture and organize your thoughts
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => openEditor()} 
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 px-6 py-3 text-base font-medium"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              New Note
-            </Button>
-          </div>
-          {/* Navigation Pills */}
-          <div className="flex items-center gap-2 p-1 bg-muted/50 rounded-xl w-fit">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">
+            Your Notes
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {notes.length} {notes.length === 1 ? 'note' : 'notes'} saved
+          </p>
+        </div>
+
+        {/* Simple Actions */}
+        <div className="flex gap-3 mb-6">
+          <Button 
+            onClick={() => openEditor()} 
+            size="sm"
+            className="text-sm"
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            New Note
+          </Button>
+          {/* Simple Navigation */}
+          <div className="flex gap-2">
             <Button
-              variant={currentView === "notes" ? "default" : "ghost"}
+              variant={currentView === "notes" ? "default" : "outline"}
               size="sm"
               onClick={() => setCurrentView("notes")}
-              className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                currentView === "notes" 
-                  ? "bg-background shadow-sm text-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
+              className="text-xs"
             >
-              <Eye className="mr-2 h-4 w-4" />
-              All Notes
+              Notes
             </Button>
             <Button
-              variant={currentView === "history" ? "default" : "ghost"}
+              variant={currentView === "history" ? "default" : "outline"}
               size="sm"
               onClick={() => setCurrentView("history")}
-              className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                currentView === "history" 
-                  ? "bg-background shadow-sm text-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
+              className="text-xs"
             >
-              <History className="mr-2 h-4 w-4" />
               History
             </Button>
           </div>

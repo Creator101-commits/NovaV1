@@ -92,40 +92,13 @@ export const DraggableWidget: React.FC<WidgetProps> = ({
 
   return (
     <Card 
-      className={`${getSizeClasses(widget.size)} relative group hover:shadow-lg transition-all duration-200`}
+      className={`${getSizeClasses(widget.size)} relative`}
       {...dragProps}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium flex items-center">
-          <IconComponent className="h-4 w-4 mr-2" />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold text-foreground">
           {widget.title}
         </CardTitle>
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const nextSize = widget.size === 'small' ? 'medium' : 
-                             widget.size === 'medium' ? 'large' : 'small';
-              onResize(widget.id, nextSize);
-            }}
-            className="h-6 w-6 p-0"
-          >
-            {widget.size === 'large' ? 
-              <Minimize2 className="h-3 w-3" /> : 
-              <Maximize2 className="h-3 w-3" />
-            }
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onRemove(widget.id)}
-            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
       </CardHeader>
       <CardContent className="pt-0">
         {children}
@@ -170,12 +143,9 @@ export const AssignmentsWidget: React.FC<{ widget: DashboardWidget }> = ({ widge
   if (isLoading) {
     return (
       <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-        <div className="space-y-2">
-          <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-            <div className="h-4 bg-muted rounded w-2/3"></div>
-          </div>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
       </DraggableWidget>
     );
@@ -183,50 +153,31 @@ export const AssignmentsWidget: React.FC<{ widget: DashboardWidget }> = ({ widge
 
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Assignment Status</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLocation('/assignments')}
-            className="h-6 px-2 text-xs"
-          >
-            View All
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
+      <div className="space-y-4">
+        <div className="text-center">
+          <div className="text-2xl font-semibold text-foreground">{analytics.totalAssignments}</div>
+          <div className="text-xs text-muted-foreground">Total</div>
         </div>
         
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <Badge variant="outline">{analytics.totalAssignments}</Badge>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Completed</span>
+            <span className="text-foreground">{analytics.completedAssignments}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Completed</span>
-            <Badge variant="default">{analytics.completedAssignments}</Badge>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Pending</span>
+            <span className="text-foreground">{analytics.pendingAssignments}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Pending</span>
-            <Badge variant="secondary">{analytics.pendingAssignments}</Badge>
-          </div>
-          {analytics.overdueAssignments > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-red-500">Overdue</span>
-              <Badge variant="destructive">{analytics.overdueAssignments}</Badge>
-            </div>
-          )}
         </div>
         
         {analytics.totalAssignments > 0 && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Progress</span>
-              <span>{Math.round((analytics.completedAssignments / analytics.totalAssignments) * 100)}%</span>
+          <div className="pt-2">
+            <div className="text-xs text-muted-foreground mb-1">
+              {Math.round((analytics.completedAssignments / analytics.totalAssignments) * 100)}% complete
             </div>
             <Progress 
               value={(analytics.completedAssignments / analytics.totalAssignments) * 100} 
-              className="h-2"
+              className="h-1"
             />
           </div>
         )}
@@ -265,55 +216,36 @@ export const HabitsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) 
 
 export const PomodoroWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
   const { analytics, isLoading } = useDashboardAnalytics();
-  const [, setLocation] = useLocation();
   
   if (isLoading) {
     return (
       <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-        <div className="space-y-2">
-          <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-8 bg-muted rounded w-1/2"></div>
-            <div className="h-3 bg-muted rounded w-2/3"></div>
-          </div>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
       </DraggableWidget>
     );
   }
 
-  const totalStudyTimeHours = Math.round(analytics.totalStudyTime / 60 * 10) / 10; // Convert minutes to hours
+  const totalStudyTimeHours = Math.round(analytics.totalStudyTime / 60 * 10) / 10;
 
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Study Sessions</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLocation('/pomodoro')}
-            className="h-6 px-2 text-xs"
-          >
-            Start Timer
-            <Timer className="h-3 w-3 ml-1" />
-          </Button>
+      <div className="space-y-4">
+        <div className="text-center">
+          <div className="text-2xl font-semibold text-foreground">{analytics.todaySessions}</div>
+          <div className="text-xs text-muted-foreground">Today's Sessions</div>
         </div>
         
-        <div className="space-y-2">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">{analytics.todaySessions}</div>
-            <div className="text-xs text-muted-foreground">Today's Sessions</div>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Study Time</span>
+            <span className="text-foreground">{totalStudyTimeHours}h</span>
           </div>
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Total Sessions</span>
-              <span>{analytics.totalPomodoroSessions}</span>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Study Time</span>
-              <span>{totalStudyTimeHours}h</span>
-            </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Total Sessions</span>
+            <span className="text-foreground">{analytics.totalPomodoroSessions}</span>
           </div>
         </div>
       </div>
@@ -391,17 +323,13 @@ export const AnalyticsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget 
 
 export const NotesWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
   const { analytics, isLoading } = useDashboardAnalytics();
-  const [, setLocation] = useLocation();
   
   if (isLoading) {
     return (
       <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-        <div className="space-y-2">
-          <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-8 bg-muted rounded w-1/2"></div>
-            <div className="h-3 bg-muted rounded w-2/3"></div>
-          </div>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
       </DraggableWidget>
     );
@@ -409,46 +337,21 @@ export const NotesWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) =
 
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Notes</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLocation('/notes')}
-            className="h-6 px-2 text-xs"
-          >
-            View All
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
+      <div className="space-y-4">
+        <div className="text-center">
+          <div className="text-2xl font-semibold text-foreground">{analytics.totalNotes}</div>
+          <div className="text-xs text-muted-foreground">Total Notes</div>
         </div>
         
-        <div className="space-y-2">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">{analytics.totalNotes}</div>
-            <div className="text-xs text-muted-foreground">Total Notes</div>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Recent</span>
+            <span className="text-foreground">{analytics.recentNotes}</span>
           </div>
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Recent Notes</span>
-              <span>{analytics.recentNotes}</span>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>This Week</span>
-              <span>{analytics.recentNotes}</span>
-            </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">This Week</span>
+            <span className="text-foreground">{analytics.recentNotes}</span>
           </div>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setLocation('/notes')}
-            className="w-full h-8 text-xs"
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            New Note
-          </Button>
         </div>
       </div>
     </DraggableWidget>
@@ -457,17 +360,13 @@ export const NotesWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) =
 
 export const FlashcardsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
   const { analytics, isLoading } = useDashboardAnalytics();
-  const [, setLocation] = useLocation();
   
   if (isLoading) {
     return (
       <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-        <div className="space-y-2">
-          <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-8 bg-muted rounded w-1/2"></div>
-            <div className="h-3 bg-muted rounded w-2/3"></div>
-          </div>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
       </DraggableWidget>
     );
@@ -479,49 +378,25 @@ export const FlashcardsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget
 
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Flashcards</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLocation('/toolbox')}
-            className="h-6 px-2 text-xs"
-          >
-            Study Now
-            <Brain className="h-3 w-3 ml-1" />
-          </Button>
+      <div className="space-y-4">
+        <div className="text-center">
+          <div className="text-2xl font-semibold text-foreground">{analytics.totalFlashcards}</div>
+          <div className="text-xs text-muted-foreground">Total Cards</div>
         </div>
         
-        <div className="space-y-2">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">{analytics.totalFlashcards}</div>
-            <div className="text-xs text-muted-foreground">Total Cards</div>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Reviewed</span>
+            <span className="text-foreground">{analytics.reviewedFlashcards}</span>
           </div>
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Reviewed</span>
-              <span>{analytics.reviewedFlashcards}</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Progress</span>
-                <span>{reviewProgress}%</span>
-              </div>
-              <Progress value={reviewProgress} className="h-2" />
-            </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Progress</span>
+            <span className="text-foreground">{reviewProgress}%</span>
           </div>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setLocation('/toolbox')}
-            className="w-full h-8 text-xs"
-          >
-            <BookOpen className="h-3 w-3 mr-1" />
-            Start Review
-          </Button>
+        </div>
+        
+        <div className="pt-1">
+          <Progress value={reviewProgress} className="h-1" />
         </div>
       </div>
     </DraggableWidget>

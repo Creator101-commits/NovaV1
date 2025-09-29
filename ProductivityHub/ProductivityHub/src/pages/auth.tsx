@@ -83,10 +83,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className={`${theme === 'dark' ? 'bg-black' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-background">
       <EnhancedSignInPage
-        title={<span className="font-light text-foreground tracking-tighter">Welcome to Refyneo</span>}
-        description="Your AI-powered productivity companion. Sign in to access your dashboard and continue your journey."
+        title={<span className="font-medium text-foreground">Welcome to Refyneo</span>}
+        description="Your study companion. Sign in to organize your classes and assignments."
         heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
         onSignIn={handleSignIn}
         onGoogleSignIn={handleGoogleSignIn}

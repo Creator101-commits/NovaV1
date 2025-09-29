@@ -112,18 +112,37 @@ export default function Classes() {
   // even without Google Classroom integration
   
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">My Classes</h1>
-        <div className="flex items-center gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Class
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+    <div className="max-w-4xl mx-auto py-8 px-6">
+      {/* Gentle Header */}
+      <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">
+            Your Classes
+          </h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your courses and subjects
+        </p>
+      </div>
+
+      {/* Simple Actions */}
+      <div className="flex gap-3 mb-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSync}
+          disabled={isSyncing || isRestoring}
+          className="text-sm"
+        >
+          <RefreshCw className={`h-3 w-3 mr-1 ${isSyncing || isRestoring ? 'animate-spin' : ''}`} />
+          {isSyncing || isRestoring ? 'Syncing...' : 'Sync'}
+        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="sm" className="text-sm">
+              <Plus className="h-3 w-3 mr-1" />
+              Add Class
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Class</DialogTitle>
               </DialogHeader>
@@ -212,31 +231,17 @@ export default function Classes() {
               </div>
             </DialogContent>
           </Dialog>
-
-          <SyncFeatureWrapper 
-            feature="Google Classroom Sync" 
-            description="Automatically sync classes, assignments, and resources from your Google Classroom account."
-          >
-            <Button 
-              onClick={handleSync} 
-              disabled={isLoading || isSyncing || isRestoring}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${(isLoading || isSyncing || isRestoring) ? 'animate-spin' : ''}`} />
-              {isRestoring ? 'Restoring...' : isSyncing ? 'Syncing...' : 'Sync Classes'}
-            </Button>
-          </SyncFeatureWrapper>
         </div>
-      </div>
 
-      {!isAuthenticated && (
+      {/* Authentication Alert - Temporarily commented out */}
+      {/* {!isAuthenticated && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             You can create custom classes below. To sync with Google Classroom, please sign in with your Google account.
           </AlertDescription>
         </Alert>
-      )}
+      )} */}
 
       {error && (
         <Alert className="mb-6" variant="destructive">
