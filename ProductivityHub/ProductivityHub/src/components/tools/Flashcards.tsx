@@ -22,10 +22,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
-import { Flashcard, InsertFlashcard } from "@shared/schema";
+import { Flashcard, InsertFlashcard, Note } from "@shared/schema";
+import { GroqAPI } from "@/lib/groq";
 import {
   Brain,
   Plus,
@@ -40,6 +42,11 @@ import {
   Download,
   Upload,
   Link,
+  Bot,
+  FileText,
+  StickyNote,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 
 export const Flashcards = () => {
@@ -54,6 +61,16 @@ export const Flashcards = () => {
   const [studyMode, setStudyMode] = useState<"sequential" | "random">("sequential");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newCard, setNewCard] = useState({ front: "", back: "", difficulty: "medium" as "easy" | "medium" | "hard" });
+
+  // AI Flashcards state
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [aiInputType, setAiInputType] = useState<"text" | "note" | "file">("text");
+  const [aiInputText, setAiInputText] = useState("");
+  const [selectedNoteId, setSelectedNoteId] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedCards, setGeneratedCards] = useState<{ front: string; back: string; difficulty: string }[]>([]);
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
   const currentCard = flashcards[currentCardIndex];
 
@@ -177,9 +194,170 @@ export const Flashcards = () => {
     }
   };
 
+  // Helper function to strip HTML tags
+  const stripHtmlTags = (html: string) => {
+    return html.replace(/<[^>]+>/g, "");
+  };
+
+  // Load notes for AI flashcards
+  const loadNotes = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const response = await apiGet("/api/notes");
+      if (response.ok) {
+        const data = await response.json();
+        setNotes(data);
+        console.log('✅ Loaded notes for AI flashcards:', data.length);
+      } else {
+        console.error('Failed to load notes:', response.status);
+        toast({
+          title: "Error",
+          description: "Failed to load notes for AI flashcards",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error loading notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load notes for AI flashcards",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Generate flashcards using AI
+  const generateFlashcards = async () => {
+    if (!user?.uid) return;
+
+    let content = "";
+    
+    // Get content based on input type
+    if (aiInputType === "text") {
+      content = aiInputText.trim();
+    } else if (aiInputType === "note") {
+      const selectedNote = notes.find(note => note.id === selectedNoteId);
+      if (selectedNote) {
+        content = stripHtmlTags(selectedNote.content);
+      }
+    } else if (aiInputType === "file" && uploadedFile) {
+      const text = await uploadedFile.text();
+      content = text;
+    }
+
+    if (!content.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide content to generate flashcards from",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const groq = new GroqAPI();
+      
+      const prompt = `Generate flashcards from the following content. Create 5-10 high-quality flashcards that would be useful for studying. Each flashcard should have a clear question on the front and a comprehensive answer on the back. Format your response as a JSON array where each object has "front", "back", and "difficulty" (easy/medium/hard) fields.
+
+Content:
+${content}
+
+Return only the JSON array, no other text.`;
+
+      const response = await groq.chat({
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        maxTokens: 2000,
+        temperature: 0.7,
+      });
+
+      // Parse the AI response
+      const cardsData = JSON.parse(response.content);
+      
+      if (Array.isArray(cardsData)) {
+        setGeneratedCards(cardsData);
+        toast({
+          title: "Success",
+          description: `Generated ${cardsData.length} flashcards!`,
+        });
+      } else {
+        throw new Error("Invalid response format from AI");
+      }
+    } catch (error) {
+      console.error('Error generating flashcards:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate flashcards. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Save generated flashcards to database
+  const saveGeneratedFlashcards = async () => {
+    if (!user?.uid || generatedCards.length === 0) return;
+
+    try {
+      const promises = generatedCards.map(card => 
+        apiPost(`/api/users/${user.uid}/flashcards`, {
+          front: card.front,
+          back: card.back,
+          difficulty: card.difficulty,
+        })
+      );
+
+      await Promise.all(promises);
+      
+      // Reload flashcards
+      await loadFlashcards();
+      
+      // Reset AI state
+      setGeneratedCards([]);
+      setAiInputText("");
+      setSelectedNoteId("");
+      setUploadedFile(null);
+      setIsAiDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: `Saved ${generatedCards.length} flashcards!`,
+      });
+    } catch (error) {
+      console.error('Error saving flashcards:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save some flashcards. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === "text/plain") {
+      setUploadedFile(file);
+    } else {
+      toast({
+        title: "Error",
+        description: "Please upload a .txt file",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Load flashcards on component mount
   useEffect(() => {
     loadFlashcards();
+    loadNotes();
   }, [user?.uid]);
 
 
@@ -305,6 +483,7 @@ export const Flashcards = () => {
           <TabsList>
             <TabsTrigger value="study">Study</TabsTrigger>
             <TabsTrigger value="manage">Manage Cards</TabsTrigger>
+            <TabsTrigger value="ai">AI Flashcards</TabsTrigger>
             <TabsTrigger value="stats">Statistics</TabsTrigger>
           </TabsList>
           
@@ -549,6 +728,204 @@ export const Flashcards = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ai">
+          <div className="space-y-6">
+            {/* AI Input Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bot className="h-5 w-5 mr-2 text-primary" />
+                  Generate Flashcards with AI
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Input Source</Label>
+                  <Select value={aiInputType} onValueChange={(value: "text" | "note" | "file") => setAiInputType(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Text Input
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="note">
+                        <div className="flex items-center">
+                          <StickyNote className="h-4 w-4 mr-2" />
+                          From Notes
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="file">
+                        <div className="flex items-center">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload .txt File
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Text Input */}
+                {aiInputType === "text" && (
+                  <div>
+                    <Label htmlFor="ai-text">Content to Generate Flashcards From</Label>
+                    <Textarea
+                      id="ai-text"
+                      placeholder="Paste your study material, lecture notes, or any text content here..."
+                      value={aiInputText}
+                      onChange={(e) => setAiInputText(e.target.value)}
+                      className="min-h-32"
+                    />
+                  </div>
+                )}
+
+                {/* Note Selection */}
+                {aiInputType === "note" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Select a Note</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={loadNotes}
+                        className="text-xs"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                        Refresh
+                      </Button>
+                    </div>
+                    {notes.length === 0 ? (
+                      <div className="p-4 border border-dashed rounded-lg text-center">
+                        <StickyNote className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mb-2">No notes found</p>
+                        <p className="text-xs text-muted-foreground">Create some notes first to generate flashcards from them</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Select value={selectedNoteId} onValueChange={setSelectedNoteId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a note to generate flashcards from" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {notes.map((note) => (
+                              <SelectItem key={note.id} value={note.id}>
+                                <div className="flex items-center">
+                                  <StickyNote className="h-4 w-4 mr-2" />
+                                  {note.title || "Untitled Note"}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedNoteId && (
+                          <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+                            <p className="text-sm text-muted-foreground">
+                              {stripHtmlTags(notes.find(n => n.id === selectedNoteId)?.content || "").substring(0, 200)}...
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* File Upload */}
+                {aiInputType === "file" && (
+                  <div>
+                    <Label htmlFor="file-upload">Upload .txt File</Label>
+                    <div className="mt-2">
+                      <Input
+                        id="file-upload"
+                        type="file"
+                        accept=".txt"
+                        onChange={handleFileUpload}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+                      />
+                      {uploadedFile && (
+                        <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">
+                            Selected: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={generateFlashcards}
+                  disabled={isGenerating || (!aiInputText.trim() && !selectedNoteId && !uploadedFile)}
+                  className="w-full"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Generate Flashcards
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Generated Cards Preview */}
+            {generatedCards.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Generated Flashcards ({generatedCards.length})</span>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setGeneratedCards([])}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        onClick={saveGeneratedFlashcards}
+                        className="gradient-bg"
+                      >
+                        Save All
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {generatedCards.map((card, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Badge className={getDifficultyColor(card.difficulty)}>
+                            {card.difficulty}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Card {index + 1}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-muted-foreground">Question:</p>
+                          <p className="text-sm">{card.front}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-muted-foreground">Answer:</p>
+                          <p className="text-sm">{card.back}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 

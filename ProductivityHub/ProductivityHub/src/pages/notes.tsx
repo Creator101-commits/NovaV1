@@ -246,40 +246,54 @@ export default function NotesPage() {
 
   const NoteCard = ({ note }: { note: Note }) => (
     <Card 
-      className="group border border-border/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30 cursor-pointer relative bg-card/50 backdrop-blur-sm hover:bg-card/80"
+      className="group border border-border/40 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/40 cursor-pointer relative bg-gradient-to-br from-card/60 to-card/40 backdrop-blur-sm hover:from-card/80 hover:to-card/60 hover:scale-[1.02] overflow-hidden"
       onClick={() => openEditor(note)}
     >
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+      {/* Header with better spacing and visual hierarchy */}
+      <CardHeader className="pb-3 px-6 pt-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* Title with pin indicator */}
+            <div className="flex items-start gap-2">
               {note.isPinned && (
-                <Pin className="h-4 w-4 text-amber-500 fill-amber-500 flex-shrink-0" />
+                <div className="flex-shrink-0 mt-1">
+                  <Pin className="h-4 w-4 text-amber-500 fill-amber-500" />
+                </div>
               )}
-              <h3 className="font-semibold text-foreground text-lg leading-tight truncate">
+              <h3 className="font-bold text-foreground text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-200">
                 {note.title || "Untitled Note"}
               </h3>
             </div>
+            
+            {/* Category and class badges with better styling */}
             <div className="flex items-center flex-wrap gap-2">
               {note.category && (
-                <Badge variant="secondary" className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary border-0">
+                <Badge 
+                  variant="secondary" 
+                  className="text-xs font-semibold px-3 py-1.5 bg-gradient-to-r from-primary/15 to-primary/10 text-primary border border-primary/20 rounded-full shadow-sm"
+                >
                   {note.category}
                 </Badge>
               )}
               {getClassName(note.classId) && (
-                <Badge variant="outline" className="text-xs font-medium px-2 py-1 border-border/50">
-                  <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
+                <Badge 
+                  variant="outline" 
+                  className="text-xs font-medium px-3 py-1.5 border-border/60 bg-muted/30 text-muted-foreground rounded-full hover:bg-muted/50 transition-colors"
+                >
+                  <BookOpen className="h-3 w-3 mr-1.5 flex-shrink-0" />
                   {getClassName(note.classId)}
                 </Badge>
               )}
             </div>
           </div>         
+          
+          {/* Action menu with better visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-accent/50 text-muted-foreground hover:text-foreground h-8 w-8 p-0"
+                className="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-accent/60 text-muted-foreground hover:text-foreground h-9 w-9 p-0 rounded-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -320,26 +334,39 @@ export default function NotesPage() {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-          {stripHtmlTags(note.content)}
-        </p>
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/30">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>{new Date(note.updatedAt || note.createdAt).toLocaleDateString()}</span>
+      
+      {/* Content with better spacing and typography */}
+      <CardContent className="px-6 pb-6 pt-0">
+        <div className="space-y-4">
+          {/* Content preview with better styling */}
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed font-medium">
+            {stripHtmlTags(note.content) || "No content available..."}
+          </p>
+          
+          {/* Metadata section with improved visual design */}
+          <div className="pt-4 border-t border-border/40">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center gap-5">
+                <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-md">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span className="font-medium">
+                    {new Date(note.updatedAt || note.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-md">
+                  <FileText className="h-3.5 w-3.5" />
+                  <span className="font-medium">
+                    {stripHtmlTags(note.content).split(' ').filter(word => word.length > 0).length} words
+                  </span>
+                </div>
+              </div>
+              <div className="font-semibold text-xs bg-primary/10 text-primary px-2 py-1 rounded-md">
+                {new Date(note.updatedAt || note.createdAt).toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              <span>{stripHtmlTags(note.content).split(' ').filter(word => word.length > 0).length} words</span>
-            </div>
-          </div>
-          <div className="font-medium text-xs opacity-60">
-            {new Date(note.updatedAt || note.createdAt).toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
           </div>
         </div>
       </CardContent>
@@ -486,23 +513,34 @@ export default function NotesPage() {
             </div>
             {/* Notes Content */}
             {isLoading ? (
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="border border-border/50 bg-card/50">
-                    <CardHeader className="pb-4">
-                      <div className="space-y-3">
-                        <div className="h-4 bg-muted/50 rounded animate-pulse"></div>
+                  <Card key={i} className="border border-border/40 bg-gradient-to-br from-card/60 to-card/40 backdrop-blur-sm overflow-hidden">
+                    <CardHeader className="pb-3 px-6 pt-6">
+                      <div className="space-y-4">
+                        <div className="h-6 bg-muted/50 rounded-lg animate-pulse"></div>
                         <div className="flex gap-2">
-                          <div className="h-5 w-16 bg-muted/50 rounded animate-pulse"></div>
-                          <div className="h-5 w-20 bg-muted/50 rounded animate-pulse"></div>
+                          <div className="h-6 w-20 bg-muted/50 rounded-full animate-pulse"></div>
+                          <div className="h-6 w-24 bg-muted/50 rounded-full animate-pulse"></div>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2">
-                        <div className="h-3 bg-muted/50 rounded animate-pulse"></div>
-                        <div className="h-3 bg-muted/50 rounded animate-pulse"></div>
-                        <div className="h-3 w-3/4 bg-muted/50 rounded animate-pulse"></div>
+                    <CardContent className="px-6 pb-6 pt-0">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="h-3 bg-muted/50 rounded animate-pulse"></div>
+                          <div className="h-3 bg-muted/50 rounded animate-pulse"></div>
+                          <div className="h-3 w-3/4 bg-muted/50 rounded animate-pulse"></div>
+                        </div>
+                        <div className="pt-4 border-t border-border/40">
+                          <div className="flex items-center justify-between">
+                            <div className="flex gap-4">
+                              <div className="h-6 w-20 bg-muted/50 rounded-md animate-pulse"></div>
+                              <div className="h-6 w-16 bg-muted/50 rounded-md animate-pulse"></div>
+                            </div>
+                            <div className="h-6 w-12 bg-muted/50 rounded-md animate-pulse"></div>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -548,7 +586,7 @@ export default function NotesPage() {
                       </h2>
                       <div className="flex-1 h-px bg-border/50"></div>
                     </div>
-                    <div className={`grid gap-6 ${
+                    <div className={`grid gap-8 ${
                       viewMode === "grid" 
                         ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
                         : "grid-cols-1 max-w-4xl"
@@ -573,7 +611,7 @@ export default function NotesPage() {
                         <div className="flex-1 h-px bg-border/50"></div>
                       </div>
                     )}
-                    <div className={`grid gap-6 ${
+                    <div className={`grid gap-8 ${
                       viewMode === "grid" 
                         ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
                         : "grid-cols-1 max-w-4xl"
