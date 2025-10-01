@@ -11,6 +11,10 @@ import type {
   InsertAssignment,
   Flashcard,
   InsertFlashcard,
+  FlashcardDeck,
+  InsertFlashcardDeck,
+  FlashcardReview,
+  InsertFlashcardReview,
   MoodEntry,
   InsertMoodEntry,
   JournalEntry,
@@ -205,16 +209,27 @@ export class LocalStorageFallback {
   }
 
   async createFlashcard(flashcard: InsertFlashcard): Promise<Flashcard> {
+    const now = new Date();
     const newFlashcard: Flashcard = {
       id: randomUUID(),
       userId: flashcard.userId,
       classId: flashcard.classId || null,
+      deckId: flashcard.deckId || null,
+      cardType: flashcard.cardType || 'basic',
       front: flashcard.front,
       back: flashcard.back,
-      difficulty: flashcard.difficulty || null,
+      clozeText: flashcard.clozeText || null,
+      clozeIndex: flashcard.clozeIndex || null,
+      difficulty: flashcard.difficulty || 'medium',
       lastReviewed: flashcard.lastReviewed || null,
-      reviewCount: flashcard.reviewCount || null,
-      createdAt: new Date()
+      reviewCount: flashcard.reviewCount || 0,
+      correctCount: flashcard.correctCount || 0,
+      incorrectCount: flashcard.incorrectCount || 0,
+      easeFactor: flashcard.easeFactor || 250,
+      interval: flashcard.interval || 0,
+      maturityLevel: flashcard.maturityLevel || 'new',
+      createdAt: now,
+      updatedAt: now
     };
     
     const flashcards = this.getFromStorage<Flashcard>(flashcard.userId, 'flashcards');
@@ -255,6 +270,53 @@ export class LocalStorageFallback {
       }
     }
     return false;
+  }
+
+  // Flashcard Deck methods (stub implementations for fallback)
+  async getDecksByUserId(userId: string): Promise<FlashcardDeck[]> {
+    console.warn('⚠️ Deck management requires Oracle database');
+    return [];
+  }
+
+  async createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck> {
+    console.warn('⚠️ Deck management requires Oracle database');
+    throw new Error('Deck management requires Oracle database');
+  }
+
+  async updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined> {
+    console.warn('⚠️ Deck management requires Oracle database');
+    return undefined;
+  }
+
+  async deleteDeck(id: string): Promise<boolean> {
+    console.warn('⚠️ Deck management requires Oracle database');
+    return false;
+  }
+
+  async getFlashcardsByDeck(deckId: string): Promise<Flashcard[]> {
+    console.warn('⚠️ Deck management requires Oracle database');
+    return [];
+  }
+
+  // Flashcard Review methods (stub implementations for fallback)
+  async recordReview(review: InsertFlashcardReview): Promise<FlashcardReview> {
+    console.warn('⚠️ Review tracking requires Oracle database');
+    throw new Error('Review tracking requires Oracle database');
+  }
+
+  async getDailyStats(userId: string, days: number = 30): Promise<any[]> {
+    console.warn('⚠️ Statistics require Oracle database');
+    return [];
+  }
+
+  async getDeckStats(userId: string): Promise<any[]> {
+    console.warn('⚠️ Statistics require Oracle database');
+    return [];
+  }
+
+  async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
+    console.warn('⚠️ Statistics require Oracle database');
+    return [];
   }
 
   // AI Summary methods

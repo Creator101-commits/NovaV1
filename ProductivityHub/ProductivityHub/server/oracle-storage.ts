@@ -9,6 +9,10 @@ import type {
   InsertAssignment,
   Flashcard,
   InsertFlashcard,
+  FlashcardDeck,
+  InsertFlashcardDeck,
+  FlashcardReview,
+  InsertFlashcardReview,
   MoodEntry,
   InsertMoodEntry,
   JournalEntry,
@@ -694,13 +698,23 @@ export class OracleStorage {
     return result.rows.map((row: any) => ({
       id: row.ID,
       userId: row.USER_ID,
+      deckId: row.DECK_ID,
       classId: row.CLASS_ID,
+      cardType: row.CARD_TYPE || 'basic',
       front: row.FRONT,
       back: row.BACK,
+      clozeText: row.CLOZE_TEXT,
+      clozeIndex: row.CLOZE_INDEX,
       difficulty: row.DIFFICULTY,
       lastReviewed: row.LAST_REVIEWED,
-      reviewCount: row.REVIEW_COUNT,
-      createdAt: row.CREATED_AT
+      reviewCount: row.REVIEW_COUNT || 0,
+      correctCount: row.CORRECT_COUNT || 0,
+      incorrectCount: row.INCORRECT_COUNT || 0,
+      easeFactor: row.EASE_FACTOR || 250,
+      interval: row.INTERVAL_DAYS || 0,
+      maturityLevel: row.MATURITY_LEVEL || 'new',
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
     }));
   }
 
@@ -708,26 +722,41 @@ export class OracleStorage {
     await this.initialize();
     const id = randomUUID();
     const createdAt = new Date();
+    const updatedAt = new Date();
     
     console.log('📝 Creating flashcard:', { id, ...flashcard });
     
     const sql = `
-      INSERT INTO flashcards (id, user_id, class_id, front, back, difficulty, 
-                             last_reviewed, review_count, created_at)
-      VALUES (:id, :userId, :classId, :front, :back, :difficulty,
-              :lastReviewed, :reviewCount, :createdAt)
+      INSERT INTO flashcards (id, user_id, deck_id, class_id, card_type, front, back, 
+                             cloze_text, cloze_index, difficulty, last_reviewed, review_count,
+                             correct_count, incorrect_count, ease_factor, interval_days,
+                             maturity_level, created_at, updated_at)
+      VALUES (:id, :userId, :deckId, :classId, :cardType, :front, :back,
+              :clozeText, :clozeIndex, :difficulty, :lastReviewed, :reviewCount,
+              :correctCount, :incorrectCount, :easeFactor, :intervalDays,
+              :maturityLevel, :createdAt, :updatedAt)
     `;
     
     await executeQuery(sql, {
       id,
       userId: flashcard.userId,
+      deckId: flashcard.deckId || null,
       classId: flashcard.classId || null,
+      cardType: flashcard.cardType || 'basic',
       front: flashcard.front,
       back: flashcard.back,
+      clozeText: flashcard.clozeText || null,
+      clozeIndex: flashcard.clozeIndex || null,
       difficulty: flashcard.difficulty || 'medium',
       lastReviewed: flashcard.lastReviewed || null,
       reviewCount: flashcard.reviewCount || 0,
-      createdAt
+      correctCount: flashcard.correctCount || 0,
+      incorrectCount: flashcard.incorrectCount || 0,
+      easeFactor: flashcard.easeFactor || 250,
+      intervalDays: flashcard.interval || 0,
+      maturityLevel: flashcard.maturityLevel || 'new',
+      createdAt,
+      updatedAt
     });
     
     console.log('✅ Flashcard created successfully');
@@ -735,13 +764,23 @@ export class OracleStorage {
     return {
       id,
       userId: flashcard.userId,
+      deckId: flashcard.deckId || null,
       classId: flashcard.classId || null,
+      cardType: flashcard.cardType || 'basic',
       front: flashcard.front,
       back: flashcard.back,
+      clozeText: flashcard.clozeText || null,
+      clozeIndex: flashcard.clozeIndex || null,
       difficulty: flashcard.difficulty || 'medium',
       lastReviewed: flashcard.lastReviewed || null,
       reviewCount: flashcard.reviewCount || 0,
-      createdAt
+      correctCount: flashcard.correctCount || 0,
+      incorrectCount: flashcard.incorrectCount || 0,
+      easeFactor: flashcard.easeFactor || 250,
+      interval: flashcard.interval || 0,
+      maturityLevel: flashcard.maturityLevel || 'new',
+      createdAt,
+      updatedAt
     };
   }
 
@@ -798,13 +837,23 @@ export class OracleStorage {
     return {
       id: row.ID,
       userId: row.USER_ID,
+      deckId: row.DECK_ID,
       classId: row.CLASS_ID,
+      cardType: row.CARD_TYPE || 'basic',
       front: row.FRONT,
       back: row.BACK,
+      clozeText: row.CLOZE_TEXT,
+      clozeIndex: row.CLOZE_INDEX,
       difficulty: row.DIFFICULTY,
       lastReviewed: row.LAST_REVIEWED,
-      reviewCount: row.REVIEW_COUNT,
-      createdAt: row.CREATED_AT
+      reviewCount: row.REVIEW_COUNT || 0,
+      correctCount: row.CORRECT_COUNT || 0,
+      incorrectCount: row.INCORRECT_COUNT || 0,
+      easeFactor: row.EASE_FACTOR || 250,
+      interval: row.INTERVAL_DAYS || 0,
+      maturityLevel: row.MATURITY_LEVEL || 'new',
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
     };
   }
 
@@ -822,6 +871,330 @@ export class OracleStorage {
     }
     
     return success;
+  }
+
+  // Flashcard Deck methods
+  async getDecksByUserId(userId: string): Promise<FlashcardDeck[]> {
+    await this.initialize();
+    console.log('📁 Fetching decks for user:', userId);
+    
+    const result = await executeQuery(
+      'SELECT * FROM flashcard_decks WHERE user_id = :userId ORDER BY sort_order, created_at',
+      { userId }
+    );
+    
+    if (!result.rows || result.rows.length === 0) {
+      console.log('✅ No decks found for user:', userId);
+      return [];
+    }
+    
+    console.log('✅ Found decks:', result.rows.length);
+    
+    return result.rows.map((row: any) => ({
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      description: row.DESCRIPTION,
+      parentDeckId: row.PARENT_DECK_ID,
+      color: row.COLOR,
+      sortOrder: row.SORT_ORDER,
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    }));
+  }
+
+  async createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    console.log('📁 Creating deck:', { id, ...deck });
+    
+    const sql = `
+      INSERT INTO flashcard_decks (id, user_id, name, description, parent_deck_id, color, sort_order, created_at, updated_at)
+      VALUES (:id, :userId, :name, :description, :parentDeckId, :color, :sortOrder, :createdAt, :updatedAt)
+    `;
+    
+    await executeQuery(sql, {
+      id,
+      userId: deck.userId,
+      name: deck.name,
+      description: deck.description || null,
+      parentDeckId: deck.parentDeckId || null,
+      color: deck.color || '#3b82f6',
+      sortOrder: deck.sortOrder || 0,
+      createdAt,
+      updatedAt
+    });
+    
+    console.log('✅ Deck created successfully');
+    
+    return {
+      id,
+      userId: deck.userId,
+      name: deck.name,
+      description: deck.description || null,
+      parentDeckId: deck.parentDeckId || null,
+      color: deck.color || '#3b82f6',
+      sortOrder: deck.sortOrder || 0,
+      createdAt,
+      updatedAt
+    };
+  }
+
+  async updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined> {
+    await this.initialize();
+    console.log('📁 Updating deck:', id, deck);
+    
+    const setParts = [];
+    const params: any = { id };
+    
+    if (deck.name !== undefined) {
+      setParts.push('name = :name');
+      params.name = deck.name;
+    }
+    if (deck.description !== undefined) {
+      setParts.push('description = :description');
+      params.description = deck.description;
+    }
+    if (deck.parentDeckId !== undefined) {
+      setParts.push('parent_deck_id = :parentDeckId');
+      params.parentDeckId = deck.parentDeckId;
+    }
+    if (deck.color !== undefined) {
+      setParts.push('color = :color');
+      params.color = deck.color;
+    }
+    if (deck.sortOrder !== undefined) {
+      setParts.push('sort_order = :sortOrder');
+      params.sortOrder = deck.sortOrder;
+    }
+    
+    if (setParts.length === 0) {
+      console.log('⚠️ No fields to update');
+      return undefined;
+    }
+    
+    setParts.push('updated_at = :updatedAt');
+    params.updatedAt = new Date();
+    
+    const sql = `UPDATE flashcard_decks SET ${setParts.join(', ')} WHERE id = :id`;
+    await executeQuery(sql, params);
+    
+    const result = await executeQuery('SELECT * FROM flashcard_decks WHERE id = :id', { id });
+    if (!result.rows || result.rows.length === 0) {
+      console.log('❌ Deck not found after update');
+      return undefined;
+    }
+    
+    const row = result.rows[0] as any;
+    console.log('✅ Deck updated successfully');
+    
+    return {
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      description: row.DESCRIPTION,
+      parentDeckId: row.PARENT_DECK_ID,
+      color: row.COLOR,
+      sortOrder: row.SORT_ORDER,
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    };
+  }
+
+  async deleteDeck(id: string): Promise<boolean> {
+    await this.initialize();
+    console.log('📁 Deleting deck:', id);
+    
+    const result = await executeQuery('DELETE FROM flashcard_decks WHERE id = :id', { id });
+    const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
+    
+    if (success) {
+      console.log('✅ Deck deleted successfully');
+    } else {
+      console.log('❌ Deck not found');
+    }
+    
+    return success;
+  }
+
+  async getFlashcardsByDeck(deckId: string): Promise<Flashcard[]> {
+    await this.initialize();
+    console.log('📝 Fetching flashcards for deck:', deckId);
+    
+    const result = await executeQuery(
+      'SELECT * FROM flashcards WHERE deck_id = :deckId ORDER BY created_at DESC',
+      { deckId }
+    );
+    
+    if (!result.rows || result.rows.length === 0) {
+      console.log('✅ No flashcards found for deck:', deckId);
+      return [];
+    }
+    
+    console.log('✅ Found flashcards:', result.rows.length);
+    
+    return result.rows.map((row: any) => ({
+      id: row.ID,
+      userId: row.USER_ID,
+      deckId: row.DECK_ID,
+      classId: row.CLASS_ID,
+      cardType: row.CARD_TYPE || 'basic',
+      front: row.FRONT,
+      back: row.BACK,
+      clozeText: row.CLOZE_TEXT,
+      clozeIndex: row.CLOZE_INDEX,
+      difficulty: row.DIFFICULTY,
+      lastReviewed: row.LAST_REVIEWED,
+      reviewCount: row.REVIEW_COUNT || 0,
+      correctCount: row.CORRECT_COUNT || 0,
+      incorrectCount: row.INCORRECT_COUNT || 0,
+      easeFactor: row.EASE_FACTOR || 250,
+      interval: row.INTERVAL_DAYS || 0,
+      maturityLevel: row.MATURITY_LEVEL || 'new',
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    }));
+  }
+
+  // Flashcard Review methods
+  async recordReview(review: InsertFlashcardReview): Promise<FlashcardReview> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    
+    console.log('📊 Recording flashcard review:', { id, ...review });
+    
+    const sql = `
+      INSERT INTO flashcard_reviews (id, user_id, flashcard_id, deck_id, was_correct, 
+                                     time_spent, review_date, ease_factor, interval_days, created_at)
+      VALUES (:id, :userId, :flashcardId, :deckId, :wasCorrect, 
+              :timeSpent, :reviewDate, :easeFactor, :intervalDays, :createdAt)
+    `;
+    
+    await executeQuery(sql, {
+      id,
+      userId: review.userId,
+      flashcardId: review.flashcardId,
+      deckId: review.deckId || null,
+      wasCorrect: review.wasCorrect ? 1 : 0,
+      timeSpent: review.timeSpent || null,
+      reviewDate: review.reviewDate || createdAt,
+      easeFactor: review.easeFactor || null,
+      intervalDays: review.interval || null,
+      createdAt
+    });
+    
+    console.log('✅ Review recorded successfully');
+    
+    return {
+      id,
+      userId: review.userId,
+      flashcardId: review.flashcardId,
+      deckId: review.deckId || null,
+      wasCorrect: review.wasCorrect,
+      timeSpent: review.timeSpent || null,
+      reviewDate: review.reviewDate || createdAt,
+      easeFactor: review.easeFactor || null,
+      interval: review.interval || null,
+      createdAt
+    };
+  }
+
+  async getDailyStats(userId: string, days: number = 30): Promise<any[]> {
+    await this.initialize();
+    console.log('📊 Fetching daily stats for user:', userId, 'days:', days);
+    
+    const sql = `
+      SELECT * FROM v_daily_review_stats 
+      WHERE user_id = :userId 
+      AND review_day >= SYSDATE - :days
+      ORDER BY review_day DESC
+    `;
+    
+    const result = await executeQuery(sql, { userId, days });
+    
+    if (!result.rows || result.rows.length === 0) {
+      console.log('✅ No daily stats found');
+      return [];
+    }
+    
+    console.log('✅ Found daily stats:', result.rows.length);
+    
+    return result.rows.map((row: any) => ({
+      userId: row.USER_ID,
+      reviewDay: row.REVIEW_DAY,
+      totalReviews: row.TOTAL_REVIEWS,
+      correctReviews: row.CORRECT_REVIEWS,
+      incorrectReviews: row.INCORRECT_REVIEWS,
+      successRate: row.SUCCESS_RATE,
+      avgTimeSpent: row.AVG_TIME_SPENT,
+      uniqueCardsReviewed: row.UNIQUE_CARDS_REVIEWED
+    }));
+  }
+
+  async getDeckStats(userId: string): Promise<any[]> {
+    await this.initialize();
+    console.log('📊 Fetching deck stats for user:', userId);
+    
+    const sql = `SELECT * FROM v_deck_stats WHERE user_id = :userId`;
+    
+    const result = await executeQuery(sql, { userId });
+    
+    if (!result.rows || result.rows.length === 0) {
+      console.log('✅ No deck stats found');
+      return [];
+    }
+    
+    console.log('✅ Found deck stats:', result.rows.length);
+    
+    return result.rows.map((row: any) => ({
+      deckId: row.DECK_ID,
+      userId: row.USER_ID,
+      deckName: row.DECK_NAME,
+      totalCards: row.TOTAL_CARDS,
+      newCards: row.NEW_CARDS,
+      learningCards: row.LEARNING_CARDS,
+      youngCards: row.YOUNG_CARDS,
+      matureCards: row.MATURE_CARDS,
+      avgEaseFactor: row.AVG_EASE_FACTOR,
+      avgInterval: row.AVG_INTERVAL
+    }));
+  }
+
+  async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
+    await this.initialize();
+    console.log('📊 Fetching retention curve for user:', userId, 'deck:', deckId);
+    
+    let sql = `SELECT * FROM v_retention_curve WHERE user_id = :userId`;
+    const params: any = { userId };
+    
+    if (deckId) {
+      sql += ' AND deck_id = :deckId';
+      params.deckId = deckId;
+    }
+    
+    sql += ' ORDER BY days_ago';
+    
+    const result = await executeQuery(sql, params);
+    
+    if (!result.rows || result.rows.length === 0) {
+      console.log('✅ No retention curve data found');
+      return [];
+    }
+    
+    console.log('✅ Found retention curve data:', result.rows.length);
+    
+    return result.rows.map((row: any) => ({
+      userId: row.USER_ID,
+      deckId: row.DECK_ID,
+      daysAgo: row.DAYS_AGO,
+      reviewsCount: row.REVIEWS_COUNT,
+      correctCount: row.CORRECT_COUNT,
+      retentionRate: row.RETENTION_RATE
+    }));
   }
   
   // Mood Entry methods

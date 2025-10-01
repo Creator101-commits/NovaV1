@@ -28,6 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 import { Flashcard, InsertFlashcard, Note } from "@shared/schema";
 import { GroqAPI } from "@/lib/groq";
+import DeckManager from "./DeckManager";
+import { ErrorBoundary } from "../ErrorBoundary";
 import {
   Brain,
   Plus,
@@ -55,6 +57,7 @@ export const Flashcards = () => {
   
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -95,6 +98,7 @@ export const Flashcards = () => {
       }
     } catch (error) {
       console.error('Error loading flashcards:', error);
+      setHasError(true);
       toast({
         title: "Error",
         description: "Failed to load flashcards",
@@ -356,8 +360,13 @@ Return only the JSON array, no other text.`;
 
   // Load flashcards on component mount
   useEffect(() => {
-    loadFlashcards();
-    loadNotes();
+    try {
+      loadFlashcards();
+      loadNotes();
+    } catch (error) {
+      console.error('Flashcards component initialization error:', error);
+      setHasError(true);
+    }
   }, [user?.uid]);
 
 
@@ -414,6 +423,30 @@ Return only the JSON array, no other text.`;
       ? Math.round(flashcards.reduce((sum, card) => sum + getAccuracyRate(card), 0) / flashcards.length)
       : 0,
   };
+
+  if (hasError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Brain className="h-5 w-5 mr-2 text-primary" />
+            Flashcards
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground mb-4">Something went wrong loading flashcards</p>
+          <Button onClick={() => {
+            setHasError(false);
+            loadFlashcards();
+          }}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (flashcards.length === 0) {
     return (
@@ -686,48 +719,79 @@ Return only the JSON array, no other text.`;
         </TabsContent>
 
         <TabsContent value="manage">
-          <div className="space-y-4">
-            {flashcards.map((card, index) => (
-              <Card key={card.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getDifficultyColor(card.difficulty || "medium")}>
-                          {card.difficulty || "medium"}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {getAccuracyRate(card)}% accuracy
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">Q: {card.front}</p>
-                        <p className="text-muted-foreground">A: {card.back}</p>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Reviewed {card.reviewCount} times • 
-                        {card.lastReviewed 
-                          ? ` Last: ${card.lastReviewed.toLocaleDateString()}`
-                          : " Never reviewed"
-                        }
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteFlashcard(card.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+          <div className="space-y-6">
+            {/* Deck Manager with Error Boundary */}
+            <ErrorBoundary>
+              <DeckManager />
+            </ErrorBoundary>
+            
+            {/* Flashcard List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  All Flashcards ({flashcards.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {flashcards.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No flashcards created yet</p>
+                    <p className="text-sm">Create your first flashcard to get started</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                ) : (
+                  <div className="space-y-4">
+                    {flashcards.map((card, index) => (
+                      <Card key={card.id} className="border-border/40">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <Badge className={getDifficultyColor(card.difficulty || "medium")}>
+                                  {card.difficulty || "medium"}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {getAccuracyRate(card)}% accuracy
+                                </span>
+                                {card.deckId && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Deck: {card.deckId}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium">Q: {card.front}</p>
+                                <p className="text-muted-foreground">A: {card.back}</p>
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Reviewed {card.reviewCount} times • 
+                                {card.lastReviewed 
+                                  ? ` Last: ${card.lastReviewed.toLocaleDateString()}`
+                                  : " Never reviewed"
+                                }
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => deleteFlashcard(card.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

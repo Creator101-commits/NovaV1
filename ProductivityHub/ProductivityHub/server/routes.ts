@@ -7,6 +7,8 @@ import {
   insertClassSchema, 
   insertAssignmentSchema,
   insertFlashcardSchema,
+  insertFlashcardDeckSchema,
+  insertFlashcardReviewSchema,
   insertMoodEntrySchema,
   insertJournalEntrySchema,
   insertPomodoroSessionSchema, 
@@ -260,6 +262,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete flashcard" });
+    }
+  });
+
+  // Flashcard Deck routes
+  app.get("/api/users/:userId/flashcard-decks", async (req, res) => {
+    try {
+      const decks = await storage.getDecksByUserId(req.params.userId);
+      res.json(decks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch decks" });
+    }
+  });
+
+  app.post("/api/users/:userId/flashcard-decks", async (req, res) => {
+    try {
+      const deckData = insertFlashcardDeckSchema.parse({ ...req.body, userId: req.params.userId });
+      const deck = await storage.createDeck(deckData);
+      res.status(201).json(deck);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid deck data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create deck" });
+    }
+  });
+
+  app.put("/api/flashcard-decks/:id", async (req, res) => {
+    try {
+      const deckData = insertFlashcardDeckSchema.partial().parse(req.body);
+      const deck = await storage.updateDeck(req.params.id, deckData);
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      res.json(deck);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid deck data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update deck" });
+    }
+  });
+
+  app.delete("/api/flashcard-decks/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteDeck(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete deck" });
+    }
+  });
+
+  app.get("/api/flashcard-decks/:deckId/flashcards", async (req, res) => {
+    try {
+      const flashcards = await storage.getFlashcardsByDeck(req.params.deckId);
+      res.json(flashcards);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch flashcards for deck" });
+    }
+  });
+
+  // Flashcard Review and Statistics routes
+  app.post("/api/flashcards/:id/review", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const reviewData = insertFlashcardReviewSchema.parse({
+        ...req.body,
+        userId,
+        flashcardId: req.params.id,
+      });
+      const review = await storage.recordReview(reviewData);
+      res.status(201).json(review);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid review data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to record review" });
+    }
+  });
+
+  app.get("/api/users/:userId/flashcard-stats/daily", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const stats = await storage.getDailyStats(req.params.userId, days);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch daily stats" });
+    }
+  });
+
+  app.get("/api/users/:userId/flashcard-stats/decks", async (req, res) => {
+    try {
+      const stats = await storage.getDeckStats(req.params.userId);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch deck stats" });
+    }
+  });
+
+  app.get("/api/users/:userId/flashcard-stats/retention", async (req, res) => {
+    try {
+      const deckId = req.query.deckId as string | undefined;
+      const curve = await storage.getRetentionCurve(req.params.userId, deckId);
+      res.json(curve);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch retention curve" });
     }
   });
 

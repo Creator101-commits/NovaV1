@@ -7,6 +7,10 @@ import {
   type InsertAssignment,
   type Flashcard,
   type InsertFlashcard,
+  type FlashcardDeck,
+  type InsertFlashcardDeck,
+  type FlashcardReview,
+  type InsertFlashcardReview,
   type MoodEntry,
   type InsertMoodEntry,
   type JournalEntry,
@@ -64,6 +68,19 @@ export interface IStorage {
   createFlashcard(flashcard: InsertFlashcard): Promise<Flashcard>;
   updateFlashcard(id: string, flashcard: Partial<InsertFlashcard>): Promise<Flashcard | undefined>;
   deleteFlashcard(id: string): Promise<boolean>;
+  
+  // Flashcard Deck methods
+  getDecksByUserId(userId: string): Promise<FlashcardDeck[]>;
+  createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck>;
+  updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined>;
+  deleteDeck(id: string): Promise<boolean>;
+  getFlashcardsByDeck(deckId: string): Promise<Flashcard[]>;
+  
+  // Flashcard Review methods
+  recordReview(review: InsertFlashcardReview): Promise<FlashcardReview>;
+  getDailyStats(userId: string, days?: number): Promise<any[]>;
+  getDeckStats(userId: string): Promise<any[]>;
+  getRetentionCurve(userId: string, deckId?: string): Promise<any[]>;
   
   // Mood entry methods
   getMoodEntriesByUserId(userId: string): Promise<MoodEntry[]>;
@@ -235,14 +252,25 @@ export class MemStorage implements IStorage {
 
   async createFlashcard(flashcardData: InsertFlashcard): Promise<Flashcard> {
     const id = randomUUID();
+    const now = new Date();
     const flashcard: Flashcard = { 
       ...flashcardData, 
       id, 
       classId: flashcardData.classId ?? null,
-      difficulty: flashcardData.difficulty ?? null,
+      deckId: flashcardData.deckId ?? null,
+      cardType: flashcardData.cardType ?? 'basic',
+      clozeText: flashcardData.clozeText ?? null,
+      clozeIndex: flashcardData.clozeIndex ?? null,
+      difficulty: flashcardData.difficulty ?? 'medium',
       lastReviewed: flashcardData.lastReviewed ?? null,
-      reviewCount: flashcardData.reviewCount ?? null,
-      createdAt: new Date() 
+      reviewCount: flashcardData.reviewCount ?? 0,
+      correctCount: flashcardData.correctCount ?? 0,
+      incorrectCount: flashcardData.incorrectCount ?? 0,
+      easeFactor: flashcardData.easeFactor ?? 250,
+      interval: flashcardData.interval ?? 0,
+      maturityLevel: flashcardData.maturityLevel ?? 'new',
+      createdAt: now,
+      updatedAt: now
     };
     this.flashcards.set(id, flashcard);
     return flashcard;
@@ -254,7 +282,8 @@ export class MemStorage implements IStorage {
 
     const updatedFlashcard: Flashcard = { 
       ...flashcard, 
-      ...flashcardData 
+      ...flashcardData,
+      updatedAt: new Date()
     };
     this.flashcards.set(id, updatedFlashcard);
     return updatedFlashcard;
@@ -429,6 +458,44 @@ export class MemStorage implements IStorage {
       totalJournalEntries: journalEntries.length,
       totalPomodoroSessions: pomodoroSessions.length,
     };
+  }
+
+  // Deck management methods (stub implementations)
+  async getDecksByUserId(userId: string): Promise<FlashcardDeck[]> {
+    console.warn('Deck management not available in MemStorage - requires Oracle database');
+    return [];
+  }
+
+  async createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck> {
+    throw new Error('Deck management not available in MemStorage - requires Oracle database');
+  }
+
+  async updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined> {
+    throw new Error('Deck management not available in MemStorage - requires Oracle database');
+  }
+
+  async deleteDeck(id: string): Promise<boolean> {
+    throw new Error('Deck management not available in MemStorage - requires Oracle database');
+  }
+
+  async getFlashcardsByDeck(deckId: string): Promise<Flashcard[]> {
+    throw new Error('Deck management not available in MemStorage - requires Oracle database');
+  }
+
+  async recordReview(review: InsertFlashcardReview): Promise<FlashcardReview> {
+    throw new Error('Review tracking not available in MemStorage - requires Oracle database');
+  }
+
+  async getDailyStats(userId: string, days: number = 30): Promise<any[]> {
+    throw new Error('Statistics not available in MemStorage - requires Oracle database');
+  }
+
+  async getDeckStats(userId: string): Promise<any[]> {
+    throw new Error('Statistics not available in MemStorage - requires Oracle database');
+  }
+
+  async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
+    throw new Error('Statistics not available in MemStorage - requires Oracle database');
   }
 }
 
@@ -625,6 +692,44 @@ export class DatabaseStorage implements IStorage {
       totalJournalEntries: userJournalEntries.length,
       totalPomodoroSessions: userPomodoroSessions.length,
     };
+  }
+
+  // Deck management methods (stub implementations)
+  async getDecksByUserId(userId: string): Promise<FlashcardDeck[]> {
+    console.warn('Deck management not available in DatabaseStorage - requires Oracle database');
+    return [];
+  }
+
+  async createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck> {
+    throw new Error('Deck management not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined> {
+    throw new Error('Deck management not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async deleteDeck(id: string): Promise<boolean> {
+    throw new Error('Deck management not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async getFlashcardsByDeck(deckId: string): Promise<Flashcard[]> {
+    throw new Error('Deck management not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async recordReview(review: InsertFlashcardReview): Promise<FlashcardReview> {
+    throw new Error('Review tracking not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async getDailyStats(userId: string, days: number = 30): Promise<any[]> {
+    throw new Error('Statistics not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async getDeckStats(userId: string): Promise<any[]> {
+    throw new Error('Statistics not available in DatabaseStorage - requires Oracle database');
+  }
+
+  async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
+    throw new Error('Statistics not available in DatabaseStorage - requires Oracle database');
   }
 }
 
