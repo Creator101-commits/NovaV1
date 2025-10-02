@@ -29,7 +29,7 @@ interface FlashcardDeck {
   userId: string;
   name: string;
   description?: string;
-  parentDeckId?: string;
+  parentDeckId?: string | null;
   color: string;
   sortOrder: number;
   createdAt: string;
@@ -80,7 +80,12 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
       setLoading(true);
       const response = await apiGet(`/api/users/${user.uid}/flashcard-decks`);
       console.log('🔍 Raw API response:', response);
-      const decks = response as unknown as FlashcardDeck[];
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const decks = await response.json() as FlashcardDeck[];
       console.log('📦 Parsed decks:', decks);
       
       // Validate and sanitize deck data
@@ -126,7 +131,13 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
       };
 
       const response = await apiPost(`/api/users/${user.uid}/flashcard-decks`, deckData);
-      setDecks(prev => [...prev, response as unknown as FlashcardDeck]);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const createdDeck = await response.json() as FlashcardDeck;
+      setDecks(prev => [...prev, createdDeck]);
       
       toast({
         title: "Success",
@@ -148,7 +159,13 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
   const updateDeck = async (deckId: string, updates: Partial<FlashcardDeck>) => {
     try {
       const response = await apiPut(`/api/flashcard-decks/${deckId}`, updates);
-      setDecks(prev => prev.map(deck => deck.id === deckId ? response as unknown as FlashcardDeck : deck));
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const updatedDeck = await response.json() as FlashcardDeck;
+      setDecks(prev => prev.map(deck => deck.id === deckId ? updatedDeck : deck));
       
       toast({
         title: "Success",
@@ -278,6 +295,15 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() => {
+                  setNewDeck(prev => ({ ...prev, parentDeckId: deck.id }));
+                  setIsCreateDialogOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Subdeck
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
                   setEditingDeck(deck);
                   setIsEditDialogOpen(true);
                 }}
@@ -375,9 +401,17 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Deck</DialogTitle>
+                <DialogTitle>
+                  {newDeck.parentDeckId ? 'Create New Subdeck' : 'Create New Deck'}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
+                {newDeck.parentDeckId && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Creating subdeck for:</p>
+                    <p className="font-medium">{decks.find(d => d.id === newDeck.parentDeckId)?.name || 'Unknown Deck'}</p>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="deck-name">Deck Name</Label>
                   <Input

@@ -63,7 +63,13 @@ export const Flashcards = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [studyMode, setStudyMode] = useState<"sequential" | "random">("sequential");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newCard, setNewCard] = useState({ front: "", back: "", difficulty: "medium" as "easy" | "medium" | "hard" });
+  const [newCard, setNewCard] = useState({ 
+    front: "", 
+    back: "", 
+    difficulty: "medium" as "easy" | "medium" | "hard",
+    deckId: "",
+    subdeckId: ""
+  });
 
   // AI Flashcards state
   const [notes, setNotes] = useState<Note[]>([]);
@@ -75,7 +81,30 @@ export const Flashcards = () => {
   const [generatedCards, setGeneratedCards] = useState<{ front: string; back: string; difficulty: string }[]>([]);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
+  // Deck management state
+  const [decks, setDecks] = useState<Array<{id: string; name: string; parentDeckId?: string}>>([]);
+  const [selectedDeckId, setSelectedDeckId] = useState("");
+
   const currentCard = flashcards[currentCardIndex];
+
+  // Load decks from database
+  const loadDecks = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const response = await apiGet(`/api/users/${user.uid}/flashcard-decks`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 Raw decks data:', data);
+        setDecks(data);
+        console.log('✅ Loaded decks:', data.length);
+      } else {
+        console.error('Failed to load decks:', response.status);
+      }
+    } catch (error) {
+      console.error('Error loading decks:', error);
+    }
+  };
 
   // Load flashcards from database
   const loadFlashcards = async () => {
@@ -121,16 +150,28 @@ export const Flashcards = () => {
     }
 
     try {
+      console.log('🔍 Creating flashcard with data:', {
+        front: newCard.front,
+        back: newCard.back,
+        difficulty: newCard.difficulty,
+        deckId: newCard.deckId,
+        subdeckId: newCard.subdeckId,
+        finalDeckId: newCard.subdeckId || newCard.deckId || null,
+        willUseSubdeck: !!newCard.subdeckId,
+        willUseParentDeck: !newCard.subdeckId && !!newCard.deckId
+      });
+      
       const response = await apiPost(`/api/users/${user.uid}/flashcards`, {
         front: newCard.front,
         back: newCard.back,
         difficulty: newCard.difficulty,
+        deckId: newCard.subdeckId ? newCard.subdeckId : (newCard.deckId || null),
       });
 
       if (response.ok) {
         const createdFlashcard = await response.json();
         setFlashcards(prev => [...prev, createdFlashcard]);
-        setNewCard({ front: "", back: "", difficulty: "medium" });
+        setNewCard({ front: "", back: "", difficulty: "medium", deckId: "", subdeckId: "" });
         setIsCreateDialogOpen(false);
         toast({
           title: "Success",
@@ -363,6 +404,7 @@ Return only the JSON array, no other text.`;
     try {
       loadFlashcards();
       loadNotes();
+      loadDecks();
     } catch (error) {
       console.error('Flashcards component initialization error:', error);
       setHasError(true);
@@ -414,6 +456,21 @@ Return only the JSON array, no other text.`;
       default:
         return "bg-muted text-foreground";
     }
+  };
+
+  const getDeckInfo = (deckId: string | null) => {
+    if (!deckId) return null;
+    const deck = decks.find(d => d.id === deckId);
+    if (!deck) return { name: "Unknown Deck", isSubdeck: false };
+    
+    const isSubdeck = !!deck.parentDeckId;
+    const parentDeck = isSubdeck ? decks.find(d => d.id === deck.parentDeckId) : null;
+    
+    return {
+      name: deck.name,
+      isSubdeck,
+      parentName: parentDeck?.name
+    };
   };
 
   const overallStats = {
@@ -493,6 +550,44 @@ Return only the JSON array, no other text.`;
                     onChange={(e) => setNewCard(prev => ({ ...prev, back: e.target.value }))}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="deck">Deck (Class)</Label>
+                  <select 
+                    value={newCard.deckId} 
+                    onChange={(e) => {
+                      console.log('🔍 Deck selected:', e.target.value);
+                      setNewCard(prev => ({ ...prev, deckId: e.target.value, subdeckId: "" }));
+                    }}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">Select a deck (class)</option>
+                    {decks.filter(deck => !deck.parentDeckId).map(deck => (
+                      <option key={deck.id} value={deck.id}>
+                        {deck.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {newCard.deckId && (
+                  <div>
+                    <Label htmlFor="subdeck">Subdeck (Topic/Assignment)</Label>
+                    <select 
+                      value={newCard.subdeckId} 
+                      onChange={(e) => {
+                        console.log('🔍 Subdeck selected:', e.target.value);
+                        setNewCard(prev => ({ ...prev, subdeckId: e.target.value }));
+                      }}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="">No subdeck</option>
+                      {decks.filter(deck => deck.parentDeckId === newCard.deckId).map(deck => (
+                        <option key={deck.id} value={deck.id}>
+                          {deck.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
@@ -560,6 +655,44 @@ Return only the JSON array, no other text.`;
                     onChange={(e) => setNewCard(prev => ({ ...prev, back: e.target.value }))}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="deck">Deck (Class)</Label>
+                  <select 
+                    value={newCard.deckId} 
+                    onChange={(e) => {
+                      console.log('🔍 Deck selected:', e.target.value);
+                      setNewCard(prev => ({ ...prev, deckId: e.target.value, subdeckId: "" }));
+                    }}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">Select a deck (class)</option>
+                    {decks.filter(deck => !deck.parentDeckId).map(deck => (
+                      <option key={deck.id} value={deck.id}>
+                        {deck.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {newCard.deckId && (
+                  <div>
+                    <Label htmlFor="subdeck">Subdeck (Topic/Assignment)</Label>
+                    <select 
+                      value={newCard.subdeckId} 
+                      onChange={(e) => {
+                        console.log('🔍 Subdeck selected:', e.target.value);
+                        setNewCard(prev => ({ ...prev, subdeckId: e.target.value }));
+                      }}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="">No subdeck</option>
+                      {decks.filter(deck => deck.parentDeckId === newCard.deckId).map(deck => (
+                        <option key={deck.id} value={deck.id}>
+                          {deck.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
@@ -634,9 +767,23 @@ Return only the JSON array, no other text.`;
               <Card className="min-h-96">
                 <CardContent className="p-8 h-full flex flex-col">
                   <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
                     <Badge className={getDifficultyColor(currentCard.difficulty || "medium")}>
                       {currentCard.difficulty || "medium"}
                     </Badge>
+                      {currentCard.deckId && (() => {
+                        const deckInfo = getDeckInfo(currentCard.deckId);
+                        if (!deckInfo) return null;
+                        return (
+                          <Badge variant="outline" className="text-xs">
+                            {deckInfo.isSubdeck 
+                              ? `${deckInfo.parentName} → ${deckInfo.name}`
+                              : deckInfo.name
+                            }
+                          </Badge>
+                        );
+                      })()}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       Reviewed {currentCard.reviewCount || 0} times
                     </div>
@@ -754,11 +901,18 @@ Return only the JSON array, no other text.`;
                                 <span className="text-sm text-muted-foreground">
                                   {getAccuracyRate(card)}% accuracy
                                 </span>
-                                {card.deckId && (
+                                {card.deckId && (() => {
+                                  const deckInfo = getDeckInfo(card.deckId);
+                                  if (!deckInfo) return null;
+                                  return (
                                   <Badge variant="outline" className="text-xs">
-                                    Deck: {card.deckId}
+                                      {deckInfo.isSubdeck 
+                                        ? `${deckInfo.parentName} → ${deckInfo.name}`
+                                        : deckInfo.name
+                                      }
                                   </Badge>
-                                )}
+                                  );
+                                })()}
                               </div>
                               <div>
                                 <p className="font-medium">Q: {card.front}</p>
