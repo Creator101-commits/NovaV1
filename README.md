@@ -2,7 +2,7 @@
 
 RefyneoV1 is a comprehensive, AI-powered productivity platform designed specifically for students. It combines intelligent note-taking, calendar management, assignment tracking, and AI assistance to create a unified academic workspace.
 
-![Architecture Diagram](ProductivityHub/ProductivityHub/images/software_architecture_diagram.png)
+![Architecture Diagram](images/software_architecture_diagram.png)
 
 ## 🏗️ System Architecture
 
