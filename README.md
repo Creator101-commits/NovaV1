@@ -4,7 +4,7 @@ RefyneoV1 is a comprehensive, AI-powered productivity platform designed specific
 
 ![Architecture Diagram](images/software_architecture_diagram.png)
 
-## 🏗️ System Architecture
+## System Architecture
 
 RefyneoV1 follows a modern, cloud-native architecture designed for scalability, performance, and reliability. The system is built using a microservices approach with clear separation between frontend, backend, and data layers.
 
@@ -63,49 +63,49 @@ The system follows a unidirectional data flow pattern:
 **Developer Experience**: Modern tooling and TypeScript ensure maintainable, bug-free code
 **Cost Efficiency**: Optimized use of free tiers and pay-as-you-scale pricing models
 
-## 🌟 Features
+## Features
 
-### 📝 Smart Note-Taking
+### Smart Note-Taking
 - **Rich Text Editor**: Advanced note editor with formatting, tables, and task lists
 - **Organization**: Categorize notes by type (lecture, homework, study, etc.)
 - **Search & Filter**: Powerful search across all notes with category and class filters
 - **Pinning System**: Pin important notes for quick access
 - **Class Integration**: Link notes to specific classes for better organization
 
-### 📅 Calendar & Scheduling
+### Calendar & Scheduling
 - **Unified Calendar**: View all events, assignments, and classes in one place
 - **Google Calendar Sync**: Two-way synchronization with Google Calendar
 - **Smart Scheduling**: AI-powered optimal study time suggestions
 - **Event Management**: Create, edit, and manage calendar events
 - **Assignment Integration**: Automatic due date tracking
 
-### 🎯 Assignment Management
+### Assignment Management
 - **Assignment Tracking**: Track homework, projects, and exams
 - **Priority System**: Mark assignments by priority (low, medium, high)
 - **Status Management**: Track completion status (pending, completed, overdue)
 - **Class Integration**: Link assignments to specific classes
 - **Due Date Alerts**: Never miss important deadlines
 
-### 🧠 AI-Powered Tools
+### AI-Powered Tools
 - **AI Chat Assistant**: Get help with studying and academic questions
 - **Content Summarization**: Summarize text, PDFs, and YouTube videos
 - **Smart Study Planning**: AI-generated optimal study schedules
 - **Learning Analytics**: Track progress and identify improvement areas
 
-### 📚 Study Tools
+### Study Tools
 - **Flashcards**: Create and study with spaced repetition
 - **Pomodoro Timer**: Focus sessions with built-in timer
 - **Mood Tracking**: Monitor academic stress and well-being
 - **Daily Journal**: Reflect on your learning journey
 - **Habit Tracking**: Build consistent study habits
 
-### 📊 Analytics & Insights
+### Analytics & Insights
 - **Progress Tracking**: Visualize your academic progress
 - **Study Analytics**: Understand your study patterns
 - **Productivity Metrics**: Track time spent on different activities
 - **Performance Insights**: Identify strengths and areas for improvement
 
-## 🏗️ Architecture
+## Architecture
 
 ### Frontend
 - **React 18** with TypeScript
@@ -136,7 +136,7 @@ The system follows a unidirectional data flow pattern:
 - **Groq AI** for intelligent features
 - **Firebase** for authentication and real-time features
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
@@ -283,7 +283,7 @@ ProductivityHub/ProductivityHub/
 2. **Firebase**: Create project and enable authentication
 3. **Google APIs**: Enable Classroom and Calendar APIs
 
-## 📚 API Documentation
+## API Documentation
 
 The application provides a comprehensive REST API with endpoints for:
 - User management and authentication
@@ -295,7 +295,7 @@ The application provides a comprehensive REST API with endpoints for:
 
 See [API Documentation](ProductivityHub/ProductivityHub/docs/API.md) for detailed endpoint information.
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -313,14 +313,14 @@ See [API Documentation](ProductivityHub/ProductivityHub/docs/API.md) for detaile
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## Support
 
 - **Documentation**: Check the [docs](ProductivityHub/ProductivityHub/docs/) folder
 - **Issues**: Report bugs on [GitHub Issues](https://github.com/Creator101-commits/RefyneoV1/issues)
 - **Discord**: Join our community for support
 - **Email**: support@refyneo.com
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Upcoming Features
 - [ ] Mobile app (React Native)
@@ -339,7 +339,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ Real-time collaboration features
 - ✅ Comprehensive analytics
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [React](https://reactjs.org/)
 - UI components from [Radix UI](https://www.radix-ui.com/)
@@ -349,4 +349,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**RefyneoV1** - Empowering students with AI-driven productivity tools. 🚀📚
+**RefyneoV1** - Empowering students with AI-driven productivity tools. 
