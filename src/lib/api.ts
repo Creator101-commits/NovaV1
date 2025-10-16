@@ -1,7 +1,9 @@
 import { auth } from './firebase';
+import { memoryCache } from './cache';
 
 /**
- * Utility functions for making authenticated API calls to Oracle backend
+ * Optimized utility functions for making authenticated API calls to Oracle backend
+ * Features: Caching, request deduplication, and performance optimization
  */
 
 const API_BASE_URL = 'http://localhost:5000';
@@ -26,9 +28,48 @@ export const makeAuthenticatedRequest = async (endpoint: string, options: Reques
   
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
 
+  // For GET requests, try cache first (cache the data, not the Response object)
+  const isGetRequest = !options.method || options.method === 'GET';
+  const cacheKey = isGetRequest ? `api:${url}:${userId || 'anonymous'}` : null;
+
+  if (isGetRequest && cacheKey) {
+    try {
+      const cachedData = memoryCache.get(cacheKey);
+      if (cachedData) {
+        // Return a new Response object with the cached data
+        return new Response(JSON.stringify(cachedData), {
+          status: 200,
+          statusText: 'OK',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    } catch (error) {
+      // Cache miss or error, continue to make request
+    }
+  }
+
+  // Make the actual request
+  const response = await makeActualRequest(url, options, userId);
+
+  // Cache the response data for GET requests
+  if (isGetRequest && cacheKey && response.ok) {
+    try {
+      const responseClone = response.clone(); // Clone to avoid consuming the original
+      const data = await responseClone.json();
+      memoryCache.set(cacheKey, data, 5 * 60 * 1000); // 5 minutes cache
+    } catch (error) {
+      console.warn('Failed to cache response data:', error);
+    }
+  }
+
+  return response;
+};
+
+const makeActualRequest = async (url: string, options: RequestInit, userId: string | null) => {
   console.log('🔍 API Debug:', { 
     url, 
     userId,
+    method: options.method || 'GET',
     authCurrentUser: auth.currentUser ? { uid: auth.currentUser.uid, email: auth.currentUser.email } : null
   });
 

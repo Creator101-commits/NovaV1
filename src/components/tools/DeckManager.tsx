@@ -21,7 +21,8 @@ import {
   ChevronRight,
   ChevronDown,
   Palette,
-  Hash
+  Hash,
+  Brain
 } from 'lucide-react';
 
 interface FlashcardDeck {
@@ -39,9 +40,10 @@ interface FlashcardDeck {
 interface DeckManagerProps {
   onDeckSelect?: (deckId: string) => void;
   selectedDeckId?: string;
+  onStudyDeck?: (deckId: string) => void;
 }
 
-export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManagerProps) {
+export default function DeckManager({ onDeckSelect, selectedDeckId, onStudyDeck }: DeckManagerProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
@@ -235,7 +237,7 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
     return (
       <div key={deck.id} className="space-y-1">
         <div
-          className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 hover:bg-accent/50 ${
+          className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${
             isSelected ? 'bg-primary/10 border-primary/40' : 'border-border/40'
           }`}
           style={{ marginLeft: `${level * 20}px` }}
@@ -293,6 +295,14 @@ export default function DeckManager({ onDeckSelect, selectedDeckId }: DeckManage
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {onStudyDeck && (
+                <DropdownMenuItem
+                  onClick={() => onStudyDeck(deck.id)}
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  Study these
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => {
                   setNewDeck(prev => ({ ...prev, parentDeckId: deck.id }));

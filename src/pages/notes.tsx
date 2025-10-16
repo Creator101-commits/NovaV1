@@ -513,7 +513,7 @@ export default function NotesPage() {
             </div>
             {/* Notes Content */}
             {isLoading ? (
-              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                 {[...Array(8)].map((_, i) => (
                   <Card key={i} className="border border-border/40 bg-gradient-to-br from-card/60 to-card/40 backdrop-blur-sm overflow-hidden">
                     <CardHeader className="pb-3 px-6 pt-6">
@@ -588,7 +588,7 @@ export default function NotesPage() {
                     </div>
                     <div className={`grid gap-8 ${
                       viewMode === "grid" 
-                        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+                        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" 
                         : "grid-cols-1 max-w-4xl"
                     }`}>
                       {pinnedNotes.map((note) => (
@@ -613,7 +613,7 @@ export default function NotesPage() {
                     )}
                     <div className={`grid gap-8 ${
                       viewMode === "grid" 
-                        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+                        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" 
                         : "grid-cols-1 max-w-4xl"
                     }`}>
                       {regularNotes.map((note) => (

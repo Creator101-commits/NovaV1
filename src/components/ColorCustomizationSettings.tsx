@@ -160,7 +160,7 @@ export const ColorCustomizationSettings = () => {
               className={`relative p-3 rounded-lg border transition-colors ${
                 customization.backgroundTheme === key 
                   ? 'border-primary ring-1 ring-primary/20' 
-                  : 'border-border hover:border-primary/50'
+                  : 'border-border'
               }`}
               style={{
                 backgroundColor: theme.background,

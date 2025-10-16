@@ -13,6 +13,8 @@ import { ActivityProvider } from "@/contexts/ActivityContext";
 import { usePersistentData } from "@/hooks/usePersistentData";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DockNavigation } from "@/components/DockNavigation";
+import { OptimizedDock } from "@/components/OptimizedDock";
+import { AppStateProvider } from "@/contexts/AppStateContext";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -28,27 +30,34 @@ import {
 import { useLocation } from "wouter";
 import { GraduationCap, Moon, Sun, Plus, Palette } from "lucide-react";
 
-// Pages
+// Pages - Lazy loaded for better performance
 import Landing from "@/pages/landing";
 import AuthPage from "@/pages/auth";
 import SignupPage from "@/pages/signup";
-import Dashboard from "@/pages/dashboard";
-import Calendar from "@/pages/calendar";
 import CalendarCallback from "@/pages/calendar-callback";
-import Assignments from "@/pages/assignments";
-import Classes from "@/pages/classes";
-import Notes from "@/pages/notes";
-import Toolbox from "@/pages/toolbox";
-import AiChat from "@/pages/ai-chat";
-import Analytics from "@/pages/analytics";
-import Profile from "@/pages/profile";
-import Habits from "@/pages/habits";
-import Settings from "@/pages/settings";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import SpotlightDemo from "@/pages/spotlight-demo";
 import SignInDemo from "@/pages/signin-demo";
 import NotFound from "@/pages/not-found";
+
+// Lazy loaded components
+import {
+  LazyDashboard,
+  LazyCalendar,
+  LazyAssignments,
+  LazyClasses,
+  LazyNotes,
+  LazyToolbox,
+  LazyAiChat,
+  LazyAnalytics,
+  LazyProfile,
+  LazyHabits,
+  LazySettings,
+} from "@/components/LazyComponents";
+
+import { Suspense } from "react";
+import { PageLoading } from "@/components/LoadingSpinner";
 
 function AppNavigation() {
   const { user, userData, signOut, hasGoogleAccess } = useAuth();
@@ -145,8 +154,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       
-      {/* Dock Navigation */}
-      <DockNavigation />
+      {/* Optimized Dock Navigation */}
+      <OptimizedDock />
       
       {/* Floating Action Button */}
       <div className="fixed bottom-6 right-6">
@@ -165,14 +174,7 @@ function Router() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
-          <p className="text-lg font-medium text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading message="Initializing Refyneo..." />;
   }
 
   return (
@@ -185,11 +187,13 @@ function Router() {
       <Route path="/auth/calendar/google" component={CalendarCallback} />
       <Route path="/auth/calendar/outlook" component={CalendarCallback} />
       
-      {/* Protected Routes */}
+      {/* Protected Routes - Lazy loaded for better performance */}
       <Route path="/dashboard">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Dashboard />
+            <Suspense fallback={<PageLoading message="Loading Dashboard..." />}>
+              <LazyDashboard />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -197,7 +201,9 @@ function Router() {
       <Route path="/calendar">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Calendar />
+            <Suspense fallback={<PageLoading message="Loading Calendar..." />}>
+              <LazyCalendar />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -205,7 +211,9 @@ function Router() {
       <Route path="/assignments">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Assignments />
+            <Suspense fallback={<PageLoading message="Loading Assignments..." />}>
+              <LazyAssignments />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -213,7 +221,9 @@ function Router() {
       <Route path="/classes">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Classes />
+            <Suspense fallback={<PageLoading message="Loading Classes..." />}>
+              <LazyClasses />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -221,7 +231,9 @@ function Router() {
       <Route path="/notes">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Notes />
+            <Suspense fallback={<PageLoading message="Loading Notes..." />}>
+              <LazyNotes />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -229,7 +241,9 @@ function Router() {
       <Route path="/toolbox">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Toolbox />
+            <Suspense fallback={<PageLoading message="Loading Toolbox..." />}>
+              <LazyToolbox />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -237,7 +251,9 @@ function Router() {
       <Route path="/ai-chat">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <AiChat />
+            <Suspense fallback={<PageLoading message="Loading AI Chat..." />}>
+              <LazyAiChat />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -245,7 +261,9 @@ function Router() {
       <Route path="/analytics">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Analytics />
+            <Suspense fallback={<PageLoading message="Loading Analytics..." />}>
+              <LazyAnalytics />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -253,7 +271,9 @@ function Router() {
       <Route path="/habits">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Habits />
+            <Suspense fallback={<PageLoading message="Loading Habits..." />}>
+              <LazyHabits />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -261,7 +281,9 @@ function Router() {
       <Route path="/profile">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Profile />
+            <Suspense fallback={<PageLoading message="Loading Profile..." />}>
+              <LazyProfile />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -269,7 +291,9 @@ function Router() {
       <Route path="/settings">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Settings />
+            <Suspense fallback={<PageLoading message="Loading Settings..." />}>
+              <LazySettings />
+            </Suspense>
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -291,20 +315,22 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <ColorCustomizationProvider>
-          <AuthProvider>
-            <ActivityProvider>
-              <CalendarProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Router />
-                </TooltipProvider>
-              </CalendarProvider>
-            </ActivityProvider>
-          </AuthProvider>
-        </ColorCustomizationProvider>
-      </ThemeProvider>
+      <AppStateProvider>
+        <ThemeProvider>
+          <ColorCustomizationProvider>
+            <AuthProvider>
+              <ActivityProvider>
+                <CalendarProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Router />
+                  </TooltipProvider>
+                </CalendarProvider>
+              </ActivityProvider>
+            </AuthProvider>
+          </ColorCustomizationProvider>
+        </ThemeProvider>
+      </AppStateProvider>
     </QueryClientProvider>
   );
 }

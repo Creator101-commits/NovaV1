@@ -48,7 +48,7 @@ export const DockNavigation = () => {
                 "transition-all duration-200 cursor-pointer",
                 isActive 
                   ? "text-white" 
-                  : "text-white/60 hover:text-white/80"
+                  : "text-white/60"
               )}
               size={32}
               magnification={40}

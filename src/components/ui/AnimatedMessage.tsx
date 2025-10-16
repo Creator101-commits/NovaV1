@@ -30,7 +30,7 @@ export function AnimatedMessage({
 
   const { displayedText, isComplete } = useTypingAnimation(
     content, 
-    8, // ~75 WPM (8ms per character instead of 25ms)
+    4, // ~130 WPM (4ms per character for faster typing)
     isInstantComplete
   );
 

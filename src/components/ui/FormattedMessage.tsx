@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
+import { Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
-// Import required CSS for katex only - we'll handle code styling manually
+// Import required CSS
 import 'katex/dist/katex.min.css';
 
 interface FormattedMessageProps {
@@ -12,10 +15,112 @@ interface FormattedMessageProps {
   className?: string;
 }
 
+// Copy to clipboard utility
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      return true;
+    } catch (err) {
+      return false;
+    } finally {
+      document.body.removeChild(textArea);
+    }
+  }
+};
+
+// Enhanced Code Block Component with Copy Button
+const CodeBlock: React.FC<{ 
+  children: string; 
+  className?: string; 
+  language?: string;
+}> = ({ children, className, language }) => {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopy = async () => {
+    const success = await copyToClipboard(children);
+    if (success) {
+      setCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Code copied to clipboard",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      toast({
+        title: "Failed",
+        description: "Failed to copy code",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Syntax highlighting removed to fix errors
+
+  return (
+    <div className="relative group my-4 overflow-hidden rounded-lg border border-border">
+      {/* Header with language and copy button */}
+      <div className="flex items-center justify-between bg-gray-800 text-gray-300 px-4 py-2 text-xs font-mono border-b border-gray-700">
+        <span className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+          {language && <span className="ml-2 text-gray-400">{language}</span>}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+        </Button>
+      </div>
+      
+      {/* Code content */}
+      <pre className={`bg-gray-900 dark:bg-gray-900 text-gray-100 p-4 overflow-x-auto font-mono text-sm ${className || ''}`}>
+        <code className="text-gray-100">
+          {children}
+        </code>
+      </pre>
+    </div>
+  );
+};
+
+// Mermaid Diagram Component - Simplified to prevent errors
+const MermaidDiagram: React.FC<{ content: string }> = ({ content }) => {
+  return (
+    <div className="my-4 p-4 bg-muted border border-border rounded-lg">
+      <p className="text-sm text-muted-foreground mb-2">Mermaid Diagram:</p>
+      <pre className="text-xs bg-background p-3 rounded overflow-x-auto font-mono">
+        {content}
+      </pre>
+    </div>
+  );
+};
+
 export const FormattedMessage: React.FC<FormattedMessageProps> = ({ 
   content, 
   className = "" 
 }) => {
+  // Process content for Mermaid diagrams
+  const processedContent = content.replace(
+    /```mermaid\n([\s\S]*?)\n```/g,
+    (match, diagramContent) => {
+      const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      return `<div data-mermaid-id="${id}" data-mermaid-content="${encodeURIComponent(diagramContent)}"></div>`;
+    }
+  );
+
   return (
     <div className={`formatted-response prose prose-sm max-w-none dark:prose-invert ${className}`}>
       <ReactMarkdown
@@ -83,30 +188,31 @@ export const FormattedMessage: React.FC<FormattedMessageProps> = ({
               );
             }
             
-            // For code blocks, return the code element with language class
+            // For code blocks in pre tags
             return (
-              <code className={`${className} text-gray-100`} {...props}>
+              <code className="text-gray-100" {...props}>
                 {children}
               </code>
             );
           },
           pre: ({ children }) => {
-            // Extract language from the child code element if it exists
-            const codeElement = React.Children.toArray(children)[0] as React.ReactElement;
-            const language = codeElement?.props?.className?.replace('language-', '') || '';
+            // Extract code content safely
+            let codeContent = '';
+            let language = '';
             
-            return (
-              <div className="my-4 overflow-hidden rounded-lg border border-border">
-                {language && (
-                  <div className="bg-gray-800 text-gray-300 px-3 py-2 text-xs font-mono border-b border-gray-700">
-                    {language}
-                  </div>
-                )}
-                <pre className={`bg-gray-900 text-gray-100 p-4 overflow-x-auto font-mono text-sm ${language ? '' : 'rounded-lg'}`}>
-                  {children}
-                </pre>
-              </div>
-            );
+            try {
+              const codeElement = React.Children.toArray(children)[0] as React.ReactElement;
+              if (codeElement && codeElement.props) {
+                language = codeElement.props.className?.replace('language-', '') || '';
+                codeContent = String(codeElement.props.children || '');
+              } else {
+                codeContent = String(children || '');
+              }
+            } catch (error) {
+              codeContent = String(children || '');
+            }
+            
+            return <CodeBlock language={language}>{codeContent}</CodeBlock>;
           },
           blockquote: ({ children }) => (
             <blockquote className="my-4 pl-4 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20 py-3 italic">
@@ -197,9 +303,21 @@ export const FormattedMessage: React.FC<FormattedMessageProps> = ({
             }
             return <input type={type} {...props} />;
           },
+          // Custom div handler for Mermaid diagrams
+          div: ({ children, ...props }: any) => {
+            try {
+              if (props['data-mermaid-id'] && props['data-mermaid-content']) {
+                const content = decodeURIComponent(props['data-mermaid-content'] as string);
+                return <MermaidDiagram content={content} />;
+              }
+            } catch (error) {
+              console.error('Mermaid diagram error:', error);
+            }
+            return <div {...props}>{children}</div>;
+          },
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

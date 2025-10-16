@@ -300,7 +300,7 @@ export default function Dashboard() {
         {/* Simple Widget Grid */}
         <div className="space-y-6">
           {/* Top Row - Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {renderWidget({ id: 'assignments', type: 'assignments', title: 'Assignments', size: 'small', position: { x: 0, y: 0 }, isVisible: true })}
             {renderWidget({ id: 'pomodoro', type: 'pomodoro', title: 'Study Time', size: 'small', position: { x: 1, y: 0 }, isVisible: true })}
             {renderWidget({ id: 'notes', type: 'notes', title: 'Notes', size: 'small', position: { x: 2, y: 0 }, isVisible: true })}

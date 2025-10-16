@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { optimizedStorage } from "./optimized-storage";
 import { z } from "zod";
 import { 
   insertUserSchema, 
@@ -49,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user already exists
-      let user = await storage.getUser(uid);
+      let user = await optimizedStorage.getUser(uid);
       
       if (user) {
         // Update existing user
@@ -60,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           googleAccessToken: accessToken || user.googleAccessToken,
         };
         
-        user = await storage.updateUser(uid, updateData);
+        user = await optimizedStorage.updateUser(uid, updateData);
         console.log(`✅ Updated user: ${email}`);
       } else {
         // Create new user
@@ -75,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         // Use Firebase UID as the Oracle database user ID
-        user = await storage.createUserWithId(uid, userData);
+        user = await optimizedStorage.createUserWithId(uid, userData);
         console.log(`✅ Created new user: ${email}`);
       }
       

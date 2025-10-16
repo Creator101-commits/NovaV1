@@ -4,6 +4,7 @@ import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
+import { optimizedStorage } from "./optimized-storage";
 
 const app = express();
 
@@ -49,12 +50,20 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize storage
+  // Initialize optimized storage
   try {
-    await storage.initialize();
-    console.log('✅ Storage initialized successfully');
+    await optimizedStorage.initialize();
+    console.log('✅ Optimized storage initialized successfully');
   } catch (error) {
-    console.warn('⚠️ Storage initialization failed:', (error as Error).message);
+    console.warn('⚠️ Optimized storage initialization failed:', (error as Error).message);
+    
+    // Fallback to regular storage
+    try {
+      await storage.initialize();
+      console.log('✅ Fallback storage initialized successfully');
+    } catch (fallbackError) {
+      console.warn('⚠️ Fallback storage initialization failed:', (fallbackError as Error).message);
+    }
   }
 
   const server = await registerRoutes(app);

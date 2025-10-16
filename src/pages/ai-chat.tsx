@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet, apiPost } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +49,9 @@ import {
   Eye,
   RefreshCw,
   History,
+  Brain,
+  Globe,
+  Telescope,
 } from "lucide-react";
 import { groqAPI, ChatMessage as GroqChatMessage } from "@/lib/groq";
 import { useToast } from "@/hooks/use-toast";
@@ -76,40 +80,39 @@ interface Summary {
 
 const STARTER_PROMPTS = [
   {
-    icon: <BookOpen className="h-5 w-5" />,
-    title: "Study Help",
-    description: "Help me understand this topic",
-    prompt: "Can you help me understand and study this topic? Please explain it in simple terms with examples."
+    icon: <Eye className="h-5 w-5" />,
+    title: "get deep research insights",
+    prompt: "I need deep research insights on this topic. Can you provide comprehensive analysis and findings?"
   },
   {
-    icon: <PenTool className="h-5 w-5" />,
-    title: "Essay Writing",
-    description: "Help me write an essay",
-    prompt: "I need help writing an essay. Can you guide me through the process and help me organize my thoughts?"
+    icon: <FileText className="h-5 w-5" />,
+    title: "make charts, diagrams and apps",
+    prompt: "Can you help me create charts, diagrams, and applications? I need visual representations and interactive tools."
   },
   {
-    icon: <Calculator className="h-5 w-5" />,
-    title: "Math Problem",
-    description: "Solve step-by-step",
-    prompt: "Can you help me solve this math problem? Please show me the step-by-step process."
+    icon: <Zap className="h-5 w-5" />,
+    title: "analyse data",
+    prompt: "I need help analyzing data. Can you provide statistical analysis, trends, and insights from my dataset?"
   },
   {
-    icon: <MessageCircle className="h-5 w-5" />,
-    title: "Q&A Session",
-    description: "Ask me questions to test my knowledge",
-    prompt: "Can you ask me questions about a topic to help me study and test my understanding?"
+    icon: <StickyNote className="h-5 w-5" />,
+    title: "generate image",
+    prompt: "Can you help me generate images or visual content for my project?"
+  },
+  {
+    icon: <Brain className="h-5 w-5" />,
+    title: "solve",
+    prompt: "I need help solving a problem. Can you work through this step by step with me?"
   },
   {
     icon: <HelpCircle className="h-5 w-5" />,
-    title: "Homework Help",
-    description: "Get help with assignments",
-    prompt: "I need help with my homework. Can you guide me through solving problems step by step?"
+    title: "research with web",
+    prompt: "Can you help me research this topic using current web information and provide up-to-date insights?"
   },
   {
-    icon: <Lightbulb className="h-5 w-5" />,
-    title: "Explain Concept",
-    description: "Break down complex ideas",
-    prompt: "Can you explain this concept to me in a way that's easy to understand? Use analogies if helpful."
+    icon: <Upload className="h-5 w-5" />,
+    title: "chat with documents",
+    prompt: "I want to analyze and discuss the content of my documents. Can you help me understand and extract key information?"
   }
 ];
 
@@ -275,28 +278,51 @@ export default function AiChat() {
           role: 'system' as const,
           content: `You are a helpful AI assistant designed to help students with their academic work. Provide clear, educational, and constructive responses using rich Markdown formatting.
 
-**Formatting Guidelines:**
+**Advanced Formatting Guidelines:**
 - Use **bold** for important terms and key concepts
 - Use *italics* for emphasis and definitions
 - Use \`inline code\` for technical terms, commands, or formulas
-- Use code blocks with language identifiers for multi-line code:
+- Use code blocks with syntax highlighting for multi-line code:
   \`\`\`python
-  code here
+  def hello_world():
+      print("Hello, World!")
   \`\`\`
 - Use # ## ### for headings to organize long responses
 - Use numbered lists (1. 2. 3.) for sequential steps
 - Use bullet points (- * •) for feature lists
 - Use > blockquotes for important definitions or key concepts
-- Use tables | header | header | for comparisons or data
+- Use tables for comparisons or data:
+  | Feature | Description | Example |
+  |---------|-------------|---------|
+  | Bold | **text** | **Important** |
 - Use --- for section breaks
 - Use checklists - [ ] for tasks or troubleshooting steps
 - Use emoji appropriately for warnings (⚠️), tips (💡), success (✅), etc.
-- Use $$math$$ for mathematical equations
+- Use $$math$$ for mathematical equations: $$E = mc^2$$
+- Use inline math: $\\alpha + \\beta = \\gamma$
+- Create Mermaid diagrams for flowcharts, sequence diagrams, etc:
+  \`\`\`mermaid
+  graph TD
+      A[Start] --> B{Decision}
+      B -->|Yes| C[Action 1]
+      B -->|No| D[Action 2]
+  \`\`\`
 - Create callout boxes with emoji + **title** for important information:
   💡 **Pro Tip**
   Content here
   
-Structure your responses with clear headings, proper spacing, and logical flow. Make complex topics easy to understand through good formatting.`
+**Supported Programming Languages for Syntax Highlighting:**
+JavaScript, TypeScript, Python, Java, C++, C#, PHP, Ruby, Go, Rust, SQL, JSON, YAML, HTML, CSS, SCSS, JSX, TSX, Vue, Svelte, Swift, Kotlin, Dart, R, MATLAB, LaTeX, Bash, Docker, Git, and many more.
+
+**Mermaid Diagram Types:**
+- Flowcharts: \`\`\`mermaid graph TD\`\`\`
+- Sequence diagrams: \`\`\`mermaid sequenceDiagram\`\`\`
+- Class diagrams: \`\`\`mermaid classDiagram\`\`\`
+- Gantt charts: \`\`\`mermaid gantt\`\`\`
+- Pie charts: \`\`\`mermaid pie\`\`\`
+- Git graphs: \`\`\`mermaid gitGraph\`\`\`
+
+Structure your responses with clear headings, proper spacing, and logical flow. Make complex topics easy to understand through good formatting. Use the advanced features to create rich, educational content.`
         },
         ...messages
           .filter(msg => msg.type !== "assistant" || !msg.summaryType) // Exclude summary responses from chat history
@@ -691,15 +717,28 @@ ${msg}
     });
   };
 
+  // Get current time for personalized greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const getUserName = () => {
+    return user?.displayName || user?.email?.split('@')[0] || "User";
+  };
+
   return (
-    <div className="fixed inset-0 flex flex-col p-2 bg-background overflow-hidden">
-      {/* Top Bar with Dropdown */}
-      <div className="flex items-center justify-end mb-2 flex-shrink-0 px-2">
+    <div className="fixed inset-0 bg-background overflow-hidden">
+      {/* Top Bar with Dropdown - Minimal */}
+      <div className="absolute top-4 right-4 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
-              variant="outline" 
-              className="bg-black text-white border-gray-700 hover:bg-gray-900 rounded-lg shadow-lg"
+              variant="ghost" 
+              size="sm"
+              className="bg-card/80 text-foreground border border-border hover:bg-card rounded-lg backdrop-blur-sm"
             >
               {activeTab === "chat" && (
                 <>
@@ -724,25 +763,25 @@ ${msg}
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="end" 
-            className="bg-black text-white border-gray-700 rounded-lg shadow-xl"
+            className="bg-card text-foreground border-border rounded-lg shadow-xl backdrop-blur-sm"
           >
             <DropdownMenuItem 
               onClick={() => setActiveTab("chat")}
-              className="hover:bg-gray-800 focus:bg-gray-800 cursor-pointer"
+              className="hover:bg-muted focus:bg-muted cursor-pointer"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               AI Chat
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setActiveTab("summarize")}
-              className="hover:bg-gray-800 focus:bg-gray-800 cursor-pointer"
+              className="hover:bg-muted focus:bg-muted cursor-pointer"
             >
               <FileText className="h-4 w-4 mr-2" />
               Summarize
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setActiveTab("history")}
-              className="hover:bg-gray-800 focus:bg-gray-800 cursor-pointer"
+              className="hover:bg-muted focus:bg-muted cursor-pointer"
             >
               <History className="h-4 w-4 mr-2" />
               History
@@ -754,80 +793,136 @@ ${msg}
       <div className="flex-1 overflow-hidden">
 
         {activeTab === "chat" && (
-          <div className="h-full overflow-hidden max-w-full mx-auto px-4">
-          {/* Modern Chat Interface */}
-          <div className="h-[calc(100%-2rem)] flex flex-col bg-background rounded-lg border border-border overflow-hidden shadow-lg">
-            {/* Chat Header */}
-            <div className="flex items-center justify-start p-4 border-b border-border bg-muted/30">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                  <Bot className="h-6 w-6 text-primary-foreground" />
+          <div className="h-full flex flex-col">
+            {messages.filter(msg => !msg.summaryType).length === 0 ? (
+              /* Landing Page - Perfectly Centered Design */
+              <div className="flex flex-col items-center justify-center min-h-screen w-full px-6">
+                {/* Personalized Greeting */}
+                <div className="text-center mb-6">
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                    {getGreeting()}, {getUserName()}
+                  </h1>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Refyneo AI Assistant</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {isLoading ? "Typing..." : "Online"}
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Chat Messages Area */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 p-4 overflow-y-auto max-h-full">
-                <div className="space-y-4">
-                  {messages.filter(msg => !msg.summaryType).length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                        <Bot className="h-8 w-8 text-primary" />
+                {/* v0-Style Input Box - CENTERED FOCAL POINT */}
+                <div className="w-full max-w-4xl mb-6">
+                  <div className="relative bg-card rounded-xl border border-border shadow-lg">
+                    <div className="overflow-y-auto">
+                      <Textarea
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (chatInput.trim() && !isLoading) {
+                              handleChatMessage();
+                            }
+                          }
+                        }}
+                        placeholder="Ask anything..."
+                        disabled={isLoading}
+                        className={cn(
+                          "w-full px-4 py-3",
+                          "resize-none",
+                          "bg-transparent",
+                          "border-none",
+                          "text-foreground text-sm",
+                          "focus:outline-none",
+                          "focus-visible:ring-0 focus-visible:ring-offset-0",
+                          "placeholder:text-muted-foreground placeholder:text-sm",
+                          "min-h-[60px] max-h-[200px]"
+                        )}
+                        style={{ overflow: "hidden" }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Upload className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground hidden group-hover:inline transition-opacity">
+                            Attach
+                          </span>
+                        </button>
                       </div>
-                      <h3 className="font-medium text-foreground mb-2">Start a conversation</h3>
-                      <p className="text-muted-foreground mb-6 text-sm">Choose a topic below or ask me anything!</p>
-                      
-                      {/* Starter Prompts - Compact Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-4xl mx-auto">
-                        {STARTER_PROMPTS.map((prompt, index) => (
-                          <div 
-                            key={index}
-                            className="p-3 rounded-lg border border-border hover:border-primary/50 cursor-pointer transition-all hover:shadow-sm bg-card"
-                            onClick={() => handleStarterPrompt(prompt.prompt)}
-                          >
-                            <div className="flex items-center space-x-2 mb-1">
-                              <div className="text-primary">
-                                {prompt.icon}
-                              </div>
-                              <h4 className="font-medium text-sm text-foreground">{prompt.title}</h4>
-                            </div>
-                            <p className="text-xs text-muted-foreground text-left">{prompt.description}</p>
-                          </div>
-                        ))}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border">
+                          <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          </svg>
+                          <span className="text-xs text-foreground font-medium whitespace-nowrap">DeepSeek V3</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleChatMessage}
+                          disabled={!chatInput.trim() || isLoading}
+                          className={cn(
+                            "px-2 py-2 rounded-lg text-sm transition-colors border flex items-center justify-center",
+                            chatInput.trim() && !isLoading
+                              ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                              : "text-muted-foreground border-border bg-muted"
+                          )}
+                        >
+                          {isLoading ? (
+                            <Square className="w-4 h-4" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                          <span className="sr-only">Send</span>
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    messages
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {STARTER_PROMPTS.map((prompt, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleStarterPrompt(prompt.prompt)}
+                      className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-muted rounded-full border border-border text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {React.cloneElement(prompt.icon as React.ReactElement, { className: "w-4 h-4" })}
+                      <span className="text-xs">{prompt.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Chat Interface */
+              <div className="flex-1 flex flex-col bg-background backdrop-blur-sm">
+                {/* Chat Messages Area */}
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                  <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+                    {messages
                       .filter(msg => !msg.summaryType)
                       .map((message) => (
                         <div
                           key={message.id}
-                          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"} mb-4`}
+                          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
                         >
-                          <div className={`flex ${message.type === "user" ? "flex-row-reverse" : "flex-row"} items-start space-x-2 max-w-[85%]`}>
+                          <div className={`flex ${message.type === "user" ? "flex-row-reverse" : "flex-row"} items-start space-x-3 max-w-[85%]`}>
                             {/* Avatar */}
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                              message.type === "user" ? "bg-primary ml-2" : "bg-muted mr-2"
+                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              message.type === "user" ? "bg-primary ml-3" : "bg-muted mr-3"
                             }`}>
                               {message.type === "user" ? (
-                                <div className="w-5 h-5 rounded-full bg-primary-foreground"></div>
+                                <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-primary-foreground"></div>
                               ) : (
-                                <Bot className="h-5 w-5 text-muted-foreground" />
+                                <Bot className="h-4 w-4 md:h-6 md:w-6 text-foreground" />
                               )}
                             </div>
                             
                             {/* Message Content */}
-                            <div className={`rounded-2xl px-4 py-3 relative ${
+                            <div className={`rounded-2xl px-4 md:px-6 py-3 md:py-4 ${
                               message.type === "user"
                                 ? "bg-primary text-primary-foreground"
-                                : "bg-muted border border-border"
+                                : "bg-card text-card-foreground border border-border"
                             }`}>
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -841,90 +936,133 @@ ${msg}
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="h-8 w-8 ml-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
                                     onClick={() => copyToClipboard(message.content)}
                                   >
-                                    <Copy className="h-3 w-3" />
+                                    <Copy className="h-4 w-4" />
                                   </Button>
                                 )}
                               </div>
                             </div>
                           </div>
                         </div>
-                      ))
-                  )}
-                  
-                  {/* Loading Indicator */}
-                  {isLoading && (
-                    <div className="flex justify-start mb-4">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Bot className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div className="bg-muted rounded-2xl px-4 py-3 border border-border">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      ))}
+                    
+                    {/* Loading Indicator */}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-muted border border-border flex items-center justify-center">
+                            <Bot className="h-4 w-4 md:h-6 md:w-6 text-foreground" />
+                          </div>
+                          <div className="bg-card rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-border">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              </div>
+                              <span className="text-sm text-muted-foreground">AI is thinking...</span>
                             </div>
-                            <span className="text-xs text-muted-foreground">AI is thinking...</span>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </div>
-              
-              {/* Chat Input Area */}
-              <div className="p-4 border-t border-border bg-background">
-                <div className="flex space-x-2">
-                  <div className="flex-1 relative">
-                    <Input
-                      placeholder="Ask me anything..."
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleChatMessage()}
-                      disabled={isLoading}
-                      className="pr-12 rounded-full border-border focus:border-primary"
-                    />
+                    )}
+                    <div ref={messagesEndRef} />
                   </div>
-                  {isLoading ? (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={stopResponse}
-                      className="rounded-full border-border"
-                    >
-                      <Square className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleChatMessage}
-                      disabled={!chatInput.trim()}
-                      size="icon"
-                      className="rounded-full"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  )}
+                </div>
+                
+                {/* Chat Input Area */}
+                <div className="p-6 border-t border-border bg-background">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="relative bg-card rounded-xl border border-border shadow-lg">
+                      <div className="overflow-y-auto">
+                        <Textarea
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              if (chatInput.trim() && !isLoading) {
+                                handleChatMessage();
+                              }
+                            }
+                          }}
+                          placeholder="Ask anything..."
+                          disabled={isLoading}
+                          className={cn(
+                            "w-full px-4 py-3",
+                            "resize-none",
+                            "bg-transparent",
+                            "border-none",
+                            "text-foreground text-sm",
+                            "focus:outline-none",
+                            "focus-visible:ring-0 focus-visible:ring-offset-0",
+                            "placeholder:text-muted-foreground placeholder:text-sm",
+                            "min-h-[60px] max-h-[200px]"
+                          )}
+                          style={{ overflow: "hidden" }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border-t border-border">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <Upload className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground hidden group-hover:inline transition-opacity">
+                              Attach
+                            </span>
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border">
+                            <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                            </svg>
+                            <span className="text-xs text-foreground font-medium whitespace-nowrap">DeepSeek V3</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={isLoading ? stopResponse : handleChatMessage}
+                            disabled={!chatInput.trim() && !isLoading}
+                            className={cn(
+                              "px-2 py-2 rounded-lg text-sm transition-colors border flex items-center justify-center",
+                              chatInput.trim() && !isLoading
+                                ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                                : isLoading
+                                ? "bg-muted text-foreground border-border hover:bg-muted/80"
+                                : "text-muted-foreground border-border bg-muted"
+                            )}
+                          >
+                            {isLoading ? (
+                              <Square className="w-4 h-4" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                            <span className="sr-only">{isLoading ? 'Stop' : 'Send'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
           </div>
         )}
 
         {activeTab === "summarize" && (
-          <div className="h-full overflow-y-auto max-w-full mx-auto px-4">
-          <div className="grid lg:grid-cols-3 gap-6 min-h-full py-4">
+          <div className="h-full overflow-y-auto bg-background">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="grid lg:grid-cols-3 gap-6 md:gap-8 min-h-full">
             {/* Input Panel */}
-            <div className="lg:col-span-1 space-y-6">
-              <Card>
+            <div className="lg:col-span-1 space-y-4 md:space-y-6">
+              <Card className="bg-card border-border backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle>Summary Settings</CardTitle>
+                  <CardTitle className="text-foreground">Summary Settings</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Choose how you want your content summarized
                   </p>
@@ -1215,13 +1353,15 @@ ${msg}
             </div>
           </div>
           </div>
+          </div>
         )}
 
         {activeTab === "history" && (
-          <div className="h-full overflow-y-auto max-w-full mx-auto px-4 py-4">
-          <Card className="min-h-full flex flex-col">
+          <div className="h-full overflow-y-auto bg-background">
+          <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          <Card className="min-h-full flex flex-col bg-card border-border backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>Summary History</CardTitle>
+              <CardTitle className="text-foreground">Summary History</CardTitle>
             </CardHeader>
             <CardContent className="flex-1">
               {summaries.length === 0 ? (
@@ -1265,6 +1405,7 @@ ${msg}
               )}
             </CardContent>
           </Card>
+          </div>
           </div>
         )}
       </div>

@@ -34,7 +34,6 @@ import {
   Brain,
   Plus,
   RotateCcw,
-  Shuffle,
   Eye,
   EyeOff,
   ThumbsUp,
@@ -61,7 +60,6 @@ export const Flashcards = () => {
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [studyMode, setStudyMode] = useState<"sequential" | "random">("sequential");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newCard, setNewCard] = useState({ 
     front: "", 
@@ -84,8 +82,15 @@ export const Flashcards = () => {
   // Deck management state
   const [decks, setDecks] = useState<Array<{id: string; name: string; parentDeckId?: string}>>([]);
   const [selectedDeckId, setSelectedDeckId] = useState("");
+  const [studyDeckId, setStudyDeckId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("manage");
 
-  const currentCard = flashcards[currentCardIndex];
+  // Get filtered flashcards based on study deck
+  const filteredFlashcards = studyDeckId 
+    ? flashcards.filter(card => card.deckId === studyDeckId)
+    : flashcards;
+  
+  const currentCard = filteredFlashcards[currentCardIndex];
 
   // Load decks from database
   const loadDecks = async () => {
@@ -412,20 +417,27 @@ Return only the JSON array, no other text.`;
   }, [user?.uid]);
 
 
+  const startStudyingDeck = (deckId: string) => {
+    setStudyDeckId(deckId);
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+    setActiveTab("study");
+  };
+
+  const clearStudyFilter = () => {
+    setStudyDeckId(null);
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+  };
+
   const nextCard = () => {
-    if (studyMode === "random") {
-      setCurrentCardIndex(Math.floor(Math.random() * flashcards.length));
-    } else {
-      setCurrentCardIndex((prev) => (prev + 1) % flashcards.length);
-    }
+    setCurrentCardIndex((prev) => (prev + 1) % filteredFlashcards.length);
     setIsFlipped(false);
   };
 
   const previousCard = () => {
-    if (studyMode === "sequential") {
-      setCurrentCardIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length);
-      setIsFlipped(false);
-    }
+    setCurrentCardIndex((prev) => (prev - 1 + filteredFlashcards.length) % filteredFlashcards.length);
+    setIsFlipped(false);
   };
 
   const markAnswer = async (correct: boolean) => {
@@ -474,10 +486,10 @@ Return only the JSON array, no other text.`;
   };
 
   const overallStats = {
-    totalCards: flashcards.length,
-    totalReviews: flashcards.reduce((sum, card) => sum + (card.reviewCount || 0), 0),
-    averageAccuracy: flashcards.length > 0 
-      ? Math.round(flashcards.reduce((sum, card) => sum + getAccuracyRate(card), 0) / flashcards.length)
+    totalCards: filteredFlashcards.length,
+    totalReviews: filteredFlashcards.reduce((sum, card) => sum + (card.reviewCount || 0), 0),
+    averageAccuracy: filteredFlashcards.length > 0 
+      ? Math.round(filteredFlashcards.reduce((sum, card) => sum + getAccuracyRate(card), 0) / filteredFlashcards.length)
       : 0,
   };
 
@@ -606,7 +618,7 @@ Return only the JSON array, no other text.`;
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="study" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="study">Study</TabsTrigger>
@@ -708,86 +720,76 @@ Return only the JSON array, no other text.`;
         </div>
 
         <TabsContent value="study">
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Study Controls */}
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Study Mode</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex space-x-2">
-                    <Button
-                      variant={studyMode === "sequential" ? "default" : "outline"}
-                      onClick={() => setStudyMode("sequential")}
-                      className="flex-1"
-                    >
-                      Sequential
-                    </Button>
-                    <Button
-                      variant={studyMode === "random" ? "default" : "outline"}
-                      onClick={() => setStudyMode("random")}
-                      className="flex-1"
-                    >
-                      <Shuffle className="h-4 w-4 mr-1" />
-                      Random
-                    </Button>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    Card {currentCardIndex + 1} of {flashcards.length}
-                  </div>
-                  <Progress value={((currentCardIndex + 1) / flashcards.length) * 100} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Quick Stats</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Total Cards:</span>
-                    <span className="font-semibold">{overallStats.totalCards}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Reviews:</span>
-                    <span className="font-semibold">{overallStats.totalReviews}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Accuracy:</span>
-                    <span className="font-semibold">{overallStats.averageAccuracy}%</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Flashcard Display */}
-            <div className="lg:col-span-2">
+          <div className="max-w-4xl mx-auto">
+            {filteredFlashcards.length === 0 ? (
               <Card className="min-h-96">
-                <CardContent className="p-8 h-full flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-2">
-                    <Badge className={getDifficultyColor(currentCard.difficulty || "medium")}>
-                      {currentCard.difficulty || "medium"}
-                    </Badge>
-                      {currentCard.deckId && (() => {
-                        const deckInfo = getDeckInfo(currentCard.deckId);
-                        if (!deckInfo) return null;
-                        return (
-                          <Badge variant="outline" className="text-xs">
-                            {deckInfo.isSubdeck 
-                              ? `${deckInfo.parentName} → ${deckInfo.name}`
-                              : deckInfo.name
-                            }
-                          </Badge>
-                        );
-                      })()}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Reviewed {currentCard.reviewCount || 0} times
+                <CardContent className="p-8 h-full flex flex-col items-center justify-center text-center">
+                  <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {studyDeckId ? "No cards in this deck" : "No flashcards available"}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {studyDeckId 
+                      ? "This deck doesn't have any flashcards yet. Create some cards to start studying."
+                      : "Create your first flashcard to start studying"
+                    }
+                  </p>
+                  {studyDeckId && (
+                    <Button 
+                      variant="outline" 
+                      onClick={clearStudyFilter}
+                      className="mb-4"
+                    >
+                      Study All Cards
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {studyDeckId && (
+                  <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">
+                          Studying: {getDeckInfo(studyDeckId)?.name || "Unknown Deck"}
+                        </span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={clearStudyFilter}
+                      >
+                        Study All Cards
+                      </Button>
                     </div>
                   </div>
+                )}
+                <Card className="min-h-96">
+                  <CardContent className="p-8 h-full flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-2">
+                      <Badge className={getDifficultyColor(currentCard?.difficulty || "medium")}>
+                        {currentCard?.difficulty || "medium"}
+                      </Badge>
+                        {currentCard?.deckId && (() => {
+                          const deckInfo = getDeckInfo(currentCard.deckId);
+                          if (!deckInfo) return null;
+                          return (
+                            <Badge variant="outline" className="text-xs">
+                              {deckInfo.isSubdeck 
+                                ? `${deckInfo.parentName} → ${deckInfo.name}`
+                                : deckInfo.name
+                              }
+                            </Badge>
+                          );
+                        })()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Card {currentCardIndex + 1} of {filteredFlashcards.length}
+                      </div>
+                    </div>
 
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center space-y-4 max-w-lg">
@@ -824,7 +826,7 @@ Return only the JSON array, no other text.`;
                         <Button
                           onClick={() => markAnswer(false)}
                           variant="outline"
-                          className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                          className="flex-1 text-red-600 border-red-200"
                         >
                           <ThumbsDown className="h-4 w-4 mr-2" />
                           Incorrect
@@ -832,7 +834,7 @@ Return only the JSON array, no other text.`;
                         <Button
                           onClick={() => markAnswer(true)}
                           variant="outline"
-                          className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                          className="flex-1 text-green-600 border-green-200"
                         >
                           <ThumbsUp className="h-4 w-4 mr-2" />
                           Correct
@@ -845,7 +847,6 @@ Return only the JSON array, no other text.`;
                       <Button
                         onClick={previousCard}
                         variant="outline"
-                        disabled={studyMode === "random"}
                         className="flex-1"
                       >
                         Previous
@@ -855,13 +856,14 @@ Return only the JSON array, no other text.`;
                         variant="outline"
                         className="flex-1"
                       >
-                        {studyMode === "random" ? "Random" : "Next"}
+                        Next
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+              </>
+            )}
           </div>
         </TabsContent>
 
@@ -869,83 +871,8 @@ Return only the JSON array, no other text.`;
           <div className="space-y-6">
             {/* Deck Manager with Error Boundary */}
             <ErrorBoundary>
-              <DeckManager />
+              <DeckManager onStudyDeck={startStudyingDeck} />
             </ErrorBoundary>
-            
-            {/* Flashcard List */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  All Flashcards ({flashcards.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {flashcards.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No flashcards created yet</p>
-                    <p className="text-sm">Create your first flashcard to get started</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {flashcards.map((card, index) => (
-                      <Card key={card.id} className="border-border/40">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center space-x-2">
-                                <Badge className={getDifficultyColor(card.difficulty || "medium")}>
-                                  {card.difficulty || "medium"}
-                                </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  {getAccuracyRate(card)}% accuracy
-                                </span>
-                                {card.deckId && (() => {
-                                  const deckInfo = getDeckInfo(card.deckId);
-                                  if (!deckInfo) return null;
-                                  return (
-                                  <Badge variant="outline" className="text-xs">
-                                      {deckInfo.isSubdeck 
-                                        ? `${deckInfo.parentName} → ${deckInfo.name}`
-                                        : deckInfo.name
-                                      }
-                                  </Badge>
-                                  );
-                                })()}
-                              </div>
-                              <div>
-                                <p className="font-medium">Q: {card.front}</p>
-                                <p className="text-muted-foreground">A: {card.back}</p>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Reviewed {card.reviewCount} times • 
-                                {card.lastReviewed 
-                                  ? ` Last: ${card.lastReviewed.toLocaleDateString()}`
-                                  : " Never reviewed"
-                                }
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              <Button variant="ghost" size="icon">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteFlashcard(card.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -1063,7 +990,7 @@ Return only the JSON array, no other text.`;
                         type="file"
                         accept=".txt"
                         onChange={handleFileUpload}
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground"
                       />
                       {uploadedFile && (
                         <div className="mt-2 p-3 bg-muted/50 rounded-lg">

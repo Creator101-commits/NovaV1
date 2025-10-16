@@ -7,7 +7,7 @@
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   gap: 24px;
   max-width: 1200px;
   margin: 0 auto;
@@ -19,7 +19,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 32px;
-  min-height: 280px;
+  min-height: 320px;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);

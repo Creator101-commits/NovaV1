@@ -483,7 +483,7 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
               variant="ghost" 
               size="sm" 
               onClick={onClose}
-              className="hover:bg-accent text-muted-foreground hover:text-foreground p-2"
+              className="text-muted-foreground p-2"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -512,7 +512,7 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
             <Button 
               onClick={handleManualSave} 
               disabled={isSaving}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 h-8 text-sm"
+              className="bg-blue-600 text-white px-4 py-1 h-8 text-sm"
             >
               <Save className="h-4 w-4 mr-1" />
               {isSaving ? "Saving..." : "Save"}
@@ -916,7 +916,7 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
               className={`h-6 px-2 text-xs ${
                 isPinned 
                   ? "text-amber-500 bg-amber-500/10" 
-                  : "text-muted-foreground hover:text-amber-500"
+                  : "text-muted-foreground"
               }`}
             >
               {isPinned ? <PinOff className="h-3 w-3 mr-1" /> : <Pin className="h-3 w-3 mr-1" />}
