@@ -11,6 +11,7 @@ import {
   Bot,
   BarChart3,
   Target,
+  CheckCircle,
 } from "lucide-react";
 
 const navigationItems = [
@@ -19,6 +20,7 @@ const navigationItems = [
   { href: "/assignments", label: "Assignments", icon: BookOpen },
   { href: "/classes", label: "Classes", icon: GraduationCap },
   { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/habits", label: "Habits", icon: CheckCircle },
   { href: "/ai-chat", label: "AI Chatbot", icon: Bot },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/toolbox", label: "Toolbox", icon: Wrench },

@@ -7,6 +7,23 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,7 +40,9 @@ import {
   Calendar as CalendarIcon,
   Clock,
   Repeat,
-  Star
+  Star,
+  Trash2,
+  MoreVertical
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, parseISO } from "date-fns";
 
@@ -62,6 +81,7 @@ export default function HabitTracker() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddingHabit, setIsAddingHabit] = useState(false);
   const [viewMode, setViewMode] = useState<'today' | 'week' | 'calendar'>('today');
+  const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   
   const [newHabit, setNewHabit] = useState({
     name: '',
@@ -158,6 +178,18 @@ export default function HabitTracker() {
     });
 
     saveHabits(updatedHabits);
+  };
+
+  const deleteHabit = (habitId: string) => {
+    const habitToRemove = habits.find(h => h.id === habitId);
+    const updatedHabits = habits.filter(habit => habit.id !== habitId);
+    saveHabits(updatedHabits);
+    setHabitToDelete(null);
+
+    toast({
+      title: "Habit Deleted",
+      description: `"${habitToRemove?.name}" has been removed from your habits.`
+    });
   };
 
   const getHabitProgress = (habit: Habit, date: string) => {
@@ -418,7 +450,7 @@ export default function HabitTracker() {
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
                           <div className="text-right">
                             <div className="text-sm text-muted-foreground">
                               {habit.completions[today] || 0} / {habit.targetCount}
@@ -439,6 +471,23 @@ export default function HabitTracker() {
                             )}
                             {completed ? 'Done' : 'Mark'}
                           </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setHabitToDelete(habit.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Habit
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </CardContent>
@@ -460,13 +509,31 @@ export default function HabitTracker() {
             {habits.map(habit => (
               <Card key={habit.id}>
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: habit.color }}
-                    />
-                    {habit.name}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: habit.color }}
+                      />
+                      {habit.name}
+                    </CardTitle>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => setHabitToDelete(habit.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Habit
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-7 gap-2">
@@ -537,6 +604,22 @@ export default function HabitTracker() {
                                 <Flame className="h-4 w-4 text-orange-500" />
                                 <span>{habit.streak} days</span>
                               </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <MoreVertical className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => setHabitToDelete(habit.id)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Habit
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                           <Progress value={successRate} className="h-2" />
@@ -585,6 +668,27 @@ export default function HabitTracker() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={habitToDelete !== null} onOpenChange={() => setHabitToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this habit and all its progress data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setHabitToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => habitToDelete && deleteHabit(habitToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

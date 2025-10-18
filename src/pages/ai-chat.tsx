@@ -85,16 +85,6 @@ const STARTER_PROMPTS = [
     prompt: "I need deep research insights on this topic. Can you provide comprehensive analysis and findings?"
   },
   {
-    icon: <FileText className="h-5 w-5" />,
-    title: "make charts, diagrams and apps",
-    prompt: "Can you help me create charts, diagrams, and applications? I need visual representations and interactive tools."
-  },
-  {
-    icon: <Zap className="h-5 w-5" />,
-    title: "analyse data",
-    prompt: "I need help analyzing data. Can you provide statistical analysis, trends, and insights from my dataset?"
-  },
-  {
     icon: <StickyNote className="h-5 w-5" />,
     title: "generate image",
     prompt: "Can you help me generate images or visual content for my project?"
@@ -103,16 +93,6 @@ const STARTER_PROMPTS = [
     icon: <Brain className="h-5 w-5" />,
     title: "solve",
     prompt: "I need help solving a problem. Can you work through this step by step with me?"
-  },
-  {
-    icon: <HelpCircle className="h-5 w-5" />,
-    title: "research with web",
-    prompt: "Can you help me research this topic using current web information and provide up-to-date insights?"
-  },
-  {
-    icon: <Upload className="h-5 w-5" />,
-    title: "chat with documents",
-    prompt: "I want to analyze and discuss the content of my documents. Can you help me understand and extract key information?"
   }
 ];
 
@@ -790,22 +770,25 @@ ${msg}
         </DropdownMenu>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="h-full w-full overflow-hidden">
 
         {activeTab === "chat" && (
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col relative">
             {messages.filter(msg => !msg.summaryType).length === 0 ? (
               /* Landing Page - Perfectly Centered Design */
-              <div className="flex flex-col items-center justify-center min-h-screen w-full px-6">
+              <div 
+                key="landing" 
+                className="absolute inset-0 flex flex-col items-center justify-center w-full px-6 animate-in fade-in duration-500 ease-out"
+              >
                 {/* Personalized Greeting */}
-                <div className="text-center mb-6">
+                <div className="text-center mb-6 animate-in fade-in slide-in-from-top-4 duration-700 delay-100">
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                     {getGreeting()}, {getUserName()}
                   </h1>
                 </div>
 
                 {/* v0-Style Input Box - CENTERED FOCAL POINT */}
-                <div className="w-full max-w-4xl mb-6">
+                <div className="w-full max-w-4xl mb-6 animate-in fade-in zoom-in-95 duration-700 delay-200">
                   <div className="relative bg-card rounded-xl border border-border shadow-lg">
                     <div className="overflow-y-auto">
                       <Textarea
@@ -879,7 +862,7 @@ ${msg}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
                   {STARTER_PROMPTS.map((prompt, index) => (
                     <button
                       key={index}
@@ -894,55 +877,59 @@ ${msg}
                 </div>
               </div>
             ) : (
-              /* Chat Interface */
-              <div className="flex-1 flex flex-col bg-background backdrop-blur-sm">
-                {/* Chat Messages Area */}
-                <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+              /* Chat Interface - Smooth Transition from Center */
+              <div 
+                key="chat" 
+                className="absolute inset-0 flex flex-col bg-background animate-in fade-in duration-500 ease-out"
+              >
+                {/* Chat Messages Area - Fills remaining space above input */}
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto scroll-smooth animate-in fade-in slide-in-from-top-2 duration-600 delay-100">
                   <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
                     {messages
                       .filter(msg => !msg.summaryType)
-                      .map((message) => (
+                      .map((message, index) => (
                         <div
                           key={message.id}
-                          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"} my-2 animate-in fade-in slide-in-from-bottom-2 duration-500`}
+                          style={{ animationDelay: `${index * 50}ms` }}
                         >
-                          <div className={`flex ${message.type === "user" ? "flex-row-reverse" : "flex-row"} items-start space-x-3 max-w-[85%]`}>
+                          <div className={`flex ${message.type === "user" ? "flex-row-reverse" : "flex-row"} items-start gap-3 max-w-[85%] group`}>
                             {/* Avatar */}
-                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                              message.type === "user" ? "bg-primary ml-3" : "bg-muted mr-3"
+                            <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              message.type === "user" ? "bg-primary" : "bg-muted"
                             }`}>
                               {message.type === "user" ? (
-                                <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-primary-foreground"></div>
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-primary-foreground"></div>
                               ) : (
-                                <Bot className="h-4 w-4 md:h-6 md:w-6 text-foreground" />
+                                <Bot className="h-4 w-4 text-foreground" />
                               )}
                             </div>
                             
-                            {/* Message Content */}
-                            <div className={`rounded-2xl px-4 md:px-6 py-3 md:py-4 ${
-                              message.type === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-card text-card-foreground border border-border"
-                            }`}>
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  {message.type === "user" ? (
-                                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                  ) : (
+                            {/* Message Content - Minimal Styling */}
+                            <div className="flex-1 min-w-0">
+                              <div className={`px-3 py-2 ${
+                                message.type === "user"
+                                  ? "bg-primary/10 text-foreground"
+                                  : "text-foreground"
+                              }`}>
+                                {message.type === "user" ? (
+                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                                ) : (
+                                  <div className="text-sm">
                                     <AnimatedMessage content={message.content} />
-                                  )}
-                                </div>
-                                {message.type === "assistant" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 ml-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                                    onClick={() => copyToClipboard(message.content)}
-                                  >
-                                    <Copy className="h-4 w-4" />
-                                  </Button>
+                                  </div>
                                 )}
                               </div>
+                              {message.type === "assistant" && (
+                                <button
+                                  onClick={() => copyToClipboard(message.content)}
+                                  className="mt-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Copy message"
+                                >
+                                  <Copy className="h-3 w-3 inline mr-1" />
+                                  Copy
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -950,19 +937,19 @@ ${msg}
                     
                     {/* Loading Indicator */}
                     {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-muted border border-border flex items-center justify-center">
-                            <Bot className="h-4 w-4 md:h-6 md:w-6 text-foreground" />
+                      <div className="flex justify-start my-2 animate-in fade-in slide-in-from-left duration-300">
+                        <div className="flex items-start gap-3">
+                          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                            <Bot className="h-4 w-4 text-foreground" />
                           </div>
-                          <div className="bg-card rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-border">
-                            <div className="flex items-center space-x-3">
-                              <div className="flex space-x-1">
+                          <div className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-1">
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                               </div>
-                              <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                              <span className="text-sm text-muted-foreground">Thinking...</span>
                             </div>
                           </div>
                         </div>
@@ -972,10 +959,10 @@ ${msg}
                   </div>
                 </div>
                 
-                {/* Chat Input Area */}
-                <div className="p-6 border-t border-border bg-background">
+                {/* Chat Input Area - Sticky Bottom with Smooth Entry */}
+                <div className="sticky bottom-0 flex-shrink-0 p-4 md:p-6 border-t border-border bg-background/95 backdrop-blur-md animate-in slide-in-from-bottom-4 duration-600 delay-200">
                   <div className="max-w-4xl mx-auto">
-                    <div className="relative bg-card rounded-xl border border-border shadow-lg">
+                    <div className="relative bg-card rounded-xl border border-border shadow-lg transition-all duration-300 hover:shadow-xl">
                       <div className="overflow-y-auto">
                         <Textarea
                           value={chatInput}

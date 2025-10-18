@@ -23,6 +23,7 @@ import {
   ChevronUp,
   MessageSquare,
   Wrench,
+  CheckCircle,
 } from 'lucide-react';
 
 interface DockItem {
@@ -63,6 +64,12 @@ const dockItems: DockItem[] = [
     label: 'Notes',
     path: '/notes',
     icon: StickyNote,
+  },
+  {
+    id: 'habits',
+    label: 'Habits',
+    path: '/habits',
+    icon: CheckCircle,
   },
   {
     id: 'ai-chat',
