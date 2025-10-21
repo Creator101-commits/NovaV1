@@ -211,7 +211,7 @@ The system follows a unidirectional data flow pattern:
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:5000/api
 
-## 📖 Usage
+## Usage
 
 ### Getting Started
 1. **Sign Up/Login**: Use Firebase authentication to create your account
@@ -227,7 +227,7 @@ The system follows a unidirectional data flow pattern:
 - **Study Sessions**: Use flashcards and Pomodoro timer for focused study
 - **Progress Review**: Check analytics to understand your learning patterns
 
-## 🛠️ Development
+## Development
 
 ### Project Structure
 ```
@@ -270,7 +270,7 @@ ProductivityHub/ProductivityHub/
    - Create database named `refyneo`
    - Run migrations
 
-## 🔧 Configuration
+## Configuration
 
 ### Google Calendar Integration
 1. Enable Google Calendar API in Google Cloud Console
@@ -333,11 +333,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Voice notes and transcription
 
 ### Recent Updates
-- ✅ Google Calendar integration
-- ✅ AI-powered content summarization
-- ✅ Advanced note organization
-- ✅ Real-time collaboration features
-- ✅ Comprehensive analytics
+- Google Calendar integration
+- AI-powered content summarization
+- Advanced note organization
+- Real-time collaboration features
+- Comprehensive analytics
 
 ## Acknowledgments
 
