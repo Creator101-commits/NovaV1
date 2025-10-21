@@ -22,7 +22,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { FormattedMessage } from "@/components/ui/FormattedMessage";
-import { AnimatedMessage } from "@/components/ui/AnimatedMessage";
 import {
   Bot,
   Upload,
@@ -916,7 +915,7 @@ ${msg}
                                   <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                                 ) : (
                                   <div className="text-sm">
-                                    <AnimatedMessage content={message.content} />
+                                    <FormattedMessage content={message.content} animated={true} animationSpeed={4} />
                                   </div>
                                 )}
                               </div>
@@ -1298,7 +1297,7 @@ ${msg}
                                     {message.type === "user" ? (
                                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                                     ) : (
-                                      <AnimatedMessage content={message.content} />
+                                      <FormattedMessage content={message.content} animated={true} animationSpeed={4} />
                                     )}
                                     {message.summaryType && message.type === "assistant" && (
                                       <Badge className={`mt-3 ${getSummaryTypeColor(message.summaryType)}`}>
@@ -1383,7 +1382,7 @@ ${msg}
                           </div>
                         </div>
                         <div className="bg-muted p-4 rounded-lg border border-border">
-                          <AnimatedMessage content={summary.summary} />
+                          <FormattedMessage content={summary.summary} animated={false} />
                         </div>
                       </CardContent>
                     </Card>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -6,13 +6,78 @@ import remarkGfm from 'remark-gfm';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import mermaid from 'mermaid';
 
 // Import required CSS
 import 'katex/dist/katex.min.css';
 
+// Initialize Mermaid
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  securityLevel: 'loose',
+  fontFamily: 'monospace',
+});
+
 interface FormattedMessageProps {
   content: string;
   className?: string;
+  animated?: boolean;
+  animationSpeed?: number;
+  onAnimationComplete?: () => void;
+}
+
+// Store completed animations to prevent re-animation
+const completedAnimations = new Set<string>();
+
+// Typing animation hook
+function useTypingAnimation(text: string, speed: number = 4, skipAnimation: boolean = false) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [isComplete, setIsComplete] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const indexRef = useRef(0);
+
+  useEffect(() => {
+    if (!text) return;
+    
+    // If we should skip animation, show all text immediately
+    if (skipAnimation) {
+      setDisplayedText(text);
+      setIsComplete(true);
+      return;
+    }
+    
+    // Reset state when text changes
+    setDisplayedText("");
+    setIsComplete(false);
+    indexRef.current = 0;
+
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    // Start typing animation
+    intervalRef.current = setInterval(() => {
+      if (indexRef.current < text.length) {
+        setDisplayedText(text.slice(0, indexRef.current + 1));
+        indexRef.current++;
+      } else {
+        setIsComplete(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      }
+    }, speed);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [text, speed, skipAnimation]);
+
+  return { displayedText, isComplete };
 }
 
 // Copy to clipboard utility
@@ -96,28 +161,118 @@ const CodeBlock: React.FC<{
   );
 };
 
-// Mermaid Diagram Component - Simplified to prevent errors
+// Mermaid Diagram Component - Renders actual diagrams
 const MermaidDiagram: React.FC<{ content: string }> = ({ content }) => {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [svg, setSvg] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    const renderDiagram = async () => {
+      if (!elementRef.current || !content) return;
+
+      try {
+        // Generate unique ID for this diagram
+        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Render the diagram
+        const { svg: renderedSvg } = await mermaid.render(id, content.trim());
+        setSvg(renderedSvg);
+        setError('');
+      } catch (err) {
+        console.error('Mermaid rendering error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to render diagram');
+        setSvg('');
+      }
+    };
+
+    renderDiagram();
+  }, [content]);
+
+  if (error) {
+    return (
+      <div className="my-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+        <p className="text-sm text-destructive font-semibold mb-2">⚠️ Mermaid Diagram Error:</p>
+        <pre className="text-xs text-destructive/80 p-3 rounded overflow-x-auto font-mono">
+          {error}
+        </pre>
+        <details className="mt-2">
+          <summary className="text-xs text-muted-foreground cursor-pointer">Show diagram code</summary>
+          <pre className="text-xs bg-background/50 p-3 rounded overflow-x-auto font-mono mt-2">
+            {content}
+          </pre>
+        </details>
+      </div>
+    );
+  }
+
   return (
-    <div className="my-4 p-4 bg-muted border border-border rounded-lg">
-      <p className="text-sm text-muted-foreground mb-2">Mermaid Diagram:</p>
-      <pre className="text-xs bg-background p-3 rounded overflow-x-auto font-mono">
-        {content}
-      </pre>
+    <div 
+      ref={elementRef}
+      className="my-4 p-4 bg-muted/50 border border-border rounded-lg overflow-x-auto"
+    >
+      {svg ? (
+        <div 
+          dangerouslySetInnerHTML={{ __html: svg }}
+          className="flex justify-center items-center"
+        />
+      ) : (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-3 text-sm text-muted-foreground">Rendering diagram...</span>
+        </div>
+      )}
     </div>
   );
 };
 
 export const FormattedMessage: React.FC<FormattedMessageProps> = ({ 
   content, 
-  className = "" 
+  className = "",
+  animated = false,
+  animationSpeed = 4,
+  onAnimationComplete
 }) => {
-  // Process content for Mermaid diagrams
-  const processedContent = content.replace(
+  const [isInstantComplete, setIsInstantComplete] = useState(false);
+  
+  // Check if this content was already animated
+  useEffect(() => {
+    if (completedAnimations.has(content)) {
+      setIsInstantComplete(true);
+    } else {
+      setIsInstantComplete(false);
+    }
+  }, [content]);
+
+  const { displayedText, isComplete } = useTypingAnimation(
+    content,
+    animationSpeed,
+    !animated || isInstantComplete
+  );
+
+  // Mark animation as complete and store in memory
+  useEffect(() => {
+    if (isComplete && animated && !isInstantComplete) {
+      completedAnimations.add(content);
+      onAnimationComplete?.();
+    }
+  }, [isComplete, animated, isInstantComplete, content, onAnimationComplete]);
+
+  // Use the appropriate text based on animation state
+  const textToRender = animated && !isInstantComplete ? displayedText : content;
+  const showCursor = animated && !isComplete && !isInstantComplete;
+
+  // Extract Mermaid diagrams before processing
+  const mermaidDiagrams: { [key: string]: string } = {};
+  let mermaidCounter = 0;
+  
+  const processedContent = textToRender.replace(
     /```mermaid\n([\s\S]*?)\n```/g,
     (match, diagramContent) => {
-      const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      return `<div data-mermaid-id="${id}" data-mermaid-content="${encodeURIComponent(diagramContent)}"></div>`;
+      const placeholder = `MERMAIDPLACEHOLDER${mermaidCounter}ENDPLACEHOLDER`;
+      mermaidDiagrams[placeholder] = diagramContent;
+      mermaidCounter++;
+      return placeholder;
     }
   );
 
@@ -158,11 +313,47 @@ export const FormattedMessage: React.FC<FormattedMessageProps> = ({
               {children}
             </h6>
           ),
-          p: ({ children }) => (
-            <p className="text-foreground leading-relaxed mb-4 last:mb-0">
-              {children}
-            </p>
-          ),
+          p: ({ children }) => {
+            // Check if this paragraph contains a Mermaid placeholder
+            let textContent = '';
+            
+            // Extract text from various possible child structures
+            if (typeof children === 'string') {
+              textContent = children;
+            } else if (Array.isArray(children)) {
+              // Flatten and extract text from all children
+              textContent = children.map(child => {
+                if (typeof child === 'string') return child;
+                if (React.isValidElement(child)) {
+                  const props = child.props as { children?: any };
+                  if (props.children) {
+                    return String(props.children);
+                  }
+                }
+                return '';
+              }).join('');
+            } else if (React.isValidElement(children)) {
+              const props = children.props as { children?: any };
+              if (props.children) {
+                textContent = String(props.children);
+              }
+            }
+            
+            // Check if we have a Mermaid placeholder
+            const placeholderMatch = textContent.match(/MERMAIDPLACEHOLDER(\d+)ENDPLACEHOLDER/);
+            if (placeholderMatch) {
+              const placeholder = placeholderMatch[0];
+              if (mermaidDiagrams[placeholder]) {
+                return <MermaidDiagram content={mermaidDiagrams[placeholder]} />;
+              }
+            }
+            
+            return (
+              <p className="text-foreground leading-relaxed mb-4 last:mb-0">
+                {children}
+              </p>
+            );
+          },
           strong: ({ children }) => (
             <strong className="font-semibold text-foreground">
               {children}
@@ -303,22 +494,13 @@ export const FormattedMessage: React.FC<FormattedMessageProps> = ({
             }
             return <input type={type} {...props} />;
           },
-          // Custom div handler for Mermaid diagrams
-          div: ({ children, ...props }: any) => {
-            try {
-              if (props['data-mermaid-id'] && props['data-mermaid-content']) {
-                const content = decodeURIComponent(props['data-mermaid-content'] as string);
-                return <MermaidDiagram content={content} />;
-              }
-            } catch (error) {
-              console.error('Mermaid diagram error:', error);
-            }
-            return <div {...props}>{children}</div>;
-          },
         }}
       >
         {processedContent}
       </ReactMarkdown>
+      {showCursor && (
+        <span className="inline-block w-0.5 h-4 bg-current animate-pulse ml-0.5 opacity-75"></span>
+      )}
     </div>
   );
 };
