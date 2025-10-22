@@ -126,37 +126,66 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       setUserData(data);
 
-      // If user has Google access, restore classroom data
+      // If user has Google access, validate tokens and sync data
       if (data?.hasGoogleAccess && data?.googleAccessToken) {
-        // First try to get cached classroom data
-        let classroomData = getClassroomDataFromStorage(user.uid);
-        
-        if (!classroomData) {
-          // If no cache, fetch fresh data from Google Classroom
+        try {
+          // Import token validation functions
+          const { getValidGoogleToken } = await import('@/lib/firebase');
+          
+          // Validate and refresh token if needed
+          console.log('🔑 Validating Google OAuth token...');
+          const validToken = await getValidGoogleToken(user.uid);
+          
+          if (!validToken) {
+            console.warn('⚠️ Google token is invalid or expired');
+            return;
+          }
+          
+          console.log('✅ Google token validated successfully');
+          
+          // Sync Google Classroom data to database
           try {
-            console.log('🔄 Fetching fresh Google Classroom data...');
-            const freshData = await syncGoogleClassroomData(data.googleAccessToken);
-            classroomData = {
+            console.log('🔄 Auto-syncing Google Classroom data...');
+            const freshData = await syncGoogleClassroomData(validToken, user.uid);
+            
+            // Cache classroom data locally
+            saveClassroomDataToStorage(user.uid, freshData.courses, freshData.assignments);
+            
+            // Store in global state for immediate access
+            (window as any).cachedClassroomData = {
               courses: freshData.courses,
               assignments: freshData.assignments,
-              cachedAt: new Date().toISOString()
+              lastSynced: new Date()
             };
-            saveClassroomDataToStorage(user.uid, freshData.courses, freshData.assignments);
-            console.log('✅ Fresh Google Classroom data fetched and cached');
-          } catch (error) {
-            console.warn('Failed to fetch fresh Google Classroom data:', error);
+            
+            console.log('✅ Google Classroom data synced to database');
+          } catch (syncError) {
+            console.warn('Failed to sync Google Classroom data:', syncError);
+            
+            // Fallback to cached data if sync fails
+            const classroomData = getClassroomDataFromStorage(user.uid);
+            if (classroomData) {
+              console.log('ℹ️ Using cached Google Classroom data as fallback');
+              (window as any).cachedClassroomData = {
+                courses: classroomData.courses,
+                assignments: classroomData.assignments,
+                lastSynced: new Date(classroomData.cachedAt)
+              };
+            }
           }
-        } else {
-          console.log('✅ Restored Google Classroom data from cache');
-        }
-
-        // Store classroom data in a global state for other components to access
-        if (classroomData) {
-          (window as any).cachedClassroomData = {
-            courses: classroomData.courses,
-            assignments: classroomData.assignments,
-            lastSynced: new Date(classroomData.cachedAt)
-          };
+        } catch (error) {
+          console.error('Error validating token and syncing data:', error);
+          
+          // Use cached data as fallback
+          const classroomData = getClassroomDataFromStorage(user.uid);
+          if (classroomData) {
+            console.log('ℹ️ Using cached Google Classroom data as fallback');
+            (window as any).cachedClassroomData = {
+              courses: classroomData.courses,
+              assignments: classroomData.assignments,
+              lastSynced: new Date(classroomData.cachedAt)
+            };
+          }
         }
       }
     } catch (error) {

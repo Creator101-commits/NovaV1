@@ -272,6 +272,18 @@ export class OptimizedStorage {
     return newClass;
   }
 
+  async updateClass(id: string, classData: Partial<InsertClass>): Promise<Class | undefined> {
+    const updatedClass = await this.baseStorage.updateClass(id, classData);
+    
+    if (updatedClass) {
+      // Invalidate cache
+      const cacheKey = this.getClassesCacheKey(updatedClass.userId);
+      this.queryCache.delete(cacheKey);
+    }
+    
+    return updatedClass;
+  }
+
   // Optimized assignment methods
   async getAssignmentsByUserId(userId: string): Promise<Assignment[]> {
     const cacheKey = this.getAssignmentsCacheKey(userId);

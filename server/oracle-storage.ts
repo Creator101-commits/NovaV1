@@ -443,6 +443,8 @@ export class OracleStorage {
       teacherName: row.TEACHER_NAME,
       teacherEmail: row.TEACHER_EMAIL,
       color: row.COLOR,
+      source: row.SOURCE || 'manual',
+      syncStatus: row.SYNC_STATUS || 'synced',
       createdAt: row.CREATED_AT
     }));
   }
@@ -486,7 +488,93 @@ export class OracleStorage {
       teacherName: classData.teacherName || null,
       teacherEmail: classData.teacherEmail || null,
       color: classData.color || '#42a5f5',
+      source: classData.source || 'manual',
+      syncStatus: classData.syncStatus || 'synced',
       createdAt
+    };
+  }
+
+  async updateClass(id: string, classData: Partial<InsertClass>): Promise<Class | undefined> {
+    await this.initialize();
+    console.log('📚 Updating class:', id, classData);
+    
+    const setParts = [];
+    const params: any = { id };
+    
+    if (classData.name !== undefined) {
+      setParts.push('name = :name');
+      params.name = classData.name;
+    }
+    if (classData.section !== undefined) {
+      setParts.push('section = :section');
+      params.section = classData.section;
+    }
+    if (classData.description !== undefined) {
+      setParts.push('description = :description');
+      params.description = classData.description;
+    }
+    if (classData.teacherName !== undefined) {
+      setParts.push('teacher_name = :teacherName');
+      params.teacherName = classData.teacherName;
+    }
+    if (classData.teacherEmail !== undefined) {
+      setParts.push('teacher_email = :teacherEmail');
+      params.teacherEmail = classData.teacherEmail;
+    }
+    if (classData.color !== undefined) {
+      setParts.push('color = :color');
+      params.color = classData.color;
+    }
+    if (classData.source !== undefined) {
+      setParts.push('source = :source');
+      params.source = classData.source;
+    }
+    if (classData.syncStatus !== undefined) {
+      setParts.push('sync_status = :syncStatus');
+      params.syncStatus = classData.syncStatus;
+    }
+    if (classData.googleClassroomId !== undefined) {
+      setParts.push('google_classroom_id = :googleClassroomId');
+      params.googleClassroomId = classData.googleClassroomId;
+    }
+    
+    if (setParts.length === 0) {
+      console.log('⚠️ No fields to update');
+      return this.getClassById(id);
+    }
+    
+    const sql = `UPDATE classes SET ${setParts.join(', ')} WHERE id = :id`;
+    await executeQuery(sql, params);
+    
+    console.log('✅ Class updated successfully');
+    return this.getClassById(id);
+  }
+
+  async getClassById(id: string): Promise<Class | undefined> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM classes WHERE id = :id',
+      { id }
+    );
+    
+    if (!result.rows || result.rows.length === 0) {
+      return undefined;
+    }
+    
+    const row: any = result.rows[0];
+    return {
+      id: row.ID,
+      userId: row.USER_ID,
+      googleClassroomId: row.GOOGLE_CLASSROOM_ID,
+      name: row.NAME,
+      section: row.SECTION,
+      description: row.DESCRIPTION,
+      teacherName: row.TEACHER_NAME,
+      teacherEmail: row.TEACHER_EMAIL,
+      color: row.COLOR,
+      source: row.SOURCE || 'manual',
+      syncStatus: row.SYNC_STATUS || 'synced',
+      createdAt: row.CREATED_AT
     };
   }
 
@@ -528,12 +616,15 @@ export class OracleStorage {
       userId: row.USER_ID,
       classId: row.CLASS_ID,
       googleClassroomId: row.GOOGLE_CLASSROOM_ID,
+      googleCalendarId: row.GOOGLE_CALENDAR_ID || null,
       title: row.TITLE,
       description: row.DESCRIPTION,
       dueDate: row.DUE_DATE,
       status: row.STATUS,
       priority: row.PRIORITY,
       isCustom: Boolean(row.IS_CUSTOM),
+      source: row.SOURCE || 'manual',
+      syncStatus: row.SYNC_STATUS || 'synced',
       completedAt: row.COMPLETED_AT,
       createdAt: row.CREATED_AT
     }));
@@ -577,12 +668,15 @@ export class OracleStorage {
       userId: assignment.userId,
       classId: assignment.classId || null,
       googleClassroomId: assignment.googleClassroomId || null,
+      googleCalendarId: assignment.googleCalendarId || null,
       title: assignment.title,
       description: assignment.description || null,
       dueDate: assignment.dueDate || null,
       status: assignment.status || 'pending',
       priority: assignment.priority || 'medium',
       isCustom: assignment.isCustom || false,
+      source: assignment.source || 'manual',
+      syncStatus: assignment.syncStatus || 'synced',
       completedAt: assignment.completedAt || null,
       createdAt
     };
@@ -651,12 +745,15 @@ export class OracleStorage {
       userId: row.USER_ID,
       classId: row.CLASS_ID,
       googleClassroomId: row.GOOGLE_CLASSROOM_ID,
+      googleCalendarId: row.GOOGLE_CALENDAR_ID || null,
       title: row.TITLE,
       description: row.DESCRIPTION,
       dueDate: row.DUE_DATE,
       status: row.STATUS,
       priority: row.PRIORITY,
       isCustom: Boolean(row.IS_CUSTOM),
+      source: row.SOURCE || 'manual',
+      syncStatus: row.SYNC_STATUS || 'synced',
       completedAt: row.COMPLETED_AT,
       createdAt: row.CREATED_AT
     };

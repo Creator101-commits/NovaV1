@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,10 @@ import { useGoogleClassroom } from '@/hooks/useGoogleClassroom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePersistentData } from '@/hooks/usePersistentData';
 import { useToast } from '@/hooks/use-toast';
+import { ErrorHandler } from '@/lib/errorHandler';
+import { AssignmentSkeleton } from '@/components/LoadingSkeletons';
+import { NoAssignments, ErrorState, EmptyState } from '@/components/EmptyStates';
+import { assignmentSchema, validateForm } from '@/lib/validationSchemas';
 import { 
   Calendar, 
   BookOpen, 
@@ -50,87 +54,174 @@ export default function Assignments() {
     priority: 'medium' as 'low' | 'medium' | 'high'
   });
 
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
     setIsSyncing(true);
     await syncClassroomData(true); // true = show toast notifications for manual sync
     setIsSyncing(false);
-  };
+  }, [syncClassroomData]);
 
-  const markAssignmentComplete = (assignmentId: string) => {
+  const markAssignmentComplete = useCallback(async (assignmentId: string) => {
     if (!user?.uid) return;
 
-    const storageKey = `custom_assignments_${user.uid}`;
-    const assignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const updatedAssignments = assignments.map((assignment: any) => 
-      assignment.id === assignmentId 
-        ? { ...assignment, status: 'completed', completedAt: new Date().toISOString() }
-        : assignment
-    );
-    localStorage.setItem(storageKey, JSON.stringify(updatedAssignments));
-    
-    toast({
-      title: "Assignment Completed",
-      description: "Great job! Assignment marked as complete.",
-    });
-    
-    // Refresh the assignments list
-    syncClassroomData(false);
-  };
-
-  const deleteCustomAssignment = (assignmentId: string) => {
-    if (!user?.uid) return;
-
-    const storageKey = `custom_assignments_${user.uid}`;
-    const assignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const updatedAssignments = assignments.filter((assignment: any) => assignment.id !== assignmentId);
-    localStorage.setItem(storageKey, JSON.stringify(updatedAssignments));
-    
-    toast({
-      title: "Assignment Deleted",
-      description: "Custom assignment has been deleted.",
-    });
-    
-    // Refresh the assignments list
-    syncClassroomData(false);
-  };
-
-  const handleCreateAssignment = async () => {
-    if (!newAssignment.title.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter an assignment title.",
-        variant: "destructive",
+    try {
+      // Update in database via API
+      const response = await fetch(`/api/assignments/${assignmentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.uid,
+        },
+        body: JSON.stringify({
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark assignment as complete');
+      }
+
+      // Update localStorage cache
+      const storageKey = `custom_assignments_${user.uid}`;
+      const assignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const updatedAssignments = assignments.map((assignment: any) => 
+        assignment.id === assignmentId 
+          ? { ...assignment, status: 'completed', completedAt: new Date().toISOString() }
+          : assignment
+      );
+      localStorage.setItem(storageKey, JSON.stringify(updatedAssignments));
+      
+      toast({
+        title: "Assignment Completed",
+        description: "Great job! Assignment marked as complete.",
+      });
+      
+      // Refresh the assignments list
+      syncClassroomData(false);
+    } catch (error: any) {
+      ErrorHandler.handle(
+        error,
+        'Failed to mark assignment as complete. Please try again.',
+        { context: 'markAssignmentComplete' }
+      );
+    }
+  }, [user, syncClassroomData]);
+
+  const deleteCustomAssignment = useCallback(async (assignmentId: string) => {
+    if (!user?.uid) return;
+
+    try {
+      // Delete from database via API
+      const response = await fetch(`/api/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-id': user.uid,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete assignment');
+      }
+
+      // Update localStorage cache
+      const storageKey = `custom_assignments_${user.uid}`;
+      const assignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const updatedAssignments = assignments.filter((assignment: any) => assignment.id !== assignmentId);
+      localStorage.setItem(storageKey, JSON.stringify(updatedAssignments));
+      
+      toast({
+        title: "Assignment Deleted",
+        description: "Custom assignment has been deleted.",
+      });
+      
+      // Refresh the assignments list
+      syncClassroomData(false);
+    } catch (error: any) {
+      ErrorHandler.handle(
+        error,
+        'Failed to delete assignment. Please try again.',
+        { context: 'deleteCustomAssignment' }
+      );
+    }
+  }, [user, syncClassroomData]);
+
+  const handleCreateAssignment = useCallback(async () => {
+    // Validate form data with Zod
+    const validation = validateForm(assignmentSchema, newAssignment);
+    
+    if (!validation.success) {
+      ErrorHandler.handleValidationError(validation.errors);
+      return;
+    }
+
+    if (!user?.uid) {
+      ErrorHandler.handleAuthError(new Error('User not authenticated'));
       return;
     }
 
     setIsAddingAssignment(true);
+    
+    // Prepare assignment data
+    let dueDate = null;
+    if (newAssignment.dueDate) {
+      const dateTime = newAssignment.dueTime 
+        ? `${newAssignment.dueDate}T${newAssignment.dueTime}:00`
+        : `${newAssignment.dueDate}T23:59:59`;
+      dueDate = new Date(dateTime).toISOString();
+    }
+
+    const assignmentData = {
+      title: newAssignment.title,
+      description: newAssignment.description || null,
+      dueDate,
+      classId: newAssignment.classId === 'none' ? null : newAssignment.classId || null,
+      priority: newAssignment.priority,
+      status: 'pending',
+      isCustom: true,
+      source: 'manual',
+      syncStatus: 'synced',
+    };
+
+    // OPTIMISTIC UPDATE: Create temporary assignment with temporary ID
+    const tempId = `temp-${Date.now()}`;
+    const tempAssignment = {
+      ...assignmentData,
+      id: tempId,
+      createdAt: new Date().toISOString(),
+      userId: user.uid,
+      _optimistic: true, // Flag for UI to show pending state
+    };
+
+    // Immediately update UI (localStorage cache)
+    const storageKey = `custom_assignments_${user.uid}`;
+    const existingAssignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const optimisticAssignments = [...existingAssignments, tempAssignment];
+    localStorage.setItem(storageKey, JSON.stringify(optimisticAssignments));
+    
+    // Trigger re-render with optimistic data
+    await syncClassroomData(false);
+
     try {
-      let dueDate = null;
-      if (newAssignment.dueDate) {
-        const dateTime = newAssignment.dueTime 
-          ? `${newAssignment.dueDate}T${newAssignment.dueTime}:00`
-          : `${newAssignment.dueDate}T23:59:59`;
-        dueDate = new Date(dateTime).toISOString();
+      // Save to database via API
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.uid,
+        },
+        body: JSON.stringify(assignmentData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create assignment');
       }
 
-      const assignmentData = {
-        id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        title: newAssignment.title,
-        description: newAssignment.description || null,
-        dueDate,
-        classId: newAssignment.classId === 'none' ? null : newAssignment.classId || null,
-        priority: newAssignment.priority,
-        status: 'pending',
-        isCustom: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const createdAssignment = await response.json();
 
-      // Save to localStorage instead of API call
-      const storageKey = `custom_assignments_${user?.uid}`;
-      const existingAssignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const updatedAssignments = [...existingAssignments, assignmentData];
+      // Replace temporary assignment with real one
+      const updatedAssignments = optimisticAssignments.map(a => 
+        a.id === tempId ? { ...createdAssignment, _optimistic: false } : a
+      );
       localStorage.setItem(storageKey, JSON.stringify(updatedAssignments));
 
       toast({
@@ -149,19 +240,24 @@ export default function Assignments() {
       });
       setShowAddDialog(false);
 
-      // Refresh data to include new assignment
+      // Refresh data to include real assignment
       await syncClassroomData(false);
       
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create assignment.",
-        variant: "destructive",
-      });
+      // ROLLBACK: Remove optimistic assignment on failure
+      const rollbackAssignments = optimisticAssignments.filter(a => a.id !== tempId);
+      localStorage.setItem(storageKey, JSON.stringify(rollbackAssignments));
+      await syncClassroomData(false); // Update UI to remove failed assignment
+      
+      ErrorHandler.handle(
+        error,
+        'Failed to create assignment. Your changes have been reverted.',
+        { context: 'handleCreateAssignment' }
+      );
     } finally {
       setIsAddingAssignment(false);
     }
-  };
+  }, [user, newAssignment, syncClassroomData, toast]);
 
   const filteredAssignments = useMemo(() => {
     return assignments.filter(assignment => {
@@ -424,37 +520,29 @@ export default function Assignments() {
         </CardContent>
       </Card>
 
-      {(isLoading || isRestoring) && !assignments.length && (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            {isRestoring ? 'Restoring your assignments...' : 'Loading your assignments...'}
-          </p>
-          {isRestoring && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Fetching your Google Classroom data from cache
-            </p>
-          )}
-        </div>
-      )}
+      {(isLoading || isRestoring) && !assignments.length ? (
+        <AssignmentSkeleton />
+      ) : null}
 
-      {!isLoading && assignments.length === 0 && (
-        <Alert>
-          <BookOpen className="h-4 w-4" />
-          <AlertDescription>
-            No assignments found. Click "Add Assignment" to create your first custom assignment, or sync with Google Classroom if you have assignments there.
-          </AlertDescription>
-        </Alert>
-      )}
+      {!isLoading && !isRestoring && assignments.length === 0 ? (
+        <NoAssignments onAdd={() => setShowAddDialog(true)} />
+      ) : null}
 
-      {!isLoading && filteredAssignments.length === 0 && assignments.length > 0 && (
-        <Alert>
-          <Search className="h-4 w-4" />
-          <AlertDescription>
-            No assignments match your current filters. Try adjusting your search or filter criteria.
-          </AlertDescription>
-        </Alert>
-      )}
+      {!isLoading && !isRestoring && filteredAssignments.length === 0 && assignments.length > 0 ? (
+        <EmptyState
+          icon={<Search className="h-12 w-12" />}
+          title="No matching assignments"
+          description="No assignments match your current filters. Try adjusting your search or filter criteria."
+          action={{
+            label: "Clear Filters",
+            onClick: () => {
+              setSearchTerm('');
+              setStatusFilter('all');
+              setClassFilter('all');
+            }
+          }}
+        />
+      ) : null}
 
       <div className="space-y-4">
         {filteredAssignments.map((assignment) => {

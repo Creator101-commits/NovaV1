@@ -1,5 +1,6 @@
 /**
  * Optimized dock navigation with smooth animations and better UX
+ * Now with mobile-responsive touch targets (44px minimum)
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAppState } from '@/contexts/AppStateContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useMobileDetection } from '@/lib/mobileDetection';
 import {
   Home,
   Calendar,
@@ -98,9 +100,13 @@ interface OptimizedDockProps {
 export function OptimizedDock({ className }: OptimizedDockProps) {
   const [location, setLocation] = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
-  // Hover state removed
   const { state } = useAppState();
   const { preferences } = state;
+  const { isMobile, isTouch, screenSize } = useMobileDetection();
+
+  // Calculate touch target size based on device
+  const touchTargetSize = isMobile ? 44 : isTouch ? 40 : 36; // iOS HIG minimum 44px
+  const iconSize = isMobile ? 24 : 20;
 
 
   // Auto-hide dock when scrolling
@@ -197,7 +203,10 @@ export function OptimizedDock({ className }: OptimizedDockProps) {
     // Static version for users who prefer reduced motion
     return (
       <div className={cn('fixed bottom-6 left-0 right-0 z-50 flex justify-center', className)}>
-        <div className="flex items-center justify-center space-x-2 bg-background border border-border rounded-2xl px-4 py-3 shadow-lg">
+        <div className={cn(
+          'flex items-center justify-center bg-background border border-border rounded-2xl shadow-lg',
+          isMobile ? 'space-x-1 px-2 py-2' : 'space-x-2 px-4 py-3'
+        )}>
           {dockItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
@@ -207,14 +216,20 @@ export function OptimizedDock({ className }: OptimizedDockProps) {
                 key={item.id}
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  'relative p-3 rounded-xl transition-colors flex items-center justify-center',
+                  'relative rounded-xl transition-colors flex items-center justify-center',
                   isActive
                     ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
+                style={{
+                  minWidth: `${touchTargetSize}px`,
+                  minHeight: `${touchTargetSize}px`,
+                  padding: isMobile ? '10px' : '12px',
+                }}
                 title={item.label}
+                aria-label={item.label}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className={cn(isMobile ? 'h-6 w-6' : 'h-5 w-5')} />
                 {item.badge && (
                   <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs">
                     {item.badge}
@@ -236,20 +251,29 @@ export function OptimizedDock({ className }: OptimizedDockProps) {
     >
       {/* Main dock */}
       <motion.div
-        className="flex items-center justify-center space-x-1 bg-background border border-border rounded-2xl px-4 py-3 shadow-lg"
+        className={cn(
+          'flex items-center justify-center bg-background border border-border rounded-2xl shadow-lg',
+          isMobile ? 'space-x-0.5 px-2 py-2' : 'space-x-1 px-4 py-3'
+        )}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
         {/* Expand/Collapse button */}
         <motion.button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-2 rounded-lg transition-colors flex items-center justify-center"
+          className="rounded-lg transition-colors flex items-center justify-center"
+          style={{
+            minWidth: `${touchTargetSize}px`,
+            minHeight: `${touchTargetSize}px`,
+            padding: isMobile ? '8px' : '10px',
+          }}
           whileTap={{ scale: 0.95 }}
+          aria-label={isExpanded ? 'Collapse dock' : 'Expand dock'}
         >
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.3 }}
           >
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <ChevronUp className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-muted-foreground')} />
           </motion.div>
         </motion.button>
 
@@ -257,7 +281,6 @@ export function OptimizedDock({ className }: OptimizedDockProps) {
         {dockItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = location === item.path;
-          // Hover state removed
 
           return (
             <motion.div
@@ -270,13 +293,20 @@ export function OptimizedDock({ className }: OptimizedDockProps) {
               <button
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  'relative p-3 rounded-xl transition-all duration-200 flex items-center justify-center',
+                  'relative rounded-xl transition-all duration-200 flex items-center justify-center',
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'text-muted-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
+                style={{
+                  minWidth: `${touchTargetSize}px`,
+                  minHeight: `${touchTargetSize}px`,
+                  padding: isMobile ? '10px' : '12px',
+                }}
+                aria-label={item.label}
+                title={item.label}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className={cn(isMobile ? 'h-6 w-6' : 'h-5 w-5')} />
                 
                 {/* Badge */}
                 {item.badge && (

@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import GlassSurface from "@/components/ui/GlassSurface";
+import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 
 export const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -49,11 +50,15 @@ export const Navigation = () => {
             <a href="#how-it-works" className="text-white/80 hover:text-blue-400 transition-colors">How It Works</a>
             <a href="#testimonials" className="text-white/80 hover:text-blue-400 transition-colors">Testimonials</a>
             
+            {/* Network Status Indicator */}
+            <NetworkStatusIndicator />
+            
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
               className="rounded-lg text-white/80 hover:text-white hover:bg-white/10"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>

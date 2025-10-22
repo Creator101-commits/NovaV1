@@ -204,7 +204,11 @@ export async function syncGoogleCalendarOnLogin(accessToken: string, userId: str
       }))
     );
 
-    // Store in localStorage for immediate access
+    // NOTE: We intentionally DO NOT sync calendar events to database as assignments
+    // Calendar events are kept separate and only cached in localStorage
+    console.log(`📅 Fetched ${allEvents.length} calendar events (cache only, not synced to DB)`);
+
+    // Store in localStorage for immediate access (cache only)
     localStorage.setItem(`google_calendars_${userId}`, JSON.stringify(calendars));
     localStorage.setItem(`google_events_${userId}`, JSON.stringify(allEvents));
     localStorage.setItem(`google_calendar_last_sync_${userId}`, new Date().toISOString());

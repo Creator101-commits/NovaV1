@@ -195,6 +195,8 @@ export class MemStorage implements IStorage {
       description: classData.description ?? null,
       teacherName: classData.teacherName ?? null,
       teacherEmail: classData.teacherEmail ?? null,
+      source: classData.source ?? null,
+      syncStatus: classData.syncStatus ?? null,
       createdAt: new Date() 
     };
     this.classes.set(id, newClass);
@@ -216,6 +218,7 @@ export class MemStorage implements IStorage {
       ...assignmentData, 
       id, 
       googleClassroomId: assignmentData.googleClassroomId ?? null,
+      googleCalendarId: assignmentData.googleCalendarId ?? null,
       description: assignmentData.description ?? null,
       classId: assignmentData.classId ?? null,
       status: assignmentData.status ?? null,
@@ -223,6 +226,8 @@ export class MemStorage implements IStorage {
       priority: assignmentData.priority ?? null,
       isCustom: assignmentData.isCustom ?? null,
       completedAt: assignmentData.completedAt ?? null,
+      source: assignmentData.source ?? null,
+      syncStatus: assignmentData.syncStatus ?? null,
       createdAt: new Date() 
     };
     this.assignments.set(id, assignment);

@@ -28,48 +28,67 @@ export const useGoogleClassroom = () => {
     try {
       let googleData: { courses: any[], assignments: any[] } = { courses: [], assignments: [] };
       let databaseClasses: any[] = [];
+      let databaseAssignments: any[] = [];
       
       // Fetch Google Classroom data if authenticated
       if (userData?.googleAccessToken) {
         try {
-          googleData = await syncGoogleClassroomData(userData.googleAccessToken);
+          googleData = await syncGoogleClassroomData(userData.googleAccessToken, user?.uid);
         } catch (googleError) {
           console.warn('Failed to sync Google Classroom data:', googleError);
           // Continue to fetch local data even if Google sync fails
         }
       }
 
-      // Fetch custom classes from database
+      // Fetch classes and assignments from database
       if (user?.uid) {
         try {
-          const response = await fetch(`/api/users/${user.uid}/classes`);
-          if (response.ok) {
-            databaseClasses = await response.json();
+          // Fetch classes
+          const classesResponse = await fetch(`/api/classes`, {
+            headers: {
+              'x-user-id': user.uid,
+            },
+          });
+          if (classesResponse.ok) {
+            databaseClasses = await classesResponse.json();
             console.log('Fetched database classes:', databaseClasses.length);
           } else {
-            console.warn('Failed to fetch database classes:', response.status);
+            console.warn('Failed to fetch database classes:', classesResponse.status);
+          }
+
+          // Fetch assignments from database
+          const assignmentsResponse = await fetch(`/api/users/${user.uid}/assignments`, {
+            headers: {
+              'x-user-id': user.uid,
+            },
+          });
+          if (assignmentsResponse.ok) {
+            databaseAssignments = await assignmentsResponse.json();
+            console.log('Fetched database assignments:', databaseAssignments.length);
+          } else {
+            console.warn('Failed to fetch database assignments:', assignmentsResponse.status);
           }
         } catch (dbError) {
-          console.warn('Failed to fetch database classes:', dbError);
+          console.warn('Failed to fetch database data:', dbError);
         }
       }
 
-      // Fetch custom assignments from localStorage
-      let customAssignments = [];
-      if (user?.uid) {
-        const storageKey = `custom_assignments_${user.uid}`;
-        customAssignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      }
+      // Merge Google Classroom classes with database classes
+      // Filter out Google classes that are already in database to avoid duplicates
+      const googleClassIds = new Set(googleData.courses.map(c => c.id));
+      const uniqueDatabaseClasses = databaseClasses.filter(c => !c.googleClassroomId || !googleClassIds.has(c.googleClassroomId));
+      const allCourses = [...googleData.courses, ...uniqueDatabaseClasses];
 
-      // Merge Google Classroom data with database classes
-      const allCourses = [...googleData.courses, ...databaseClasses];
-      const allAssignments = [...googleData.assignments, ...customAssignments];
+      // Merge assignments - database is source of truth
+      // Google Classroom assignments are already in database from sync endpoint
+      const allAssignments = databaseAssignments;
       
       console.log('Classroom sync results:', {
         googleCourses: googleData.courses.length,
         databaseClasses: databaseClasses.length,
+        uniqueDatabaseClasses: uniqueDatabaseClasses.length,
         googleAssignments: googleData.assignments.length,
-        customAssignments: customAssignments.length,
+        databaseAssignments: databaseAssignments.length,
         totalCourses: allCourses.length,
         totalAssignments: allAssignments.length,
         sampleCourse: allCourses[0], // Log first course for debugging
@@ -84,7 +103,7 @@ export const useGoogleClassroom = () => {
         lastSynced: new Date(),
       }));
 
-      // Save to localStorage for persistence
+      // Save to localStorage for cache/fallback only
       if (user?.uid) {
         try {
           const dataToCache = {

@@ -17,6 +17,36 @@ body {
   font-optical-sizing: auto;
 }
 
+/* Accessibility: Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Accessibility: Focus visible styles */
+.focus-visible:focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
 /* Space Grotesk font classes */
 .space-grotesk-light {
   font-family: "Space Grotesk", sans-serif;
@@ -146,35 +176,6 @@ body {
 
   .dark .notion-card {
     background: hsl(0, 0%, 0%);
-  }
-
-  .notion-hover {
-    /* Hover effects removed */
-  }
-
-  /* Enhanced button effects - hover removed */
-  .btn-hover {
-    /* Hover effects removed */
-  }
-
-  /* Enhanced card effects - hover removed */
-  .card-hover {
-    /* Hover effects removed */
-  }
-
-  /* Enhanced link effects - hover removed */
-  .link-hover {
-    /* Hover effects removed */
-  }
-
-  /* Enhanced icon effects - hover removed */
-  .icon-hover {
-    /* Hover effects removed */
-  }
-
-  /* Enhanced input effects - hover removed */
-  .input-hover {
-    /* Hover effects removed */
   }
 }
 

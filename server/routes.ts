@@ -87,6 +87,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Classroom sync endpoint
+  app.post("/api/sync/google-classroom", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { classes: googleClasses, assignments: googleAssignments } = req.body;
+
+      if (!googleClasses || !googleAssignments) {
+        return res.status(400).json({ message: "Missing Google Classroom data" });
+      }
+
+      const syncedClasses = [];
+      const syncedAssignments = [];
+
+      // Sync classes
+      for (const googleClass of googleClasses) {
+        try {
+          // Check if class already exists by googleClassroomId
+          const existingClasses = await optimizedStorage.getClassesByUserId(userId);
+          const existingClass = existingClasses.find(c => c.googleClassroomId === googleClass.id);
+
+          if (existingClass) {
+            // Update existing class
+            const updatedClass = await optimizedStorage.updateClass(existingClass.id, {
+              name: googleClass.name,
+              section: googleClass.section || null,
+              description: googleClass.descriptionHeading || null,
+              teacherName: googleClass.teacherName || null,
+              teacherEmail: googleClass.teacherEmail || null,
+              source: 'google_classroom',
+              syncStatus: 'synced',
+            });
+            syncedClasses.push(updatedClass);
+          } else {
+            // Create new class
+            const classData = insertClassSchema.parse({
+              userId,
+              googleClassroomId: googleClass.id,
+              name: googleClass.name,
+              section: googleClass.section || null,
+              description: googleClass.descriptionHeading || null,
+              teacherName: googleClass.teacherName || null,
+              teacherEmail: googleClass.teacherEmail || null,
+              color: googleClass.color || '#42a5f5',
+              source: 'google_classroom',
+              syncStatus: 'synced',
+            });
+            const newClass = await optimizedStorage.createClass(classData);
+            syncedClasses.push(newClass);
+          }
+        } catch (error) {
+          console.error(`Failed to sync class ${googleClass.id}:`, error);
+        }
+      }
+
+      // Sync assignments
+      for (const googleAssignment of googleAssignments) {
+        try {
+          // Find the corresponding class in our database
+          const correspondingClass = syncedClasses.find(
+            c => c?.googleClassroomId === googleAssignment.courseId
+          );
+
+          if (!correspondingClass) {
+            console.warn(`No class found for assignment ${googleAssignment.id}`);
+            continue;
+          }
+
+          // Check if assignment already exists by googleClassroomId
+          const existingAssignments = await optimizedStorage.getAssignmentsByUserId(userId);
+          const existingAssignment = existingAssignments.find(
+            a => a.googleClassroomId === googleAssignment.id
+          );
+
+          if (existingAssignment) {
+            // Update existing assignment
+            const updatedAssignment = await optimizedStorage.updateAssignment(existingAssignment.id, {
+              title: googleAssignment.title,
+              description: googleAssignment.description || null,
+              dueDate: googleAssignment.dueDate ? new Date(googleAssignment.dueDate) : null,
+              source: 'google_classroom',
+              syncStatus: 'synced',
+            });
+            syncedAssignments.push(updatedAssignment);
+          } else {
+            // Create new assignment
+            const assignmentData = insertAssignmentSchema.parse({
+              userId,
+              classId: correspondingClass.id,
+              googleClassroomId: googleAssignment.id,
+              title: googleAssignment.title,
+              description: googleAssignment.description || null,
+              dueDate: googleAssignment.dueDate ? new Date(googleAssignment.dueDate) : null,
+              status: 'pending',
+              priority: 'medium',
+              isCustom: false,
+              source: 'google_classroom',
+              syncStatus: 'synced',
+            });
+            const newAssignment = await optimizedStorage.createAssignment(assignmentData);
+            syncedAssignments.push(newAssignment);
+          }
+        } catch (error) {
+          console.error(`Failed to sync assignment ${googleAssignment.id}:`, error);
+        }
+      }
+
+      res.json({
+        success: true,
+        syncedClasses: syncedClasses.length,
+        syncedAssignments: syncedAssignments.length,
+        classes: syncedClasses,
+        assignments: syncedAssignments,
+      });
+    } catch (error) {
+      console.error('❌ Error syncing Google Classroom data:', error);
+      res.status(500).json({ message: "Failed to sync Google Classroom data" });
+    }
+  });
+
+  // Google Calendar sync endpoint
+  app.post("/api/sync/google-calendar", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { events } = req.body;
+
+      if (!events) {
+        return res.status(400).json({ message: "Missing Google Calendar events" });
+      }
+
+      // Just log the calendar sync, don't create assignments from calendar events
+      console.log(`📅 Received ${events.length} calendar events for user ${userId}`);
+      console.log('Note: Calendar events are NOT synced as assignments');
+
+      res.json({
+        success: true,
+        syncedEvents: events.length,
+        message: "Calendar events received but not synced as assignments",
+      });
+    } catch (error) {
+      console.error('❌ Error syncing Google Calendar events:', error);
+      res.status(500).json({ message: "Failed to sync Google Calendar events" });
+    }
+  });
+
   // User routes
   app.get("/api/users/:id", async (req, res) => {
     try {

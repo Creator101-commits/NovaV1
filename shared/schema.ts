@@ -28,6 +28,8 @@ export const classes = pgTable("classes", {
   teacherName: text("teacher_name"),
   teacherEmail: text("teacher_email"),
   color: text("color").default("#42a5f5"),
+  source: text("source").default("manual"), // manual, google_classroom
+  syncStatus: text("sync_status").default("synced"), // synced, pending, failed
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -36,12 +38,15 @@ export const assignments = pgTable("assignments", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   classId: varchar("class_id").references(() => classes.id),
   googleClassroomId: text("google_classroom_id"),
+  googleCalendarId: text("google_calendar_id"),
   title: text("title").notNull(),
   description: text("description"),
   dueDate: timestamp("due_date"),
   status: text("status").default("pending"), // pending, completed, overdue
   priority: text("priority").default("medium"), // low, medium, high
   isCustom: boolean("is_custom").default(false),
+  source: text("source").default("manual"), // manual, google_classroom, google_calendar
+  syncStatus: text("sync_status").default("synced"), // synced, pending, failed
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });

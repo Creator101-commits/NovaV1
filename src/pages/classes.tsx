@@ -14,6 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 import { usePersistentData } from '@/hooks/usePersistentData';
 import { useClassManagement } from '@/hooks/useClassManagement';
 import { apiGet, apiPost } from '@/lib/api';
+import { ErrorHandler } from '@/lib/errorHandler';
+import { ClassSkeleton } from '@/components/LoadingSkeletons';
+import { EmptyState, NoClasses } from '@/components/EmptyStates';
+import { classSchema, validateForm } from '@/lib/validationSchemas';
 import { RefreshCw, BookOpen, Users, Calendar, ExternalLink, AlertCircle, CheckCircle, Plus, Palette, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -45,26 +49,16 @@ export default function Classes() {
   };
 
   const handleCreateClass = async () => {
-    if (!newClass.name.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a class name.",
-        variant: "destructive",
-      });
+    // Validate form data with Zod
+    const validation = validateForm(classSchema, newClass);
+    
+    if (!validation.success) {
+      ErrorHandler.handleValidationError(validation.errors);
       return;
     }
 
     try {
-      const classData = {
-        name: newClass.name,
-        section: newClass.section || undefined,
-        description: newClass.description || undefined,
-        teacherName: newClass.teacherName || undefined,
-        teacherEmail: newClass.teacherEmail || undefined,
-        color: newClass.color,
-      };
-
-      await createClass(classData);
+      await createClass(validation.data);
 
       // Reset form
       setNewClass({
@@ -80,8 +74,11 @@ export default function Classes() {
       await syncClassroomData(false); // Silent refresh to include new class
       
     } catch (error: any) {
-      // Error handling is done in the hook
-      console.error('Error creating class:', error);
+      ErrorHandler.handle(
+        error,
+        'Failed to create class. Please check your input and try again.',
+        { context: 'handleCreateClass' }
+      );
     }
   };
 
@@ -103,8 +100,11 @@ export default function Classes() {
         await syncClassroomData(false);
       }
     } catch (error: any) {
-      // Error handling is done in the hook
-      console.error('Error deleting class:', error);
+      ErrorHandler.handle(
+        error,
+        'Failed to delete class. Please try again.',
+        { context: 'handleDeleteClass' }
+      );
     }
   };
 
@@ -250,21 +250,13 @@ export default function Classes() {
         </Alert>
       )}
 
-      {isLoading && !courses.length && (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your classes...</p>
-        </div>
-      )}
+      {(isLoading || isRestoring) && !courses.length ? (
+        <ClassSkeleton />
+      ) : null}
 
-      {!isLoading && courses.length === 0 && (
-        <Alert>
-          <BookOpen className="h-4 w-4" />
-          <AlertDescription>
-            No classes found. Make sure you have courses in Google Classroom or try syncing again.
-          </AlertDescription>
-        </Alert>
-      )}
+      {!isLoading && !isRestoring && courses.length === 0 ? (
+        <NoClasses onAdd={() => {/* Dialog trigger handled by state */}} />
+      ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {courses.map((course) => (

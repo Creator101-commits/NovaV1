@@ -104,7 +104,7 @@ export class GoogleClassroomAPI {
   }
 }
 
-export const syncGoogleClassroomData = async (accessToken: string) => {
+export const syncGoogleClassroomData = async (accessToken: string, userId?: string) => {
   const api = new GoogleClassroomAPI(accessToken);
   
   try {
@@ -112,6 +112,37 @@ export const syncGoogleClassroomData = async (accessToken: string) => {
       api.getCourses(),
       api.getAllAssignments(),
     ]);
+
+    // Enhance courses with teacher information
+    const enhancedCourses = await Promise.all(
+      courses.map(async (course) => {
+        try {
+          const teachers = await api.getCourseTeachers(course.id);
+          const primaryTeacher = teachers[0];
+          
+          return {
+            id: course.id,
+            name: course.name,
+            section: course.section || null,
+            descriptionHeading: course.description || null,
+            teacherName: primaryTeacher?.profile?.name?.fullName || null,
+            teacherEmail: primaryTeacher?.profile?.emailAddress || null,
+            color: '#42a5f5', // Default Google Classroom color
+          };
+        } catch (error) {
+          console.warn(`Failed to fetch teachers for course ${course.id}:`, error);
+          return {
+            id: course.id,
+            name: course.name,
+            section: course.section || null,
+            descriptionHeading: course.description || null,
+            teacherName: null,
+            teacherEmail: null,
+            color: '#42a5f5',
+          };
+        }
+      })
+    );
 
     // Transform Google Classroom assignments to match our format
     const assignments = rawAssignments.map(assignment => {
@@ -147,7 +178,7 @@ export const syncGoogleClassroomData = async (accessToken: string) => {
 
       const transformedAssignment = {
         id: assignment.id,
-        classId: assignment.courseId,
+        courseId: assignment.courseId,
         title: assignment.title,
         description: assignment.description || null,
         dueDate,
@@ -163,8 +194,38 @@ export const syncGoogleClassroomData = async (accessToken: string) => {
       return transformedAssignment;
     });
 
+    // Sync data to database if userId is provided
+    if (userId) {
+      try {
+        console.log('🔄 Syncing Google Classroom data to database...');
+        
+        const response = await fetch('/api/sync/google-classroom', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId,
+          },
+          body: JSON.stringify({
+            classes: enhancedCourses,
+            assignments: assignments,
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Google Classroom data synced to database:', result);
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Failed to sync to database:', errorText);
+        }
+      } catch (syncError) {
+        console.error('❌ Error syncing to database:', syncError);
+        // Don't throw - allow the function to continue returning local data
+      }
+    }
+
     return {
-      courses,
+      courses: enhancedCourses,
       assignments,
     };
   } catch (error) {

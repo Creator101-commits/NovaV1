@@ -56,8 +56,9 @@ import {
   LazySettings,
 } from "@/components/LazyComponents";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { PageLoading } from "@/components/LoadingSpinner";
+import { errorReporter } from "@/lib/errorReporting";
 
 function AppNavigation() {
   const { user, userData, signOut, hasGoogleAccess } = useAuth();
@@ -65,6 +66,21 @@ function AppNavigation() {
   const [, setLocation] = useLocation();
   const { isRestoring } = usePersistentData();
   const { customization } = useColorCustomization();
+
+  // Initialize error reporter with user context
+  useEffect(() => {
+    errorReporter.init();
+    
+    if (user) {
+      errorReporter.setUser(user.uid, user.email || undefined);
+    }
+
+    return () => {
+      if (!user) {
+        errorReporter.clearUser();
+      }
+    };
+  }, [user]);
 
   return (
     <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 px-6 py-4">

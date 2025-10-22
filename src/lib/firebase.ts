@@ -346,3 +346,140 @@ export const signInWithEmail = async (email: string, password: string) => {
     throw error;
   }
 };
+
+/**
+ * Refresh Google OAuth token
+ * @param userId - The user's Firebase UID
+ * @returns Object containing new access token and expiry time
+ */
+export const refreshGoogleToken = async (userId: string): Promise<{ accessToken: string; expiresAt: Date } | null> => {
+  try {
+    console.log('🔄 Refreshing Google token for user:', userId);
+
+    // Get user data from Firestore to retrieve refresh token
+    const userData = await getUserData(userId);
+    
+    if (!userData || !userData.googleRefreshToken) {
+      console.error('❌ No refresh token found for user');
+      return null;
+    }
+
+    // Call Google's token refresh endpoint
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: firebaseConfig.apiKey,
+        refresh_token: userData.googleRefreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('❌ Failed to refresh token:', await response.text());
+      return null;
+    }
+
+    const tokenData = await response.json();
+    const newAccessToken = tokenData.access_token;
+    const expiresIn = tokenData.expires_in || 3600; // Default 1 hour
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
+    console.log('✅ Token refreshed successfully, expires at:', expiresAt);
+
+    // Update tokens in Firestore
+    if (db) {
+      try {
+        await updateDoc(doc(db, 'users', userId), {
+          googleAccessToken: newAccessToken,
+          tokenExpiresAt: expiresAt,
+          updatedAt: new Date(),
+        });
+        console.log('✅ Updated tokens in Firestore');
+      } catch (firestoreError) {
+        console.warn('Failed to update tokens in Firestore:', firestoreError);
+      }
+    }
+
+    // Update tokens in Oracle database
+    try {
+      const response = await fetch('/api/auth/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: userId,
+          email: userData.email,
+          displayName: userData.name,
+          photoURL: userData.avatar,
+          accessToken: newAccessToken,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('✅ Updated tokens in Oracle database');
+      } else {
+        console.warn('Failed to update tokens in Oracle:', await response.text());
+      }
+    } catch (oracleError) {
+      console.warn('Failed to update tokens in Oracle:', oracleError);
+    }
+
+    return { accessToken: newAccessToken, expiresAt };
+  } catch (error) {
+    console.error('❌ Error refreshing Google token:', error);
+    return null;
+  }
+};
+
+/**
+ * Validate and refresh Google token if needed
+ * @param userId - The user's Firebase UID
+ * @returns Valid access token or null
+ */
+export const getValidGoogleToken = async (userId: string): Promise<string | null> => {
+  try {
+    const userData = await getUserData(userId);
+    
+    if (!userData || !userData.googleAccessToken) {
+      console.warn('No Google access token found for user');
+      return null;
+    }
+
+    // Check if token is expired or about to expire (5 minutes buffer)
+    const tokenExpiresAt = userData.tokenExpiresAt ? new Date(userData.tokenExpiresAt) : null;
+    const now = new Date();
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+    if (!tokenExpiresAt || tokenExpiresAt <= fiveMinutesFromNow) {
+      console.log('⏰ Token expired or expiring soon, refreshing...');
+      const refreshResult = await refreshGoogleToken(userId);
+      
+      if (refreshResult) {
+        return refreshResult.accessToken;
+      }
+      
+      console.error('Failed to refresh token');
+      return null;
+    }
+
+    console.log('✅ Token is still valid');
+    return userData.googleAccessToken;
+  } catch (error) {
+    console.error('Error validating Google token:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if user has valid Google OAuth tokens
+ * @param userId - The user's Firebase UID
+ * @returns Boolean indicating if tokens are available and valid
+ */
+export const hasValidGoogleAuth = async (userId: string): Promise<boolean> => {
+  const token = await getValidGoogleToken(userId);
+  return token !== null;
+};

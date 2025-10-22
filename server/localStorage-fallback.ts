@@ -433,6 +433,8 @@ export class LocalStorageFallback {
       teacherName: classData.teacherName || null,
       teacherEmail: classData.teacherEmail || null,
       color: classData.color || null,
+      source: classData.source || null,
+      syncStatus: classData.syncStatus || null,
       createdAt: new Date()
     };
     
@@ -441,6 +443,28 @@ export class LocalStorageFallback {
     this.saveToStorage(classData.userId, 'classes', classes);
     
     return newClass;
+  }
+
+  async updateClass(id: string, classData: Partial<InsertClass>): Promise<Class | undefined> {
+    // Find the class by ID across all users
+    for (const key of Object.keys(localStorage)) {
+      if (key.endsWith('_classes')) {
+        const userId = key.replace('_classes', '');
+        const classes = this.getFromStorage<Class>(userId, 'classes');
+        const classIndex = classes.findIndex(c => c.id === id);
+        
+        if (classIndex !== -1) {
+          // Update the class
+          classes[classIndex] = {
+            ...classes[classIndex],
+            ...classData
+          };
+          this.saveToStorage(userId, 'classes', classes);
+          return classes[classIndex];
+        }
+      }
+    }
+    return undefined;
   }
 
   // Assignment methods
@@ -454,12 +478,15 @@ export class LocalStorageFallback {
       userId: assignment.userId,
       classId: assignment.classId || null,
       googleClassroomId: assignment.googleClassroomId || null,
+      googleCalendarId: assignment.googleCalendarId || null,
       title: assignment.title,
       description: assignment.description || null,
       dueDate: assignment.dueDate || null,
       status: assignment.status || null,
       priority: assignment.priority || null,
       isCustom: assignment.isCustom || null,
+      source: assignment.source || null,
+      syncStatus: assignment.syncStatus || null,
       completedAt: assignment.completedAt || null,
       createdAt: new Date()
     };
