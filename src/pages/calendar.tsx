@@ -39,7 +39,8 @@ import {
   Zap,
   Download,
   Upload,
-  Link
+  Link,
+  RefreshCw
 } from "lucide-react";
 import { 
   format, 
@@ -59,6 +60,7 @@ import { useActivity } from "@/contexts/ActivityContext";
 import { useSmartScheduling } from "@/hooks/useSmartScheduling";
 import { useCalendarIntegration } from "@/hooks/useCalendarIntegration";
 import { useGoogleCalendarSync } from "@/hooks/useGoogleCalendarSync";
+import { useGoogleClassroom } from "@/hooks/useGoogleClassroom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -76,10 +78,12 @@ export default function Calendar() {
     createEvent: createGoogleEvent,
     lastSync
   } = useGoogleCalendarSync();
+  const { syncClassroomData } = useGoogleClassroom();
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -227,6 +231,34 @@ export default function Calendar() {
     });
   };
 
+  // Handle sync of both Google Classroom and Google Calendar
+  const handleSync = async () => {
+    if (!user) return;
+
+    setIsSyncing(true);
+    try {
+      // Sync both Google Classroom assignments and Google Calendar events
+      await Promise.all([
+        syncClassroomData(),
+        syncCalendarData()
+      ]);
+
+      toast({
+        title: "Sync Complete",
+        description: `Synced ${googleEvents.length} calendar events and assignments`,
+      });
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Could not sync data. Please check your Google account connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const getColorForType = (type: string) => {
     switch (type) {
       case "assignment": return "bg-red-500";
@@ -257,9 +289,19 @@ export default function Calendar() {
         <Button variant="outline" size="sm" onClick={goToToday} className="text-sm">
           Today
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSync}
+          disabled={isSyncing}
+          className="text-sm"
+        >
+          <RefreshCw className={`h-3 w-3 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+          {isSyncing ? 'Syncing...' : 'Sync'}
+        </Button>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <Link className="h-4 w-4 mr-2" />
                 Integrations
               </Button>

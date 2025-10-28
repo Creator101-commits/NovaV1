@@ -41,7 +41,7 @@ export const AiSummaryHistory = () => {
       if (response.ok) {
         const data = await response.json();
         setSummaries(data);
-        console.log('✅ Loaded AI summaries:', data.length);
+        console.log(' Loaded AI summaries:', data.length);
       } else {
         console.error('Failed to load AI summaries:', response.status);
         toast({

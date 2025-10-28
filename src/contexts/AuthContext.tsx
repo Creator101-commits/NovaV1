@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           saveUserDataToStorage(user.uid, data);
         }
       } else {
-        console.log('✅ Restored user data from cache');
+        console.log(' Restored user data from cache');
       }
 
       setUserData(data);
@@ -133,19 +133,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const { getValidGoogleToken } = await import('@/lib/firebase');
           
           // Validate and refresh token if needed
-          console.log('🔑 Validating Google OAuth token...');
+          console.log(' Validating Google OAuth token...');
           const validToken = await getValidGoogleToken(user.uid);
           
           if (!validToken) {
-            console.warn('⚠️ Google token is invalid or expired');
+            console.warn(' Google token is invalid or expired');
             return;
           }
           
-          console.log('✅ Google token validated successfully');
+          console.log(' Google token validated successfully');
           
           // Sync Google Classroom data to database
           try {
-            console.log('🔄 Auto-syncing Google Classroom data...');
+            console.log(' Auto-syncing Google Classroom data...');
             const freshData = await syncGoogleClassroomData(validToken, user.uid);
             
             // Cache classroom data locally
@@ -158,14 +158,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               lastSynced: new Date()
             };
             
-            console.log('✅ Google Classroom data synced to database');
+            console.log(' Google Classroom data synced to database');
           } catch (syncError) {
             console.warn('Failed to sync Google Classroom data:', syncError);
             
             // Fallback to cached data if sync fails
             const classroomData = getClassroomDataFromStorage(user.uid);
             if (classroomData) {
-              console.log('ℹ️ Using cached Google Classroom data as fallback');
+              console.log('ℹ Using cached Google Classroom data as fallback');
               (window as any).cachedClassroomData = {
                 courses: classroomData.courses,
                 assignments: classroomData.assignments,
@@ -179,7 +179,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Use cached data as fallback
           const classroomData = getClassroomDataFromStorage(user.uid);
           if (classroomData) {
-            console.log('ℹ️ Using cached Google Classroom data as fallback');
+            console.log('ℹ Using cached Google Classroom data as fallback');
             (window as any).cachedClassroomData = {
               courses: classroomData.courses,
               assignments: classroomData.assignments,
@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (cachedData) {
           setUserData(cachedData);
           setLoading(false);
-          console.log('✅ User authenticated with cached data');
+          console.log(' User authenticated with cached data');
           
           // Restore classroom data in background
           if (cachedData?.hasGoogleAccess && cachedData?.googleAccessToken) {

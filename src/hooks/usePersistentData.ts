@@ -43,7 +43,7 @@ export const usePersistentData = () => {
         lastRestoreTime: new Date(),
       }));
 
-      console.log('✅ All user data restored successfully');
+      console.log(' All user data restored successfully');
     } catch (error) {
       console.error('Error restoring user data:', error);
       setState(prev => ({ ...prev, isRestoring: false }));
@@ -68,13 +68,13 @@ export const usePersistentData = () => {
             assignments: data.assignments,
             lastSynced: new Date(data.cachedAt)
           };
-          console.log('✅ Google Classroom data restored from cache');
+          console.log(' Google Classroom data restored from cache');
           return;
         }
       }
 
       // Fetch fresh data if cache is stale or doesn't exist
-      console.log('🔄 Fetching fresh Google Classroom data...');
+      console.log(' Fetching fresh Google Classroom data...');
       const freshData = await syncGoogleClassroomData(userData.googleAccessToken);
       
       const dataToCache = {
@@ -91,7 +91,7 @@ export const usePersistentData = () => {
         lastSynced: new Date()
       };
       
-      console.log('✅ Fresh Google Classroom data fetched and cached');
+      console.log(' Fresh Google Classroom data fetched and cached');
     } catch (error) {
       console.warn('Failed to restore Google Classroom data:', error);
     }
@@ -105,7 +105,7 @@ export const usePersistentData = () => {
       
       if (cachedData.calendars.length > 0 || cachedData.events.length > 0) {
         (window as any).cachedCalendarData = cachedData;
-        console.log('✅ Google Calendar data restored from cache');
+        console.log(' Google Calendar data restored from cache');
       }
     } catch (error) {
       console.warn('Failed to restore Google Calendar data:', error);
@@ -121,7 +121,7 @@ export const usePersistentData = () => {
       
       if (customAssignments.length > 0) {
         (window as any).cachedCustomAssignments = customAssignments;
-        console.log(`✅ ${customAssignments.length} custom assignments restored from cache`);
+        console.log(` ${customAssignments.length} custom assignments restored from cache`);
       }
     } catch (error) {
       console.warn('Failed to restore custom assignments:', error);
@@ -151,7 +151,7 @@ export const usePersistentData = () => {
         lastRestoreTime: null,
       }));
 
-      console.log('✅ All cached data cleared');
+      console.log(' All cached data cleared');
     } catch (error) {
       console.warn('Failed to clear cached data:', error);
     }

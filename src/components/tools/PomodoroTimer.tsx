@@ -60,9 +60,9 @@ const focusSounds: FocusSound[] = [
     description: "Coffee shop atmosphere"
   },
   {
-    id: "white-noise",
+    id: "whitenoise",
     name: "White Noise",
-    url: "/sounds/white-noise.mp3",
+    url: "/sounds/whitenoise.mp3",
     description: "Pure white noise"
   }
 ];
@@ -124,7 +124,7 @@ export const PomodoroTimer = () => {
       const response = await apiPost(`/api/users/${user.uid}/pomodoro-sessions`, sessionData);
       
       if (response.ok) {
-        console.log('✅ Pomodoro session saved to database');
+        console.log('Pomodoro session saved to database');
       } else {
         console.error('Failed to save pomodoro session:', response.status);
       }
@@ -135,7 +135,7 @@ export const PomodoroTimer = () => {
 
   const playNotificationSound = () => {
     // In a real app, you would play an actual sound file
-    console.log("🔔 Timer notification");
+    console.log("Timer notification");
   };
 
   const toggleMusic = () => {
@@ -262,7 +262,7 @@ export const PomodoroTimer = () => {
       setTimeLeft(nextMode === "longBreak" ? settings.longBreakDuration : settings.shortBreakDuration);
       
       toast({
-        title: "Work session complete! 🎉",
+        title: "Work session complete!",
         description: `Time for a ${shouldTakeLongBreak ? "long" : "short"} break`,
       });
     } else {
@@ -271,7 +271,7 @@ export const PomodoroTimer = () => {
       setTotalSessions(prev => prev + 1);
       
       toast({
-        title: "Break time over! 💪",
+        title: "Break time over!",
         description: "Ready for another work session?",
       });
     }

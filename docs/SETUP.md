@@ -349,4 +349,4 @@ DEBUG=refyneo:database npm run dev
 
 ---
 
-Happy coding! 🚀
+Happy coding! 

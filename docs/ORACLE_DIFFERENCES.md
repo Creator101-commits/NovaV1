@@ -1,10 +1,10 @@
-# 🔄 Oracle vs PostgreSQL Migration Notes
+#  Oracle vs PostgreSQL Migration Notes
 
 ## **Key Differences to Watch For:**
 
 ### **SQL Syntax Differences:**
 - **Boolean Values**: PostgreSQL uses `true/false`, Oracle uses `1/0` (NUMBER)
-- **String Concatenation**: PostgreSQL uses `||`, Oracle uses `||` (same) ✅
+- **String Concatenation**: PostgreSQL uses `||`, Oracle uses `||` (same) 
 - **Quotes**: PostgreSQL uses double quotes for identifiers, Oracle prefers uppercase
 - **LIMIT**: PostgreSQL uses `LIMIT`, Oracle uses `ROWNUM` or `FETCH FIRST`
 - **Auto-increment**: PostgreSQL uses `SERIAL`, Oracle uses `IDENTITY` or sequences
@@ -60,10 +60,10 @@ const result = await connection.execute('SELECT * FROM users WHERE id = :id', { 
 const users = result.rows;
 
 // Oracle (new)
-const users = result.rows; // Same! ✅
+const users = result.rows; // Same! 
 ```
 
-## **⚠️ Important Gotchas:**
+## ** Important Gotchas:**
 
 1. **Oracle Free Tier Limits:**
    - 2 Always Free Autonomous Databases
@@ -90,7 +90,7 @@ const users = result.rows; // Same! ✅
    - Oracle uses ORA-##### error codes
    - Different from PostgreSQL error codes
 
-## **✅ Migration Benefits:**
+## ** Migration Benefits:**
 
 1. **Cloud-Native**: Oracle Autonomous Database is fully managed
 2. **Free Tier**: Generous free tier for development
@@ -99,15 +99,15 @@ const users = result.rows; // Same! ✅
 5. **Scalability**: Easy to scale up when needed
 6. **Reliability**: 99.995% availability SLA
 
-## **🔧 Performance Tips:**
+## ** Performance Tips:**
 
-1. **Use Bind Variables**: Always use parameterized queries (we do this ✅)
-2. **Connection Pooling**: Use connection pools (implemented ✅)
+1. **Use Bind Variables**: Always use parameterized queries (we do this )
+2. **Connection Pooling**: Use connection pools (implemented )
 3. **Batch Operations**: Use `executeMany()` for bulk inserts
 4. **Indexes**: Oracle automatically creates indexes for primary keys
 5. **Query Optimization**: Oracle's optimizer is very advanced
 
-## **📚 Useful Oracle Resources:**
+## ** Useful Oracle Resources:**
 
 - [Oracle Database Free Tier](https://www.oracle.com/cloud/free/)
 - [Oracle node-oracledb Documentation](https://oracle.github.io/node-oracledb/)

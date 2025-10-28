@@ -100,12 +100,12 @@ const newEvent = await createEvent({
 
 ## Benefits
 
-✅ **Seamless UX**: No separate calendar connection needed
-✅ **Automatic Sync**: Data synced during login
-✅ **Offline Access**: Events cached locally
-✅ **Real-time Updates**: Auto-refresh stale data
-✅ **Bi-directional**: Create/edit events in Google Calendar
-✅ **Multi-calendar**: Supports all user's Google calendars
+ **Seamless UX**: No separate calendar connection needed
+ **Automatic Sync**: Data synced during login
+ **Offline Access**: Events cached locally
+ **Real-time Updates**: Auto-refresh stale data
+ **Bi-directional**: Create/edit events in Google Calendar
+ **Multi-calendar**: Supports all user's Google calendars
 
 ## Calendar Button Behavior
 

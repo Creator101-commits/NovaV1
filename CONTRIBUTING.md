@@ -487,4 +487,4 @@ Contributors will be recognized in:
 - Release notes
 - Project documentation
 
-Thank you for contributing to RefyneoV1! 🚀
+Thank you for contributing to RefyneoV1! 

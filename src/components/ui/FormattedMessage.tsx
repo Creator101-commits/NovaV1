@@ -192,7 +192,7 @@ const MermaidDiagram: React.FC<{ content: string }> = ({ content }) => {
   if (error) {
     return (
       <div className="my-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-        <p className="text-sm text-destructive font-semibold mb-2">⚠️ Mermaid Diagram Error:</p>
+        <p className="text-sm text-destructive font-semibold mb-2"> Mermaid Diagram Error:</p>
         <pre className="text-xs text-destructive/80 p-3 rounded overflow-x-auto font-mono">
           {error}
         </pre>

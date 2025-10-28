@@ -1,12 +1,12 @@
 # Flashcard System Enhancement Migration Guide
 
-## 🎯 Overview
+##  Overview
 This guide covers the migration to an enhanced flashcard system with:
-- **📁 Decks & Subdecks** - Organize flashcards into folders and subfolders
-- **📊 Advanced Statistics** - Track retention curves, daily reviews, and maturation
-- **🔤 Cloze Deletion Cards** - Fill-in-the-blank style cards for better learning
+- ** Decks & Subdecks** - Organize flashcards into folders and subfolders
+- ** Advanced Statistics** - Track retention curves, daily reviews, and maturation
+- ** Cloze Deletion Cards** - Fill-in-the-blank style cards for better learning
 
-## 📋 What's New
+##  What's New
 
 ### 1. Decks & Subdecks
 - Organize flashcards into named decks (like folders)
@@ -29,7 +29,7 @@ This guide covers the migration to an enhanced flashcard system with:
 - Example: "The capital of {{c1::France}} is {{c2::Paris}}"
 - AI can generate multiple cloze cards from a single note
 
-## 🗄️ Database Schema Changes
+##  Database Schema Changes
 
 ### New Tables
 
@@ -87,7 +87,7 @@ Card counts and averages per deck
 #### `v_retention_curve`
 30-day retention rates for analysis
 
-## 🚀 Migration Steps
+##  Migration Steps
 
 ### Prerequisites
 1. **Backup your data!**
@@ -147,7 +147,7 @@ import {
 
 3. UI components will be enhanced to show deck organization
 
-## 📊 Using the New Statistics
+##  Using the New Statistics
 
 ### Daily Review Statistics
 ```sql
@@ -171,7 +171,7 @@ WHERE user_id = 'your_user_id'
 ORDER BY days_ago;
 ```
 
-## 🎴 Cloze Card Format
+##  Cloze Card Format
 
 ### Creating Cloze Cards
 ```
@@ -196,7 +196,7 @@ The AI will automatically detect and create cloze cards when appropriate:
 }
 ```
 
-## 🔄 Maturity Progression
+##  Maturity Progression
 
 Cards automatically progress through maturity levels:
 
@@ -217,7 +217,7 @@ Cards automatically progress through maturity levels:
    - Intervals: 1m → 2m → 3m+
    - Ease factor adjusts based on performance
 
-## 📈 Spaced Repetition Algorithm
+##  Spaced Repetition Algorithm
 
 ### Ease Factor
 - Starts at 2.5 (250 in database, scaled by 100)
@@ -235,7 +235,7 @@ If incorrect:
   ease_factor -= 0.2
 ```
 
-## 🎨 Deck Organization Best Practices
+##  Deck Organization Best Practices
 
 1. **Top-Level Decks**: Main subjects
    - Biology, Chemistry, History, etc.
@@ -250,7 +250,7 @@ If incorrect:
    - Green (#22c55e): Mastered/Review
    - Yellow (#eab308): In progress
 
-## 🛠️ Troubleshooting
+##  Troubleshooting
 
 ### Issue: Migration fails
 ```sql
@@ -281,7 +281,7 @@ WHERE name LIKE 'V_%';
 -- (see migration script step 8)
 ```
 
-## 📞 Support
+##  Support
 
 For issues or questions:
 1. Check the migration verification queries
@@ -289,14 +289,14 @@ For issues or questions:
 3. Consult `ORACLE_CONNECTION_GUIDE.md`
 4. Check application logs for API errors
 
-## 🔐 Security Notes
+##  Security Notes
 
 - All foreign key constraints include `ON DELETE CASCADE` or `ON DELETE SET NULL`
 - Indexes created for optimal query performance
 - Views use user_id filtering for data isolation
 - No sensitive data stored in new tables
 
-## ⚡ Performance Considerations
+##  Performance Considerations
 
 ### Indexes
 The migration creates indexes on:
@@ -311,7 +311,7 @@ The migration creates indexes on:
 3. Archive old review records after 90 days (optional)
 4. Use materialized views for complex statistics (advanced)
 
-## 📝 Rollback Plan
+##  Rollback Plan
 
 If you need to rollback:
 ```sql
@@ -327,7 +327,7 @@ CREATE TABLE flashcards AS SELECT * FROM flashcards_backup;
 -- (Use your original schema definition)
 ```
 
-## ✅ Post-Migration Checklist
+##  Post-Migration Checklist
 
 - [ ] All tables created successfully
 - [ ] Data migrated (counts match)

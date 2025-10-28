@@ -9,11 +9,11 @@ try {
     configDir: walletLocation
   });
   oracleClientAvailable = true;
-  console.log('✅ Oracle Client initialized successfully');
+  console.log(' Oracle Client initialized successfully');
 } catch (error) {
-  console.log('⚠️  Oracle Client initialization:', (error as Error).message);
-  console.log('📝 Oracle Instant Client not installed. Database features will be limited.');
-  console.log('💡 To install Oracle Instant Client:');
+  console.log('  Oracle Client initialization:', (error as Error).message);
+  console.log(' Oracle Instant Client not installed. Database features will be limited.');
+  console.log(' To install Oracle Instant Client:');
   console.log('   1. Download from: https://www.oracle.com/database/technologies/instant-client/winx64-64-downloads.html');
   console.log('   2. Extract to a folder and add to PATH');
   console.log('   3. Install Visual Studio Redistributable');
@@ -48,10 +48,10 @@ export async function initializeDatabase() {
 
     console.log('Initializing Oracle connection pool...');
     pool = await oracledb.createPool(dbConfig);
-    console.log('✅ Oracle database pool created successfully');
+    console.log(' Oracle database pool created successfully');
     return pool;
   } catch (error) {
-    console.error('❌ Error creating Oracle database pool:', error);
+    console.error(' Error creating Oracle database pool:', error);
     throw error;
   }
 }

@@ -35,9 +35,9 @@ export class OracleStorage {
         await initializeDatabase();
         this.oracleAvailable = true;
         this.initialized = true;
-        console.log('✅ Oracle storage initialized successfully');
+        console.log(' Oracle storage initialized successfully');
       } catch (error) {
-        console.warn('⚠️ Oracle database not available, using fallback mode:', (error as Error).message);
+        console.warn(' Oracle database not available, using fallback mode:', (error as Error).message);
         this.oracleAvailable = false;
         this.initialized = true; // Mark as initialized to avoid repeated attempts
         throw new Error('Oracle database not available - fallback to localStorage');
@@ -275,7 +275,7 @@ export class OracleStorage {
         };
       }));
       
-      console.log(`✅ Found notes: ${notes.length}`);
+      console.log(` Found notes: ${notes.length}`);
       return notes;
     });
   }
@@ -419,7 +419,7 @@ export class OracleStorage {
   // Class methods
   async getClassesByUserId(userId: string): Promise<Class[]> {
     await this.initialize();
-    console.log('📚 Fetching classes for user:', userId);
+    console.log(' Fetching classes for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM classes WHERE user_id = :userId ORDER BY created_at DESC',
@@ -427,11 +427,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No classes found for user:', userId);
+      console.log(' No classes found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found classes:', result.rows.length);
+    console.log(' Found classes:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -454,7 +454,7 @@ export class OracleStorage {
     const id = randomUUID();
     const createdAt = new Date();
     
-    console.log('📚 Creating class:', { id, ...classData });
+    console.log(' Creating class:', { id, ...classData });
     
     const sql = `
       INSERT INTO classes (id, user_id, google_classroom_id, name, section, 
@@ -476,7 +476,7 @@ export class OracleStorage {
       createdAt
     });
     
-    console.log('✅ Class created successfully');
+    console.log(' Class created successfully');
     
     return {
       id,
@@ -496,7 +496,7 @@ export class OracleStorage {
 
   async updateClass(id: string, classData: Partial<InsertClass>): Promise<Class | undefined> {
     await this.initialize();
-    console.log('📚 Updating class:', id, classData);
+    console.log(' Updating class:', id, classData);
     
     const setParts = [];
     const params: any = { id };
@@ -539,14 +539,14 @@ export class OracleStorage {
     }
     
     if (setParts.length === 0) {
-      console.log('⚠️ No fields to update');
+      console.log(' No fields to update');
       return this.getClassById(id);
     }
     
     const sql = `UPDATE classes SET ${setParts.join(', ')} WHERE id = :id`;
     await executeQuery(sql, params);
     
-    console.log('✅ Class updated successfully');
+    console.log(' Class updated successfully');
     return this.getClassById(id);
   }
 
@@ -580,15 +580,15 @@ export class OracleStorage {
 
   async deleteClass(id: string): Promise<boolean> {
     await this.initialize();
-    console.log('📚 Deleting class:', id);
+    console.log(' Deleting class:', id);
     
     const result = await executeQuery('DELETE FROM classes WHERE id = :id', { id });
     const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
     
     if (success) {
-      console.log('✅ Class deleted successfully');
+      console.log(' Class deleted successfully');
     } else {
-      console.log('❌ Class not found');
+      console.log(' Class not found');
     }
     
     return success;
@@ -597,7 +597,7 @@ export class OracleStorage {
   // Assignment methods
   async getAssignmentsByUserId(userId: string): Promise<Assignment[]> {
     await this.initialize();
-    console.log('📋 Fetching assignments for user:', userId);
+    console.log(' Fetching assignments for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM assignments WHERE user_id = :userId ORDER BY created_at DESC',
@@ -605,11 +605,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No assignments found for user:', userId);
+      console.log(' No assignments found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found assignments:', result.rows.length);
+    console.log(' Found assignments:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -635,7 +635,7 @@ export class OracleStorage {
     const id = randomUUID();
     const createdAt = new Date();
     
-    console.log('📋 Creating assignment:', { id, ...assignment });
+    console.log(' Creating assignment:', { id, ...assignment });
     
     const sql = `
       INSERT INTO assignments (id, user_id, class_id, google_classroom_id, title, 
@@ -661,7 +661,7 @@ export class OracleStorage {
       createdAt
     });
     
-    console.log('✅ Assignment created successfully');
+    console.log(' Assignment created successfully');
     
     return {
       id,
@@ -684,7 +684,7 @@ export class OracleStorage {
 
   async updateAssignment(id: string, assignment: Partial<InsertAssignment>): Promise<Assignment | undefined> {
     await this.initialize();
-    console.log('📋 Updating assignment:', id, assignment);
+    console.log(' Updating assignment:', id, assignment);
     
     const setParts = [];
     const params: any = { id };
@@ -723,7 +723,7 @@ export class OracleStorage {
     }
     
     if (setParts.length === 0) {
-      console.log('⚠️ No fields to update');
+      console.log(' No fields to update');
       return undefined;
     }
     
@@ -733,12 +733,12 @@ export class OracleStorage {
     // Return updated assignment
     const result = await executeQuery('SELECT * FROM assignments WHERE id = :id', { id });
     if (!result.rows || result.rows.length === 0) {
-      console.log('❌ Assignment not found after update');
+      console.log(' Assignment not found after update');
       return undefined;
     }
     
     const row = result.rows[0] as any;
-    console.log('✅ Assignment updated successfully');
+    console.log(' Assignment updated successfully');
     
     return {
       id: row.ID,
@@ -761,15 +761,15 @@ export class OracleStorage {
 
   async deleteAssignment(id: string): Promise<boolean> {
     await this.initialize();
-    console.log('📋 Deleting assignment:', id);
+    console.log(' Deleting assignment:', id);
     
     const result = await executeQuery('DELETE FROM assignments WHERE id = :id', { id });
     const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
     
     if (success) {
-      console.log('✅ Assignment deleted successfully');
+      console.log(' Assignment deleted successfully');
     } else {
-      console.log('❌ Assignment not found');
+      console.log(' Assignment not found');
     }
     
     return success;
@@ -778,7 +778,7 @@ export class OracleStorage {
   // Flashcard methods
   async getFlashcardsByUserId(userId: string): Promise<Flashcard[]> {
     await this.initialize();
-    console.log('📝 Fetching flashcards for user:', userId);
+    console.log(' Fetching flashcards for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM flashcards WHERE user_id = :userId ORDER BY created_at DESC',
@@ -786,11 +786,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No flashcards found for user:', userId);
+      console.log(' No flashcards found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found flashcards:', result.rows.length);
+    console.log(' Found flashcards:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -821,7 +821,7 @@ export class OracleStorage {
     const createdAt = new Date();
     const updatedAt = new Date();
     
-    console.log('📝 Creating flashcard:', { id, ...flashcard });
+    console.log(' Creating flashcard:', { id, ...flashcard });
     
     const sql = `
       INSERT INTO flashcards (id, user_id, deck_id, class_id, card_type, front, back, 
@@ -856,7 +856,7 @@ export class OracleStorage {
       updatedAt
     });
     
-    console.log('✅ Flashcard created successfully');
+    console.log(' Flashcard created successfully');
     
     return {
       id,
@@ -883,7 +883,7 @@ export class OracleStorage {
 
   async updateFlashcard(id: string, flashcard: Partial<InsertFlashcard>): Promise<Flashcard | undefined> {
     await this.initialize();
-    console.log('📝 Updating flashcard:', id, flashcard);
+    console.log(' Updating flashcard:', id, flashcard);
     
     const setParts = [];
     const params: any = { id };
@@ -914,7 +914,7 @@ export class OracleStorage {
     }
     
     if (setParts.length === 0) {
-      console.log('⚠️ No fields to update');
+      console.log(' No fields to update');
       return undefined;
     }
     
@@ -924,12 +924,12 @@ export class OracleStorage {
     // Return updated flashcard
     const result = await executeQuery('SELECT * FROM flashcards WHERE id = :id', { id });
     if (!result.rows || result.rows.length === 0) {
-      console.log('❌ Flashcard not found after update');
+      console.log(' Flashcard not found after update');
       return undefined;
     }
     
     const row = result.rows[0] as any;
-    console.log('✅ Flashcard updated successfully');
+    console.log(' Flashcard updated successfully');
     
     return {
       id: row.ID,
@@ -956,15 +956,15 @@ export class OracleStorage {
 
   async deleteFlashcard(id: string): Promise<boolean> {
     await this.initialize();
-    console.log('📝 Deleting flashcard:', id);
+    console.log(' Deleting flashcard:', id);
     
     const result = await executeQuery('DELETE FROM flashcards WHERE id = :id', { id });
     const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
     
     if (success) {
-      console.log('✅ Flashcard deleted successfully');
+      console.log(' Flashcard deleted successfully');
     } else {
-      console.log('❌ Flashcard not found');
+      console.log(' Flashcard not found');
     }
     
     return success;
@@ -973,7 +973,7 @@ export class OracleStorage {
   // Flashcard Deck methods
   async getDecksByUserId(userId: string): Promise<FlashcardDeck[]> {
     await this.initialize();
-    console.log('📁 Fetching decks for user:', userId);
+    console.log(' Fetching decks for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM flashcard_decks WHERE user_id = :userId ORDER BY sort_order, created_at',
@@ -981,11 +981,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No decks found for user:', userId);
+      console.log(' No decks found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found decks:', result.rows.length);
+    console.log(' Found decks:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -1006,7 +1006,7 @@ export class OracleStorage {
     const createdAt = new Date();
     const updatedAt = new Date();
     
-    console.log('📁 Creating deck:', { id, ...deck });
+    console.log(' Creating deck:', { id, ...deck });
     
     const sql = `
       INSERT INTO flashcard_decks (id, user_id, name, description, parent_deck_id, color, sort_order, created_at, updated_at)
@@ -1025,7 +1025,7 @@ export class OracleStorage {
       updatedAt
     });
     
-    console.log('✅ Deck created successfully');
+    console.log(' Deck created successfully');
     
     return {
       id,
@@ -1042,7 +1042,7 @@ export class OracleStorage {
 
   async updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined> {
     await this.initialize();
-    console.log('📁 Updating deck:', id, deck);
+    console.log(' Updating deck:', id, deck);
     
     const setParts = [];
     const params: any = { id };
@@ -1069,7 +1069,7 @@ export class OracleStorage {
     }
     
     if (setParts.length === 0) {
-      console.log('⚠️ No fields to update');
+      console.log(' No fields to update');
       return undefined;
     }
     
@@ -1081,12 +1081,12 @@ export class OracleStorage {
     
     const result = await executeQuery('SELECT * FROM flashcard_decks WHERE id = :id', { id });
     if (!result.rows || result.rows.length === 0) {
-      console.log('❌ Deck not found after update');
+      console.log(' Deck not found after update');
       return undefined;
     }
     
     const row = result.rows[0] as any;
-    console.log('✅ Deck updated successfully');
+    console.log(' Deck updated successfully');
     
     return {
       id: row.ID,
@@ -1103,15 +1103,15 @@ export class OracleStorage {
 
   async deleteDeck(id: string): Promise<boolean> {
     await this.initialize();
-    console.log('📁 Deleting deck:', id);
+    console.log(' Deleting deck:', id);
     
     const result = await executeQuery('DELETE FROM flashcard_decks WHERE id = :id', { id });
     const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
     
     if (success) {
-      console.log('✅ Deck deleted successfully');
+      console.log(' Deck deleted successfully');
     } else {
-      console.log('❌ Deck not found');
+      console.log(' Deck not found');
     }
     
     return success;
@@ -1119,7 +1119,7 @@ export class OracleStorage {
 
   async getFlashcardsByDeck(deckId: string): Promise<Flashcard[]> {
     await this.initialize();
-    console.log('📝 Fetching flashcards for deck:', deckId);
+    console.log(' Fetching flashcards for deck:', deckId);
     
     const result = await executeQuery(
       'SELECT * FROM flashcards WHERE deck_id = :deckId ORDER BY created_at DESC',
@@ -1127,11 +1127,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No flashcards found for deck:', deckId);
+      console.log(' No flashcards found for deck:', deckId);
       return [];
     }
     
-    console.log('✅ Found flashcards:', result.rows.length);
+    console.log(' Found flashcards:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -1162,7 +1162,7 @@ export class OracleStorage {
     const id = randomUUID();
     const createdAt = new Date();
     
-    console.log('📊 Recording flashcard review:', { id, ...review });
+    console.log(' Recording flashcard review:', { id, ...review });
     
     const sql = `
       INSERT INTO flashcard_reviews (id, user_id, flashcard_id, deck_id, was_correct, 
@@ -1184,7 +1184,7 @@ export class OracleStorage {
       createdAt
     });
     
-    console.log('✅ Review recorded successfully');
+    console.log(' Review recorded successfully');
     
     return {
       id,
@@ -1202,7 +1202,7 @@ export class OracleStorage {
 
   async getDailyStats(userId: string, days: number = 30): Promise<any[]> {
     await this.initialize();
-    console.log('📊 Fetching daily stats for user:', userId, 'days:', days);
+    console.log(' Fetching daily stats for user:', userId, 'days:', days);
     
     const sql = `
       SELECT * FROM v_daily_review_stats 
@@ -1214,11 +1214,11 @@ export class OracleStorage {
     const result = await executeQuery(sql, { userId, days });
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No daily stats found');
+      console.log(' No daily stats found');
       return [];
     }
     
-    console.log('✅ Found daily stats:', result.rows.length);
+    console.log(' Found daily stats:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       userId: row.USER_ID,
@@ -1234,18 +1234,18 @@ export class OracleStorage {
 
   async getDeckStats(userId: string): Promise<any[]> {
     await this.initialize();
-    console.log('📊 Fetching deck stats for user:', userId);
+    console.log(' Fetching deck stats for user:', userId);
     
     const sql = `SELECT * FROM v_deck_stats WHERE user_id = :userId`;
     
     const result = await executeQuery(sql, { userId });
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No deck stats found');
+      console.log(' No deck stats found');
       return [];
     }
     
-    console.log('✅ Found deck stats:', result.rows.length);
+    console.log(' Found deck stats:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       deckId: row.DECK_ID,
@@ -1263,7 +1263,7 @@ export class OracleStorage {
 
   async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
     await this.initialize();
-    console.log('📊 Fetching retention curve for user:', userId, 'deck:', deckId);
+    console.log(' Fetching retention curve for user:', userId, 'deck:', deckId);
     
     let sql = `SELECT * FROM v_retention_curve WHERE user_id = :userId`;
     const params: any = { userId };
@@ -1278,11 +1278,11 @@ export class OracleStorage {
     const result = await executeQuery(sql, params);
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No retention curve data found');
+      console.log(' No retention curve data found');
       return [];
     }
     
-    console.log('✅ Found retention curve data:', result.rows.length);
+    console.log(' Found retention curve data:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       userId: row.USER_ID,
@@ -1297,7 +1297,7 @@ export class OracleStorage {
   // Mood Entry methods
   async getMoodEntriesByUserId(userId: string): Promise<MoodEntry[]> {
     await this.initialize();
-    console.log('😊 Fetching mood entries for user:', userId);
+    console.log(' Fetching mood entries for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM mood_entries WHERE user_id = :userId ORDER BY created_at DESC',
@@ -1305,11 +1305,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No mood entries found for user:', userId);
+      console.log(' No mood entries found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found mood entries:', result.rows.length);
+    console.log(' Found mood entries:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -1327,7 +1327,7 @@ export class OracleStorage {
     const createdAt = new Date();
     const date = new Date();
     
-    console.log('😊 Creating mood entry:', { id, ...entry });
+    console.log(' Creating mood entry:', { id, ...entry });
     
     const sql = `
       INSERT INTO mood_entries (id, user_id, mood, notes, date_entry, created_at)
@@ -1343,7 +1343,7 @@ export class OracleStorage {
       createdAt
     });
     
-    console.log('✅ Mood entry created successfully');
+    console.log(' Mood entry created successfully');
     
     return {
       id,
@@ -1358,7 +1358,7 @@ export class OracleStorage {
   // Journal Entry methods
   async getJournalEntriesByUserId(userId: string): Promise<JournalEntry[]> {
     await this.initialize();
-    console.log('📓 Fetching journal entries for user:', userId);
+    console.log(' Fetching journal entries for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM journal_entries WHERE user_id = :userId ORDER BY created_at DESC',
@@ -1366,11 +1366,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No journal entries found for user:', userId);
+      console.log(' No journal entries found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found journal entries:', result.rows.length);
+    console.log(' Found journal entries:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -1387,7 +1387,7 @@ export class OracleStorage {
     const createdAt = new Date();
     const date = new Date();
     
-    console.log('📓 Creating journal entry:', { id, ...entry });
+    console.log(' Creating journal entry:', { id, ...entry });
     
     const sql = `
       INSERT INTO journal_entries (id, user_id, content, date_entry, created_at)
@@ -1402,7 +1402,7 @@ export class OracleStorage {
       createdAt
     });
     
-    console.log('✅ Journal entry created successfully');
+    console.log(' Journal entry created successfully');
     
     return {
       id,
@@ -1415,7 +1415,7 @@ export class OracleStorage {
 
   async updateJournalEntry(id: string, entry: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined> {
     await this.initialize();
-    console.log('📓 Updating journal entry:', id, entry);
+    console.log(' Updating journal entry:', id, entry);
     
     const setParts = [];
     const params: any = { id };
@@ -1430,7 +1430,7 @@ export class OracleStorage {
     }
     
     if (setParts.length === 0) {
-      console.log('⚠️ No fields to update');
+      console.log(' No fields to update');
       return undefined;
     }
     
@@ -1440,12 +1440,12 @@ export class OracleStorage {
     // Return updated journal entry
     const result = await executeQuery('SELECT * FROM journal_entries WHERE id = :id', { id });
     if (!result.rows || result.rows.length === 0) {
-      console.log('❌ Journal entry not found after update');
+      console.log(' Journal entry not found after update');
       return undefined;
     }
     
     const row = result.rows[0] as any;
-    console.log('✅ Journal entry updated successfully');
+    console.log(' Journal entry updated successfully');
     
     return {
       id: row.ID,
@@ -1458,15 +1458,15 @@ export class OracleStorage {
 
   async deleteJournalEntry(id: string): Promise<boolean> {
     await this.initialize();
-    console.log('📓 Deleting journal entry:', id);
+    console.log(' Deleting journal entry:', id);
     
     const result = await executeQuery('DELETE FROM journal_entries WHERE id = :id', { id });
     const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
     
     if (success) {
-      console.log('✅ Journal entry deleted successfully');
+      console.log(' Journal entry deleted successfully');
     } else {
-      console.log('❌ Journal entry not found');
+      console.log(' Journal entry not found');
     }
     
     return success;
@@ -1475,7 +1475,7 @@ export class OracleStorage {
   // Pomodoro Session methods
   async getPomodoroSessionsByUserId(userId: string): Promise<PomodoroSession[]> {
     await this.initialize();
-    console.log('🍅 Fetching pomodoro sessions for user:', userId);
+    console.log(' Fetching pomodoro sessions for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM pomodoro_sessions WHERE user_id = :userId ORDER BY completed_at DESC',
@@ -1483,11 +1483,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No pomodoro sessions found for user:', userId);
+      console.log(' No pomodoro sessions found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found pomodoro sessions:', result.rows.length);
+    console.log(' Found pomodoro sessions:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -1503,7 +1503,7 @@ export class OracleStorage {
     const id = randomUUID();
     const completedAt = new Date();
     
-    console.log('🍅 Creating pomodoro session:', { id, ...session });
+    console.log(' Creating pomodoro session:', { id, ...session });
     
     const sql = `
       INSERT INTO pomodoro_sessions (id, user_id, duration, type, completed_at)
@@ -1518,7 +1518,7 @@ export class OracleStorage {
       completedAt
     });
     
-    console.log('✅ Pomodoro session created successfully');
+    console.log(' Pomodoro session created successfully');
     
     return {
       id,
@@ -1532,7 +1532,7 @@ export class OracleStorage {
   // AI Summary methods
   async getAiSummariesByUserId(userId: string): Promise<AiSummary[]> {
     await this.initialize();
-    console.log('🤖 Fetching AI summaries for user:', userId);
+    console.log(' Fetching AI summaries for user:', userId);
     
     const result = await executeQuery(
       'SELECT * FROM ai_summaries WHERE user_id = :userId ORDER BY created_at DESC',
@@ -1540,11 +1540,11 @@ export class OracleStorage {
     );
     
     if (!result.rows || result.rows.length === 0) {
-      console.log('✅ No AI summaries found for user:', userId);
+      console.log(' No AI summaries found for user:', userId);
       return [];
     }
     
-    console.log('✅ Found AI summaries:', result.rows.length);
+    console.log(' Found AI summaries:', result.rows.length);
     
     return result.rows.map((row: any) => ({
       id: row.ID,
@@ -1563,7 +1563,7 @@ export class OracleStorage {
     const id = randomUUID();
     const createdAt = new Date();
     
-    console.log('🤖 Creating AI summary:', { id, title: summary.title });
+    console.log(' Creating AI summary:', { id, title: summary.title });
     
     const sql = `
       INSERT INTO ai_summaries (id, user_id, title, original_content, summary_content, 
@@ -1583,7 +1583,7 @@ export class OracleStorage {
       createdAt
     });
     
-    console.log('✅ AI summary created successfully');
+    console.log(' AI summary created successfully');
     
     return {
       id,
@@ -1599,15 +1599,15 @@ export class OracleStorage {
 
   async deleteAiSummary(id: string): Promise<boolean> {
     await this.initialize();
-    console.log('🤖 Deleting AI summary:', id);
+    console.log(' Deleting AI summary:', id);
     
     const result = await executeQuery('DELETE FROM ai_summaries WHERE id = :id', { id });
     const success = Boolean(result.rowsAffected && result.rowsAffected > 0);
     
     if (success) {
-      console.log('✅ AI summary deleted successfully');
+      console.log(' AI summary deleted successfully');
     } else {
-      console.log('❌ AI summary not found');
+      console.log(' AI summary not found');
     }
     
     return success;

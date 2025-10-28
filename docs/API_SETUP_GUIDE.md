@@ -2,10 +2,10 @@
 
 ## Required API Keys & Setup
 
-### ✅ Already Configured
+###  Already Configured
 - **Groq AI API** - Already working for AI chat and summarization
 
-### 🔧 Optional Integrations (Choose what you need)
+###  Optional Integrations (Choose what you need)
 
 ## 1. Google Calendar Integration
 To enable Google Calendar sync in the Calendar page:
@@ -89,7 +89,7 @@ If you want cloud data storage:
 Your `.env` file should look like this:
 
 ```bash
-# AI API (✅ Working)
+# AI API ( Working)
 VITE_GROQ_API_KEY=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
 
 # Google Calendar (Optional)
@@ -116,15 +116,15 @@ DATABASE_URL=postgresql://username:password@localhost:5432/refyneo
 ```
 
 ## What Works Right Now
-- ✅ **AI Chat & Summarization** - Fully functional
-- ✅ **Local features** - Notes, assignments, habits, pomodoro timer
-- ✅ **Gamification** - XP, levels, achievements
-- ✅ **Dashboard customization** - Drag & drop widgets
-- ✅ **Performance optimization** - Caching, lazy loading
+-  **AI Chat & Summarization** - Fully functional
+-  **Local features** - Notes, assignments, habits, pomodoro timer
+-  **Gamification** - XP, levels, achievements
+-  **Dashboard customization** - Drag & drop widgets
+-  **Performance optimization** - Caching, lazy loading
 
 ## What Needs API Keys
-- 🔧 **Calendar sync** - Google/Outlook integration
-- 🔧 **Flashcard import** - Quizlet, Notion sync
-- 🔧 **Cloud storage** - Firebase for data backup
+-  **Calendar sync** - Google/Outlook integration
+-  **Flashcard import** - Quizlet, Notion sync
+-  **Cloud storage** - Firebase for data backup
 
 The app works perfectly without these API keys - they just enable additional cloud integrations!

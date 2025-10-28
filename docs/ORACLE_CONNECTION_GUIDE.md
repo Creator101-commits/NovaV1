@@ -1,6 +1,6 @@
 # Oracle Autonomous Database Connection Guide
 
-## Current Status: ✅ Wallet Configuration Working
+## Current Status:  Wallet Configuration Working
 Your Oracle wallet files are properly organized and the connection is reaching the Oracle Cloud servers. 
 
 ## Issue: Database Instance Paused
@@ -37,15 +37,15 @@ node test-oracle-connection.cjs
 - **Storage**: 20GB storage per database (always free)
 
 ## Next Steps After Starting:
-1. ✅ Test connection (should work once started)
-2. ✅ Create database tables using `oracle_schema.sql`
-3. ✅ Import your PostgreSQL data
-4. ✅ Update application to use Oracle storage
+1.  Test connection (should work once started)
+2.  Create database tables using `oracle_schema.sql`
+3.  Import your PostgreSQL data
+4.  Update application to use Oracle storage
 
 ## Connection Details:
 - **Service**: `yjxu7nia1a0sj43k_high`
 - **User**: `ADMIN`
-- **Wallet**: Properly configured ✅
-- **Status**: Database needs to be started 🚀
+- **Wallet**: Properly configured 
+- **Status**: Database needs to be started 
 
 The setup is working perfectly - you just need to start the database instance!

@@ -81,14 +81,14 @@ export default function DeckManager({ onDeckSelect, selectedDeckId, onStudyDeck 
     try {
       setLoading(true);
       const response = await apiGet(`/api/users/${user.uid}/flashcard-decks`);
-      console.log('🔍 Raw API response:', response);
+      console.log(' Raw API response:', response);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const decks = await response.json() as FlashcardDeck[];
-      console.log('📦 Parsed decks:', decks);
+      console.log(' Parsed decks:', decks);
       
       // Validate and sanitize deck data
       const validDecks = decks.filter(deck => 
@@ -108,7 +108,7 @@ export default function DeckManager({ onDeckSelect, selectedDeckId, onStudyDeck 
         updatedAt: deck.updatedAt || new Date().toISOString()
       }));
       
-      console.log('✅ Valid decks:', validDecks);
+      console.log(' Valid decks:', validDecks);
       setDecks(validDecks);
     } catch (error) {
       console.error('Failed to load decks:', error);
@@ -341,7 +341,7 @@ export default function DeckManager({ onDeckSelect, selectedDeckId, onStudyDeck 
       </div>
     );
     } catch (error) {
-      console.error('❌ Error rendering deck item:', error, deck);
+      console.error(' Error rendering deck item:', error, deck);
       return (
         <div key={deck.id} className="p-3 border border-red-200 rounded-lg bg-red-50">
           <p className="text-red-600 text-sm">Error rendering deck: {deck.name}</p>

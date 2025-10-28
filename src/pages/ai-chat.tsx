@@ -182,7 +182,7 @@ export default function AiChat() {
       const response = await apiPost(`/api/users/${user.uid}/ai-summaries`, summaryData);
       
       if (response.ok) {
-        console.log('✅ AI summary saved to database');
+        console.log(' AI summary saved to database');
       } else {
         console.error('Failed to save AI summary to database:', response.status);
       }
@@ -193,14 +193,14 @@ export default function AiChat() {
 
   const testConnection = async () => {
     setIsLoading(true);
-    addMessage("user", "🔧 Testing AI connection...");
+    addMessage("user", " Testing AI connection...");
 
     try {
       const response = await groqAPI.chat({
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful AI assistant. Respond with exactly "✅ Connection successful! AI chat is working properly." to confirm the connection.'
+            content: 'You are a helpful AI assistant. Respond with exactly " Connection successful! AI chat is working properly." to confirm the connection.'
           },
           {
             role: 'user',
@@ -218,7 +218,7 @@ export default function AiChat() {
       });
     } catch (error) {
       console.error("Connection test error:", error);
-      let errorMessage = "❌ **Connection Test Failed**\n\nThe AI service is not responding properly.";
+      let errorMessage = " **Connection Test Failed**\n\nThe AI service is not responding properly.";
       
       if (error instanceof Error) {
         errorMessage += `\n\n**Error Details:** ${error.message}`;
@@ -276,7 +276,7 @@ export default function AiChat() {
   | Bold | **text** | **Important** |
 - Use --- for section breaks
 - Use checklists - [ ] for tasks or troubleshooting steps
-- Use emoji appropriately for warnings (⚠️), tips (💡), success (✅), etc.
+- Use emoji appropriately for warnings (), tips (), success (), etc.
 - Use $$math$$ for mathematical equations: $$E = mc^2$$
 - Use inline math: $\\alpha + \\beta = \\gamma$
 - Create Mermaid diagrams for flowcharts, sequence diagrams, etc:
@@ -287,7 +287,7 @@ export default function AiChat() {
       B -->|No| D[Action 2]
   \`\`\`
 - Create callout boxes with emoji + **title** for important information:
-  💡 **Pro Tip**
+   **Pro Tip**
   Content here
   
 **Supported Programming Languages for Syntax Highlighting:**
@@ -340,19 +340,19 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
       
       if (error instanceof Error) {
         if (error.message.includes('Invalid API key') || error.message.includes('401')) {
-          errorMessage = "⚠️ **API Configuration Issue**\n\nThe Groq API key needs to be configured. Please check your settings and try again.";
+          errorMessage = " **API Configuration Issue**\n\nThe Groq API key needs to be configured. Please check your settings and try again.";
         } else if (error.message.includes('404') || error.message.includes('model')) {
-          errorMessage = "⚠️ **Model Issue**\n\nThe AI model is currently unavailable. Please try again in a moment.";
+          errorMessage = " **Model Issue**\n\nThe AI model is currently unavailable. Please try again in a moment.";
         } else if (error.message.includes('rate limit') || error.message.includes('429')) {
-          errorMessage = "⚠️ **Rate Limit**\n\nToo many requests. Please wait a moment and try again.";
+          errorMessage = " **Rate Limit**\n\nToo many requests. Please wait a moment and try again.";
         } else if (error.message.includes('Network error') || error.message.includes('fetch')) {
-          errorMessage = "⚠️ **Connection Issue**\n\nUnable to connect to the AI service. Please check your internet connection and try again.";
+          errorMessage = " **Connection Issue**\n\nUnable to connect to the AI service. Please check your internet connection and try again.";
         } else if (error.message.includes('Bad request') || error.message.includes('400')) {
-          errorMessage = "⚠️ **Request Error**\n\nThere was an issue with the request format. Please try rephrasing your message.";
+          errorMessage = " **Request Error**\n\nThere was an issue with the request format. Please try rephrasing your message.";
         } else if (error.message.includes('500') || error.message.includes('server error')) {
-          errorMessage = "⚠️ **Server Error**\n\nThe AI service is temporarily unavailable. Please try again later.";
+          errorMessage = " **Server Error**\n\nThe AI service is temporarily unavailable. Please try again later.";
         } else {
-          errorMessage = `⚠️ **Unexpected Error**\n\n${error.message}\n\nPlease try again or contact support if the issue persists.`;
+          errorMessage = ` **Unexpected Error**\n\n${error.message}\n\nPlease try again or contact support if the issue persists.`;
         }
       }
       
@@ -570,7 +570,7 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
       
       // Provide a demo mode if transcript fetching fails
       if (msg.includes("Transcript is disabled")) {
-        addMessage("assistant", `⚠️ **YouTube Transcript Issue**
+        addMessage("assistant", ` **YouTube Transcript Issue**
 
 ${msg}
 
@@ -1221,7 +1221,7 @@ ${msg}
                       onChange={(e) => setYoutubeUrl(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      💡 <strong>Tip:</strong> Educational videos, tutorials, and news content typically have working captions. Music videos and older content often have disabled transcripts.
+                       <strong>Tip:</strong> Educational videos, tutorials, and news content typically have working captions. Music videos and older content often have disabled transcripts.
                     </p>
                     <Button
                       onClick={handleYoutubeSummarize}

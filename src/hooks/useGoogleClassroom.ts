@@ -164,7 +164,7 @@ export const useGoogleClassroom = () => {
       // First try to load from cached data if available
       const cachedData = (window as any).cachedClassroomData;
       if (cachedData) {
-        console.log('✅ Loading Google Classroom data from cache');
+        console.log(' Loading Google Classroom data from cache');
         setData(prev => ({
           ...prev,
           courses: cachedData.courses || [],
@@ -183,7 +183,7 @@ export const useGoogleClassroom = () => {
     const handleAuthRestore = () => {
       const cachedData = (window as any).cachedClassroomData;
       if (cachedData && user?.uid) {
-        console.log('✅ Auth restored, updating Google Classroom data');
+        console.log(' Auth restored, updating Google Classroom data');
         setData(prev => ({
           ...prev,
           courses: cachedData.courses || [],

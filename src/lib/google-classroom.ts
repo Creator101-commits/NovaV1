@@ -197,7 +197,7 @@ export const syncGoogleClassroomData = async (accessToken: string, userId?: stri
     // Sync data to database if userId is provided
     if (userId) {
       try {
-        console.log('🔄 Syncing Google Classroom data to database...');
+        console.log(' Syncing Google Classroom data to database...');
         
         const response = await fetch('/api/sync/google-classroom', {
           method: 'POST',
@@ -213,13 +213,13 @@ export const syncGoogleClassroomData = async (accessToken: string, userId?: stri
 
         if (response.ok) {
           const result = await response.json();
-          console.log('✅ Google Classroom data synced to database:', result);
+          console.log(' Google Classroom data synced to database:', result);
         } else {
           const errorText = await response.text();
-          console.error('❌ Failed to sync to database:', errorText);
+          console.error(' Failed to sync to database:', errorText);
         }
       } catch (syncError) {
-        console.error('❌ Error syncing to database:', syncError);
+        console.error(' Error syncing to database:', syncError);
         // Don't throw - allow the function to continue returning local data
       }
     }

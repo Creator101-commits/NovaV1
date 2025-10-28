@@ -203,7 +203,7 @@ export const HabitsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) 
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span>Exercise</span>
-            <span>✓</span>
+            <span></span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div className="bg-green-600 h-2 rounded-full" style={{ width: '100%' }}></div>

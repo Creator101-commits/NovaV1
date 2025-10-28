@@ -42,7 +42,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'first_habit',
     title: 'Habit Starter',
     description: 'Complete your first habit',
-    icon: '🌱',
+    icon: '',
     category: 'habits',
     xpReward: 50,
     target: 1,
@@ -52,7 +52,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'habit_streak_7',
     title: 'Week Warrior',
     description: 'Maintain a 7-day habit streak',
-    icon: '🔥',
+    icon: '',
     category: 'streaks',
     xpReward: 200,
     target: 7,
@@ -62,7 +62,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'habit_streak_30',
     title: 'Monthly Master',
     description: 'Maintain a 30-day habit streak',
-    icon: '💎',
+    icon: '',
     category: 'streaks',
     xpReward: 1000,
     target: 30,
@@ -74,7 +74,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'first_assignment',
     title: 'Task Tackler',
     description: 'Complete your first assignment',
-    icon: '✅',
+    icon: '',
     category: 'assignments',
     xpReward: 100,
     target: 1,
@@ -84,7 +84,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'assignments_10',
     title: 'Assignment Ace',
     description: 'Complete 10 assignments',
-    icon: '🏆',
+    icon: '',
     category: 'assignments',
     xpReward: 500,
     target: 10,
@@ -94,7 +94,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'early_bird',
     title: 'Early Bird',
     description: 'Submit 5 assignments before their due date',
-    icon: '🐦',
+    icon: '',
     category: 'assignments',
     xpReward: 300,
     target: 5,
@@ -106,7 +106,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'study_1_hour',
     title: 'Study Session',
     description: 'Study for 1 hour straight',
-    icon: '📚',
+    icon: '',
     category: 'study',
     xpReward: 150,
     target: 3600000, // 1 hour in milliseconds
@@ -116,7 +116,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'study_10_hours',
     title: 'Dedicated Scholar',
     description: 'Accumulate 10 hours of study time',
-    icon: '🎓',
+    icon: '',
     category: 'study',
     xpReward: 800,
     target: 36000000, // 10 hours
@@ -221,7 +221,7 @@ export const useGamification = () => {
     // Check for level up
     if (levelInfo.level > userStats.level) {
       toast({
-        title: `🎉 Level Up! Level ${levelInfo.level}`,
+        title: ` Level Up! Level ${levelInfo.level}`,
         description: `You've reached level ${levelInfo.level}! Keep up the great work!`,
       });
     }
@@ -292,7 +292,7 @@ export const useGamification = () => {
     awardXP(achievement.xpReward);
     
     toast({
-      title: `🏆 Achievement Unlocked!`,
+      title: ` Achievement Unlocked!`,
       description: `${achievement.icon} ${achievement.title} - ${achievement.description}`,
     });
   };

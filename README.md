@@ -309,7 +309,7 @@ See [API Documentation](ProductivityHub/ProductivityHub/docs/API.md) for detaile
 - Write tests for new features
 - Update documentation as needed
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 

@@ -100,9 +100,9 @@ export const Flashcards = () => {
       const response = await apiGet(`/api/users/${user.uid}/flashcard-decks`);
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 Raw decks data:', data);
+        console.log(' Raw decks data:', data);
         setDecks(data);
-        console.log('✅ Loaded decks:', data.length);
+        console.log(' Loaded decks:', data.length);
       } else {
         console.error('Failed to load decks:', response.status);
       }
@@ -121,7 +121,7 @@ export const Flashcards = () => {
       if (response.ok) {
         const data = await response.json();
         setFlashcards(data);
-        console.log('✅ Loaded flashcards:', data.length);
+        console.log(' Loaded flashcards:', data.length);
       } else {
         console.error('Failed to load flashcards:', response.status);
         toast({
@@ -155,7 +155,7 @@ export const Flashcards = () => {
     }
 
     try {
-      console.log('🔍 Creating flashcard with data:', {
+      console.log(' Creating flashcard with data:', {
         front: newCard.front,
         back: newCard.back,
         difficulty: newCard.difficulty,
@@ -258,7 +258,7 @@ export const Flashcards = () => {
       if (response.ok) {
         const data = await response.json();
         setNotes(data);
-        console.log('✅ Loaded notes for AI flashcards:', data.length);
+        console.log(' Loaded notes for AI flashcards:', data.length);
       } else {
         console.error('Failed to load notes:', response.status);
         toast({
@@ -567,7 +567,7 @@ Return only the JSON array, no other text.`;
                   <select 
                     value={newCard.deckId} 
                     onChange={(e) => {
-                      console.log('🔍 Deck selected:', e.target.value);
+                      console.log(' Deck selected:', e.target.value);
                       setNewCard(prev => ({ ...prev, deckId: e.target.value, subdeckId: "" }));
                     }}
                     className="w-full p-2 border rounded-md"
@@ -586,7 +586,7 @@ Return only the JSON array, no other text.`;
                     <select 
                       value={newCard.subdeckId} 
                       onChange={(e) => {
-                        console.log('🔍 Subdeck selected:', e.target.value);
+                        console.log(' Subdeck selected:', e.target.value);
                         setNewCard(prev => ({ ...prev, subdeckId: e.target.value }));
                       }}
                       className="w-full p-2 border rounded-md"
@@ -672,7 +672,7 @@ Return only the JSON array, no other text.`;
                   <select 
                     value={newCard.deckId} 
                     onChange={(e) => {
-                      console.log('🔍 Deck selected:', e.target.value);
+                      console.log(' Deck selected:', e.target.value);
                       setNewCard(prev => ({ ...prev, deckId: e.target.value, subdeckId: "" }));
                     }}
                     className="w-full p-2 border rounded-md"
@@ -691,7 +691,7 @@ Return only the JSON array, no other text.`;
                     <select 
                       value={newCard.subdeckId} 
                       onChange={(e) => {
-                        console.log('🔍 Subdeck selected:', e.target.value);
+                        console.log(' Subdeck selected:', e.target.value);
                         setNewCard(prev => ({ ...prev, subdeckId: e.target.value }));
                       }}
                       className="w-full p-2 border rounded-md"

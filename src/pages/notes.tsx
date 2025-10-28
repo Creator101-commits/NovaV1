@@ -66,11 +66,11 @@ export default function NotesPage() {
   useEffect(() => {
     // Only load data when user is authenticated and not loading
     if (!loading && user) {
-      console.log('🔥 User authenticated, loading notes and classes...');
+      console.log(' User authenticated, loading notes and classes...');
       loadNotes();
       loadClasses();
     } else if (!loading && !user) {
-      console.warn('⚠️ User not authenticated, cannot load notes');
+      console.warn(' User not authenticated, cannot load notes');
     }
   }, [loading, user]);
 
@@ -79,20 +79,20 @@ export default function NotesPage() {
       setIsLoading(true);
     }
     try {
-      console.log('🔥 Loading notes...');
+      console.log(' Loading notes...');
       const response = await apiGet("/api/notes");
-      console.log('🔥 Load notes response status:', response.status, response.ok);
+      console.log(' Load notes response status:', response.status, response.ok);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('🔥 Loaded notes data:', data.length, 'notes');
+        console.log(' Loaded notes data:', data.length, 'notes');
         setNotes(Array.isArray(data) ? data : []);
-        console.log('📝 Loaded notes:', data.length);
+        console.log(' Loaded notes:', data.length);
       } else {
         throw new Error(`Failed to fetch notes: ${response.status}`);
       }
     } catch (error) {
-      console.error('🔥 Load notes error:', error);
+      console.error(' Load notes error:', error);
       toast({
         title: "Error",
         description: `Failed to load notes: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -122,24 +122,24 @@ export default function NotesPage() {
 
   const handleSaveNote = async (noteData: Partial<InsertNote>) => {
     try {
-      console.log('🔥 Saving note:', noteData);
+      console.log(' Saving note:', noteData);
       const response = editingNote?.id 
         ? await apiPut(`/api/notes/${editingNote.id}`, noteData)
         : await apiPost("/api/notes", noteData);
       
-      console.log('🔥 Save response status:', response.status, response.ok);
+      console.log(' Save response status:', response.status, response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const savedNote = await response.json();
-      console.log('🔥 Saved note:', savedNote);
+      console.log(' Saved note:', savedNote);
       
       // Force refresh the notes list to ensure we have the latest data
-      console.log('🔥 Refreshing notes list...');
+      console.log(' Refreshing notes list...');
       await loadNotes(false);
-      console.log('🔥 Notes list refreshed');
+      console.log(' Notes list refreshed');
       
       toast({
         title: "Success",
@@ -147,7 +147,7 @@ export default function NotesPage() {
       });
       return savedNote;
     } catch (error) {
-      console.error('🔥 Save error:', error);
+      console.error(' Save error:', error);
       toast({
         title: "Error",
         description: `Failed to save note: ${error instanceof Error ? error.message : 'Unknown error'}`,

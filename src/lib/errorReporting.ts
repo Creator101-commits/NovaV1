@@ -166,7 +166,7 @@ class ErrorReporter {
 
     // Log to console in development
     if (import.meta.env.DEV) {
-      console.group('🐛 Error Captured');
+      console.group(' Error Captured');
       console.error('Error:', errorObj);
       console.log('Context:', report.context);
       console.log('Breadcrumbs:', report.breadcrumbs);
@@ -191,7 +191,7 @@ class ErrorReporter {
    * Capture warning (non-critical issues)
    */
   captureWarning(message: string, data?: Record<string, any>) {
-    console.warn('⚠️ Warning:', message, data);
+    console.warn(' Warning:', message, data);
     this.addBreadcrumb('info', `Warning: ${message}`, data);
 
     // Store warning locally
@@ -228,7 +228,7 @@ class ErrorReporter {
 
     // Log slow operations (>2s)
     if (duration > 2000) {
-      console.warn(`⚡ Slow operation detected: ${name} took ${duration}ms`, metadata);
+      console.warn(` Slow operation detected: ${name} took ${duration}ms`, metadata);
       this.captureWarning(`Slow operation: ${name}`, {
         duration,
         ...metadata,

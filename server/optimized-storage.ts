@@ -171,10 +171,10 @@ export class OptimizedStorage {
   constructor() {
     try {
       this.baseStorage = new OracleStorage();
-      console.log('✅ Optimized Oracle storage initialized');
+      console.log(' Optimized Oracle storage initialized');
     } catch (error) {
-      console.error('❌ Failed to initialize Oracle storage:', error);
-      console.log('📱 Falling back to localStorage storage');
+      console.error(' Failed to initialize Oracle storage:', error);
+      console.log(' Falling back to localStorage storage');
       this.baseStorage = new LocalStorageFallback();
     }
 

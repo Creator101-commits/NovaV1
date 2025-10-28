@@ -229,7 +229,7 @@ export const useSmartScheduling = () => {
       if (peakHours.some(hour => 
         sessions.some(s => s.startTime.getHours() === hour && s.priority === 'high')
       )) {
-        suggestions.push("✨ High-priority tasks are scheduled during your peak energy hours!");
+        suggestions.push(" High-priority tasks are scheduled during your peak energy hours!");
       }
       
       const totalStudyTime = sessions
@@ -241,7 +241,7 @@ export const useSmartScheduling = () => {
         .reduce((total, s) => total + (s.endTime.getTime() - s.startTime.getTime()), 0);
       
       if (totalBreakTime < totalStudyTime * 0.2) {
-        suggestions.push("💡 Consider adding more breaks for better focus and retention.");
+        suggestions.push(" Consider adding more breaks for better focus and retention.");
       }
     }
 

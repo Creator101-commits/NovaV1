@@ -66,7 +66,7 @@ export const makeAuthenticatedRequest = async (endpoint: string, options: Reques
 };
 
 const makeActualRequest = async (url: string, options: RequestInit, userId: string | null) => {
-  console.log('🔍 API Debug:', { 
+  console.log(' API Debug:', { 
     url, 
     userId,
     method: options.method || 'GET',
@@ -81,9 +81,9 @@ const makeActualRequest = async (url: string, options: RequestInit, userId: stri
   // Add user ID to headers if available
   if (userId) {
     headers['x-user-id'] = userId;
-    console.log('✅ Adding user ID to headers:', userId);
+    console.log(' Adding user ID to headers:', userId);
   } else {
-    console.warn('⚠️ No user ID available - user may not be authenticated');
+    console.warn(' No user ID available - user may not be authenticated');
   }
 
   try {
@@ -92,7 +92,7 @@ const makeActualRequest = async (url: string, options: RequestInit, userId: stri
       headers,
     });
 
-    console.log('🔍 API Response:', { 
+    console.log(' API Response:', { 
       url, 
       status: response.status, 
       ok: response.ok,

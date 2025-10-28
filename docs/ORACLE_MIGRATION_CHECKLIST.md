@@ -1,6 +1,6 @@
 # Oracle Migration Testing Checklist
 
-## 🚀 **STEP-BY-STEP MIGRATION COMPLETION**
+##  **STEP-BY-STEP MIGRATION COMPLETION**
 
 ### 1. **Complete .env Setup**
 ```bash
@@ -44,7 +44,7 @@ npm run dev
 
 ---
 
-## 🧪 **API TESTING ENDPOINTS**
+##  **API TESTING ENDPOINTS**
 
 ### **Notes API**
 - `GET /api/notes` - List all notes
@@ -78,7 +78,7 @@ npm run dev
 
 ---
 
-## 🎯 **UI TESTING CHECKLIST**
+##  **UI TESTING CHECKLIST**
 
 ### **Frontend Features to Test:**
 - [ ] Notes page loads without errors
@@ -101,7 +101,7 @@ npm run dev
 
 ---
 
-## 🔍 **VERIFICATION STEPS**
+##  **VERIFICATION STEPS**
 
 ### **Database Verification:**
 ```bash
@@ -122,19 +122,19 @@ SELECT * FROM notes WHERE ROWNUM <= 5;
 
 ---
 
-## 🎉 **SUCCESS CRITERIA**
+##  **SUCCESS CRITERIA**
 
-✅ Oracle tables created successfully  
-✅ CSV data imported to Oracle  
-✅ Application connects to Oracle  
-✅ All API endpoints work  
-✅ Frontend loads and functions correctly  
-✅ Data persists between sessions  
-✅ No PostgreSQL dependencies remaining  
+ Oracle tables created successfully  
+ CSV data imported to Oracle  
+ Application connects to Oracle  
+ All API endpoints work  
+ Frontend loads and functions correctly  
+ Data persists between sessions  
+ No PostgreSQL dependencies remaining  
 
 ---
 
-## 🛠 **TROUBLESHOOTING**
+##  **TROUBLESHOOTING**
 
 ### **Common Issues:**
 1. **"ORA-12514: TNS:listener does not currently know of service"**

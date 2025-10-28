@@ -24,19 +24,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Firebase token verification is handled by frontend
     const userId = req.headers['x-user-id'] || req.headers['user-id'];
     
-    console.log('🔍 Server Debug - Headers:', {
+    console.log(' Server Debug - Headers:', {
       'x-user-id': req.headers['x-user-id'],
       'user-id': req.headers['user-id'],
       allHeaders: Object.keys(req.headers)
     });
     
     if (userId) {
-      console.log('✅ User ID found:', userId);
+      console.log(' User ID found:', userId);
       return userId as string;
     }
     
     // No fallback - require proper authentication
-    console.error('❌ No user ID provided in request headers');
+    console.error(' No user ID provided in request headers');
     throw new Error('Authentication required: No user ID provided');
   };
 
@@ -62,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         user = await optimizedStorage.updateUser(uid, updateData);
-        console.log(`✅ Updated user: ${email}`);
+        console.log(` Updated user: ${email}`);
       } else {
         // Create new user
         const userData = {
@@ -77,12 +77,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Use Firebase UID as the Oracle database user ID
         user = await optimizedStorage.createUserWithId(uid, userData);
-        console.log(`✅ Created new user: ${email}`);
+        console.log(` Created new user: ${email}`);
       }
       
       res.json({ success: true, user });
     } catch (error) {
-      console.error('❌ Error syncing user:', error);
+      console.error(' Error syncing user:', error);
       res.status(500).json({ message: "Failed to sync user" });
     }
   });
@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignments: syncedAssignments,
       });
     } catch (error) {
-      console.error('❌ Error syncing Google Classroom data:', error);
+      console.error(' Error syncing Google Classroom data:', error);
       res.status(500).json({ message: "Failed to sync Google Classroom data" });
     }
   });
@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Just log the calendar sync, don't create assignments from calendar events
-      console.log(`📅 Received ${events.length} calendar events for user ${userId}`);
+      console.log(` Received ${events.length} calendar events for user ${userId}`);
       console.log('Note: Calendar events are NOT synced as assignments');
 
       res.json({
@@ -226,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Calendar events received but not synced as assignments",
       });
     } catch (error) {
-      console.error('❌ Error syncing Google Calendar events:', error);
+      console.error(' Error syncing Google Calendar events:', error);
       res.status(500).json({ message: "Failed to sync Google Calendar events" });
     }
   });
@@ -530,16 +530,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users/:userId/mood-entries", async (req, res) => {
     try {
-      console.log('😊 Creating mood entry with data:', { ...req.body, userId: req.params.userId });
+      console.log(' Creating mood entry with data:', { ...req.body, userId: req.params.userId });
       const entryData = insertMoodEntrySchema.parse({ ...req.body, userId: req.params.userId });
       const entry = await storage.createMoodEntry(entryData);
       res.status(201).json(entry);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error('😊 Zod validation error:', error.errors);
+        console.error(' Zod validation error:', error.errors);
         return res.status(400).json({ message: "Invalid mood entry data", errors: error.errors });
       }
-      console.error('😊 Mood entry creation error:', error);
+      console.error(' Mood entry creation error:', error);
       res.status(500).json({ message: "Failed to create mood entry" });
     }
   });
@@ -556,16 +556,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users/:userId/journal-entries", async (req, res) => {
     try {
-      console.log('📓 Creating journal entry with data:', { ...req.body, userId: req.params.userId });
+      console.log(' Creating journal entry with data:', { ...req.body, userId: req.params.userId });
       const entryData = insertJournalEntrySchema.parse({ ...req.body, userId: req.params.userId });
       const entry = await storage.createJournalEntry(entryData);
       res.status(201).json(entry);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error('📓 Zod validation error:', error.errors);
+        console.error(' Zod validation error:', error.errors);
         return res.status(400).json({ message: "Invalid journal entry data", errors: error.errors });
       }
-      console.error('📓 Journal entry creation error:', error);
+      console.error(' Journal entry creation error:', error);
       res.status(500).json({ message: "Failed to create journal entry" });
     }
   });
@@ -661,12 +661,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notes", async (req, res) => {
     try {
       const userId = getUserId(req);
-      console.log('📝 Fetching notes for user:', userId);
+      console.log(' Fetching notes for user:', userId);
       const notes = await storage.getNotesByUserId(userId);
-      console.log('✅ Found notes:', notes.length);
+      console.log(' Found notes:', notes.length);
       res.json(notes);
     } catch (error) {
-      console.error('❌ Error fetching notes:', error);
+      console.error(' Error fetching notes:', error);
       res.status(500).json({ message: "Failed to fetch notes" });
     }
   });

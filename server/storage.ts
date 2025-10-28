@@ -743,10 +743,10 @@ let storage: OracleStorage | LocalStorageFallback;
 
 try {
   storage = new OracleStorage();
-  console.log('✅ Oracle storage initialized');
+  console.log(' Oracle storage initialized');
 } catch (error) {
-  console.error('❌ Failed to initialize Oracle storage:', error);
-  console.log('📱 Falling back to localStorage storage');
+  console.error(' Failed to initialize Oracle storage:', error);
+  console.log(' Falling back to localStorage storage');
   storage = new LocalStorageFallback();
 }
 

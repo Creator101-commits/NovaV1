@@ -32,7 +32,7 @@ export class LocalStorageFallback {
 
   async initialize() {
     this.initialized = true;
-    console.log('📱 LocalStorage fallback storage initialized');
+    console.log(' LocalStorage fallback storage initialized');
   }
 
   private getStorageDir(): string {
@@ -274,48 +274,48 @@ export class LocalStorageFallback {
 
   // Flashcard Deck methods (stub implementations for fallback)
   async getDecksByUserId(userId: string): Promise<FlashcardDeck[]> {
-    console.warn('⚠️ Deck management requires Oracle database');
+    console.warn(' Deck management requires Oracle database');
     return [];
   }
 
   async createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck> {
-    console.warn('⚠️ Deck management requires Oracle database');
+    console.warn(' Deck management requires Oracle database');
     throw new Error('Deck management requires Oracle database');
   }
 
   async updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined> {
-    console.warn('⚠️ Deck management requires Oracle database');
+    console.warn(' Deck management requires Oracle database');
     return undefined;
   }
 
   async deleteDeck(id: string): Promise<boolean> {
-    console.warn('⚠️ Deck management requires Oracle database');
+    console.warn(' Deck management requires Oracle database');
     return false;
   }
 
   async getFlashcardsByDeck(deckId: string): Promise<Flashcard[]> {
-    console.warn('⚠️ Deck management requires Oracle database');
+    console.warn(' Deck management requires Oracle database');
     return [];
   }
 
   // Flashcard Review methods (stub implementations for fallback)
   async recordReview(review: InsertFlashcardReview): Promise<FlashcardReview> {
-    console.warn('⚠️ Review tracking requires Oracle database');
+    console.warn(' Review tracking requires Oracle database');
     throw new Error('Review tracking requires Oracle database');
   }
 
   async getDailyStats(userId: string, days: number = 30): Promise<any[]> {
-    console.warn('⚠️ Statistics require Oracle database');
+    console.warn(' Statistics require Oracle database');
     return [];
   }
 
   async getDeckStats(userId: string): Promise<any[]> {
-    console.warn('⚠️ Statistics require Oracle database');
+    console.warn(' Statistics require Oracle database');
     return [];
   }
 
   async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
-    console.warn('⚠️ Statistics require Oracle database');
+    console.warn(' Statistics require Oracle database');
     return [];
   }
 

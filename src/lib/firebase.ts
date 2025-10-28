@@ -117,7 +117,7 @@ export const signInWithGoogle = async (enableSync: boolean = true) => {
           });
 
           if (response.ok) {
-            console.log('✅ User synced to Oracle database');
+            console.log(' User synced to Oracle database');
           } else {
             console.warn('Failed to sync user to Oracle database:', await response.text());
           }
@@ -279,7 +279,7 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
           });
 
           if (response.ok) {
-            console.log('✅ Email user synced to Oracle database');
+            console.log(' Email user synced to Oracle database');
           } else {
             console.warn('Failed to sync email user to Oracle database:', await response.text());
           }
@@ -331,7 +331,7 @@ export const signInWithEmail = async (email: string, password: string) => {
         });
 
         if (response.ok) {
-          console.log('✅ Signed-in user synced to Oracle database');
+          console.log(' Signed-in user synced to Oracle database');
         } else {
           console.warn('Failed to sync signed-in user to Oracle database:', await response.text());
         }
@@ -354,13 +354,13 @@ export const signInWithEmail = async (email: string, password: string) => {
  */
 export const refreshGoogleToken = async (userId: string): Promise<{ accessToken: string; expiresAt: Date } | null> => {
   try {
-    console.log('🔄 Refreshing Google token for user:', userId);
+    console.log(' Refreshing Google token for user:', userId);
 
     // Get user data from Firestore to retrieve refresh token
     const userData = await getUserData(userId);
     
     if (!userData || !userData.googleRefreshToken) {
-      console.error('❌ No refresh token found for user');
+      console.error(' No refresh token found for user');
       return null;
     }
 
@@ -378,7 +378,7 @@ export const refreshGoogleToken = async (userId: string): Promise<{ accessToken:
     });
 
     if (!response.ok) {
-      console.error('❌ Failed to refresh token:', await response.text());
+      console.error(' Failed to refresh token:', await response.text());
       return null;
     }
 
@@ -387,7 +387,7 @@ export const refreshGoogleToken = async (userId: string): Promise<{ accessToken:
     const expiresIn = tokenData.expires_in || 3600; // Default 1 hour
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    console.log('✅ Token refreshed successfully, expires at:', expiresAt);
+    console.log(' Token refreshed successfully, expires at:', expiresAt);
 
     // Update tokens in Firestore
     if (db) {
@@ -397,7 +397,7 @@ export const refreshGoogleToken = async (userId: string): Promise<{ accessToken:
           tokenExpiresAt: expiresAt,
           updatedAt: new Date(),
         });
-        console.log('✅ Updated tokens in Firestore');
+        console.log(' Updated tokens in Firestore');
       } catch (firestoreError) {
         console.warn('Failed to update tokens in Firestore:', firestoreError);
       }
@@ -420,7 +420,7 @@ export const refreshGoogleToken = async (userId: string): Promise<{ accessToken:
       });
 
       if (response.ok) {
-        console.log('✅ Updated tokens in Oracle database');
+        console.log(' Updated tokens in Oracle database');
       } else {
         console.warn('Failed to update tokens in Oracle:', await response.text());
       }
@@ -430,7 +430,7 @@ export const refreshGoogleToken = async (userId: string): Promise<{ accessToken:
 
     return { accessToken: newAccessToken, expiresAt };
   } catch (error) {
-    console.error('❌ Error refreshing Google token:', error);
+    console.error(' Error refreshing Google token:', error);
     return null;
   }
 };
@@ -455,7 +455,7 @@ export const getValidGoogleToken = async (userId: string): Promise<string | null
     const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
     if (!tokenExpiresAt || tokenExpiresAt <= fiveMinutesFromNow) {
-      console.log('⏰ Token expired or expiring soon, refreshing...');
+      console.log(' Token expired or expiring soon, refreshing...');
       const refreshResult = await refreshGoogleToken(userId);
       
       if (refreshResult) {
@@ -466,7 +466,7 @@ export const getValidGoogleToken = async (userId: string): Promise<string | null
       return null;
     }
 
-    console.log('✅ Token is still valid');
+    console.log(' Token is still valid');
     return userData.googleAccessToken;
   } catch (error) {
     console.error('Error validating Google token:', error);

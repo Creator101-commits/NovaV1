@@ -1,8 +1,8 @@
 # Oracle Database Migration Files
 
-## 📁 Files Overview
+##  Files Overview
 
-### 1. `oracle_schema_updated.sql` ✅ **USE THIS FOR FRESH INSTALL**
+### 1. `oracle_schema_updated.sql`  **USE THIS FOR FRESH INSTALL**
 **Purpose:** Complete database schema for NEW installations  
 **When to use:** First time setting up the database  
 **What it does:**
@@ -12,11 +12,11 @@
 - Ready to run on empty database
 
 **Run this if:**
-- ✅ You're setting up the database for the first time
-- ✅ You don't have any existing flashcard data
-- ✅ You want the latest features from the start
+-  You're setting up the database for the first time
+-  You don't have any existing flashcard data
+-  You want the latest features from the start
 
-### 2. `flashcard_enhancements.sql` ⚠️ **USE THIS TO UPGRADE EXISTING DATA**
+### 2. `flashcard_enhancements.sql`  **USE THIS TO UPGRADE EXISTING DATA**
 **Purpose:** Migration script for EXISTING databases  
 **When to use:** You already have flashcards and want to upgrade  
 **What it does:**
@@ -28,11 +28,11 @@
 - Creates indexes, triggers, and views
 
 **Run this if:**
-- ✅ You already have a working database with flashcards
-- ✅ You want to upgrade to the new flashcard system
-- ✅ You want to keep all your existing data
+-  You already have a working database with flashcards
+-  You want to upgrade to the new flashcard system
+-  You want to keep all your existing data
 
-## 🚀 How to Run
+##  How to Run
 
 ### Fresh Installation:
 ```sql
@@ -60,7 +60,7 @@ UNION ALL
 SELECT 'Current' as source, COUNT(*) FROM flashcards;
 ```
 
-## 📊 What's New in Enhanced Flashcard System
+##  What's New in Enhanced Flashcard System
 
 ### 1. **Decks & Subdecks**
 Organize flashcards into folders and subfolders:
@@ -91,7 +91,7 @@ Cloze: "{{c1::Mitochondria}} are the {{c2::powerhouse}} of the {{c3::cell}}"
 - Review interval scheduling
 - Automatic maturity progression
 
-## 🗄️ New Tables Created
+##  New Tables Created
 
 ### `flashcard_decks`
 - Organize cards into named decks
@@ -118,7 +118,7 @@ Cloze: "{{c1::Mitochondria}} are the {{c2::powerhouse}} of the {{c3::cell}}"
 - Correctness tracking
 - Historical ease factor and intervals
 
-## 📈 New Views Created
+##  New Views Created
 
 ### `v_daily_review_stats`
 Daily aggregated statistics per user:
@@ -140,7 +140,7 @@ Per-deck performance metrics:
 - Review counts by day
 - Success rate trends
 
-## ⚙️ Triggers Added
+##  Triggers Added
 
 ### `trg_deck_update`
 Automatically updates `updated_at` timestamp on deck modifications
@@ -148,7 +148,7 @@ Automatically updates `updated_at` timestamp on deck modifications
 ### `trg_flashcard_update`
 Automatically updates `updated_at` timestamp on flashcard modifications
 
-## 🔍 Verification Queries
+##  Verification Queries
 
 After running either script, verify with:
 
@@ -179,17 +179,17 @@ WHERE trigger_name LIKE 'TRG_%'
 ORDER BY trigger_name;
 ```
 
-## 🛡️ Safety Features
+##  Safety Features
 
 ### `flashcard_enhancements.sql` includes:
-- ✅ Automatic backup before migration
-- ✅ Data verification queries
-- ✅ Foreign key constraints preserved
-- ✅ Default deck creation for orphaned cards
-- ✅ Maturity level calculation based on review count
-- ✅ Rollback instructions in migration guide
+-  Automatic backup before migration
+-  Data verification queries
+-  Foreign key constraints preserved
+-  Default deck creation for orphaned cards
+-  Maturity level calculation based on review count
+-  Rollback instructions in migration guide
 
-## 📝 Notes
+##  Notes
 
 ### Column Naming:
 - Oracle uses UPPERCASE for column names
@@ -209,7 +209,7 @@ ORDER BY trigger_name;
 - ON DELETE CASCADE: Child records deleted with parent
 - ON DELETE SET NULL: Child records kept, reference cleared
 
-## 🆘 Troubleshooting
+##  Troubleshooting
 
 ### Error: "Table already exists"
 - You're running the wrong script
@@ -229,13 +229,13 @@ ORDER BY trigger_name;
 - Run verification queries in migration script
 - See troubleshooting section in FLASHCARD_MIGRATION_GUIDE.md
 
-## 📚 Additional Documentation
+##  Additional Documentation
 
 - `FLASHCARD_MIGRATION_GUIDE.md` - Detailed migration instructions
 - `FLASHCARD_ENHANCEMENTS.md` - Implementation roadmap
 - `BACKEND_IMPLEMENTATION_COMPLETE.md` - Backend API documentation
 
-## ✅ Post-Migration Checklist
+##  Post-Migration Checklist
 
 - [ ] All tables created successfully
 - [ ] All indexes created

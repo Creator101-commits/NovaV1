@@ -53,16 +53,16 @@ app.use((req, res, next) => {
   // Initialize optimized storage
   try {
     await optimizedStorage.initialize();
-    console.log('✅ Optimized storage initialized successfully');
+    console.log(' Optimized storage initialized successfully');
   } catch (error) {
-    console.warn('⚠️ Optimized storage initialization failed:', (error as Error).message);
+    console.warn(' Optimized storage initialization failed:', (error as Error).message);
     
     // Fallback to regular storage
     try {
       await storage.initialize();
-      console.log('✅ Fallback storage initialized successfully');
+      console.log(' Fallback storage initialized successfully');
     } catch (fallbackError) {
-      console.warn('⚠️ Fallback storage initialization failed:', (fallbackError as Error).message);
+      console.warn(' Fallback storage initialization failed:', (fallbackError as Error).message);
     }
   }
 
