@@ -23,7 +23,7 @@ const navigationItems = [
   { href: "/habits", label: "Habits", icon: CheckCircle },
   { href: "/ai-chat", label: "AI Chatbot", icon: Bot },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/toolbox", label: "Toolbox", icon: Wrench },
+  { href: "/learn", label: "Learn", icon: Wrench },
 ];
 
 export const DockNavigation = () => {

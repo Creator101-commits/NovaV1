@@ -48,7 +48,7 @@ import {
   LazyAssignments,
   LazyClasses,
   LazyNotes,
-  LazyToolbox,
+  LazyLearn,
   LazyAiChat,
   LazyAnalytics,
   LazyProfile,
@@ -254,11 +254,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-      <Route path="/toolbox">
+      <Route path="/learn">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Suspense fallback={<PageLoading message="Loading Toolbox..." />}>
-              <LazyToolbox />
+            <Suspense fallback={<PageLoading message="Loading Learn..." />}>
+              <LazyLearn />
             </Suspense>
           </AppLayout>
         </ProtectedRoute>

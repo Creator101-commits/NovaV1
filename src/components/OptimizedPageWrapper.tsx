@@ -309,10 +309,10 @@ export function ClassesPageWrapper({ children, ...props }: Omit<OptimizedPageWra
   );
 }
 
-export function ToolboxPageWrapper({ children, ...props }: Omit<OptimizedPageWrapperProps, 'title'>) {
+export function LearnPageWrapper({ children, ...props }: Omit<OptimizedPageWrapperProps, 'title'>) {
   return (
     <OptimizedPageWrapper
-      title="Toolbox"
+      title="Learn"
       description="Study tools and resources"
       {...props}
     >

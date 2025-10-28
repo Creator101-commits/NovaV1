@@ -71,9 +71,9 @@ const navigationItems: NavItem[] = [
     description: 'Take and organize notes',
   },
   {
-    id: 'toolbox',
-    label: 'Toolbox',
-    path: '/toolbox',
+    id: 'learn',
+    label: 'Learn',
+    path: '/learn',
     icon: Brain,
     description: 'Study tools and resources',
   },

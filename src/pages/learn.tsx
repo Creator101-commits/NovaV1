@@ -15,7 +15,7 @@ import {
   Bot,
 } from "lucide-react";
 
-export default function Toolbox() {
+export default function Learn() {
   const { addActivity } = useActivity();
   
   const tools = [
@@ -69,7 +69,7 @@ export default function Toolbox() {
         icon: tool.icon,
         tone: tool.color,
         type: toolId as any,
-        route: "/toolbox"
+        route: "/learn"
       });
     }
   };

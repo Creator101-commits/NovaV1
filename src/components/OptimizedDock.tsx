@@ -80,9 +80,9 @@ const dockItems: DockItem[] = [
     icon: MessageSquare,
   },
   {
-    id: 'toolbox',
-    label: 'Toolbox',
-    path: '/toolbox',
+    id: 'learn',
+    label: 'Learn',
+    path: '/learn',
     icon: Wrench,
   },
   {

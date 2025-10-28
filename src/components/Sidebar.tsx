@@ -18,7 +18,7 @@ const navigationItems = [
   { href: "/assignments", label: "Assignments", icon: BookOpen },
   { href: "/classes", label: "Classes", icon: GraduationCap },
   { href: "/notes", label: "Notes", icon: StickyNote },
-  { href: "/toolbox", label: "Toolbox", icon: Wrench },
+  { href: "/learn", label: "Learn", icon: Wrench },
   { href: "/ai-chat", label: "AI Chatbot", icon: Bot },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/profile", label: "Profile", icon: User },
