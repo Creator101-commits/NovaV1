@@ -90,7 +90,7 @@ Your `.env` file should look like this:
 
 ```bash
 # AI API ( Working)
-VITE_GROQ_API_KEY=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
+VITE_GROQ_API_KEY=aowidjoaiwjdoaiwdjoaiwdji
 
 # Google Calendar (Optional)
 VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
