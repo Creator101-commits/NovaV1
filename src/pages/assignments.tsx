@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,8 @@ import {
   Users,
   Plus,
   Trash2,
-  Check
+  Check,
+  Edit2
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -53,6 +54,115 @@ export default function Assignments() {
     classId: 'none',
     priority: 'medium' as 'low' | 'medium' | 'high'
   });
+
+  // Personal Todo List State
+  interface TodoItem {
+    id: string;
+    title: string;
+    status: 'In progress' | 'Mark received';
+    dueDate: string;
+    submittedTime: string;
+    priority: 'Low' | 'Medium' | 'High';
+  }
+
+  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [newTodoTitle, setNewTodoTitle] = useState('');
+  const [editingTodo, setEditingTodo] = useState<string | null>(null);
+  const [editingDueDate, setEditingDueDate] = useState<string | null>(null);
+  const [editingSubmittedTime, setEditingSubmittedTime] = useState<string | null>(null);
+  const [todosLoaded, setTodosLoaded] = useState(false);
+
+  // Load todos from localStorage on mount
+  useEffect(() => {
+    const savedTodos = localStorage.getItem('personal_todos');
+    console.log('Loading todos from localStorage:', savedTodos);
+    if (savedTodos) {
+      try {
+        const parsed = JSON.parse(savedTodos);
+        setTodos(parsed);
+        console.log('Loaded todos:', parsed);
+      } catch (error) {
+        console.error('Error loading todos from localStorage:', error);
+      }
+    }
+    setTodosLoaded(true);
+  }, []);
+
+  // Save todos to localStorage whenever they change (but only after initial load)
+  useEffect(() => {
+    if (todosLoaded) {
+      console.log('Saving todos to localStorage:', todos);
+      try {
+        localStorage.setItem('personal_todos', JSON.stringify(todos));
+      } catch (error) {
+        console.error('Error saving todos to localStorage:', error);
+      }
+    }
+  }, [todos, todosLoaded]);
+
+  const addTodo = useCallback(() => {
+    if (!newTodoTitle.trim()) {
+      toast({
+        title: "Empty Task",
+        description: "Please enter a task title",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newTodo: TodoItem = {
+      id: `todo-${Date.now()}`,
+      title: newTodoTitle.trim(),
+      status: 'In progress',
+      dueDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      submittedTime: '',
+      priority: 'Medium'
+    };
+    
+    setTodos(prevTodos => [...prevTodos, newTodo]);
+    setNewTodoTitle('');
+    
+    toast({
+      title: "Task Added",
+      description: `"${newTodo.title}" has been added to your todo list`,
+    });
+  }, [newTodoTitle, toast]);
+
+  const updateTodo = useCallback((id: string, field: keyof TodoItem, value: any) => {
+    setTodos(prevTodos => prevTodos.map(todo => 
+      todo.id === id ? { ...todo, [field]: value } : todo
+    ));
+  }, []);
+
+  const deleteTodo = useCallback((id: string) => {
+    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+    toast({
+      title: "Task Deleted",
+      description: "The task has been removed from your todo list",
+    });
+  }, [toast]);
+
+  const toggleTodoStatus = useCallback((id: string) => {
+    setTodos(prevTodos => prevTodos.map(todo => 
+      todo.id === id 
+        ? { 
+            ...todo, 
+            status: todo.status === 'In progress' ? 'Mark received' : 'In progress',
+            submittedTime: todo.status === 'In progress' 
+              ? new Date().toLocaleString('en-US', { 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                })
+              : ''
+          }
+        : todo
+    ));
+  }, []);
+
 
   const handleSync = useCallback(async () => {
     setIsSyncing(true);
@@ -78,8 +188,13 @@ export default function Assignments() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to mark assignment as complete');
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.message || 'Failed to mark assignment as complete');
       }
+
+      const updatedAssignment = await response.json();
+      console.log('Assignment marked complete:', updatedAssignment);
 
       // Update localStorage cache
       const storageKey = `custom_assignments_${user.uid}`;
@@ -99,13 +214,14 @@ export default function Assignments() {
       // Refresh the assignments list
       syncClassroomData(false);
     } catch (error: any) {
-      ErrorHandler.handle(
-        error,
-        'Failed to mark assignment as complete. Please try again.',
-        { context: 'markAssignmentComplete' }
-      );
+      console.error('Error marking assignment complete:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to mark assignment as complete. Please try again.',
+        variant: "destructive"
+      });
     }
-  }, [user, syncClassroomData]);
+  }, [user, syncClassroomData, toast]);
 
   const deleteCustomAssignment = useCallback(async (assignmentId: string) => {
     if (!user?.uid) return;
@@ -644,7 +760,7 @@ export default function Assignments() {
                   <div className="flex items-center gap-2">
                     {assignment.isCustom && (
                       <>
-                        {assignment.status !== 'completed' && (
+                        {assignment.status !== 'completed' ? (
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -654,6 +770,11 @@ export default function Assignments() {
                             <Check className="h-4 w-4" />
                             Mark Complete
                           </Button>
+                        ) : (
+                          <Badge variant="default" className="bg-green-600 text-white flex items-center gap-1">
+                            <Check className="h-3 w-3" />
+                            Completed
+                          </Badge>
                         )}
                         <Button 
                           variant="destructive" 
@@ -693,6 +814,233 @@ export default function Assignments() {
           </p>
         </div>
       )}
+
+      {/* Personal Todo List */}
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Check className="h-5 w-5" />
+              Personal Todo List
+            </CardTitle>
+            <Badge variant="outline" className="text-sm">
+              {todos.length} {todos.length === 1 ? 'Task' : 'Tasks'}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Add New Todo */}
+          <div className="flex gap-2 mb-4">
+            <Input
+              placeholder="Add a new task..."
+              value={newTodoTitle}
+              onChange={(e) => setNewTodoTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTodo();
+                }
+              }}
+              className="flex-1"
+            />
+            <Button 
+              onClick={addTodo} 
+              size="sm" 
+              type="button"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add
+            </Button>
+          </div>
+
+          {/* Todo Table */}
+          <div className="rounded-md border">
+            <div className="bg-muted/50">
+              <div className="grid grid-cols-[40px_1fr_140px_140px_180px_120px_60px] gap-4 p-3 text-sm font-medium text-muted-foreground">
+                <div></div>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Title
+                </div>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Status
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Due Date
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Submitted
+                </div>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Priority
+                </div>
+                <div></div>
+              </div>
+            </div>
+
+            <div className="divide-y">
+              {todos.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No tasks yet. Add one above to get started!
+                </div>
+              ) : (
+                todos.map((todo) => (
+                  <div key={todo.id} className="grid grid-cols-[40px_1fr_140px_140px_180px_120px_60px] gap-4 p-3 items-center hover:bg-muted/30 transition-colors">
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => toggleTodoStatus(todo.id)}
+                        className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          todo.status === 'Mark received' 
+                            ? 'bg-primary border-primary' 
+                            : 'border-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {todo.status === 'Mark received' && (
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </button>
+                    </div>
+                    
+                    <div>
+                      {editingTodo === todo.id ? (
+                        <Input
+                          value={todo.title}
+                          onChange={(e) => updateTodo(todo.id, 'title', e.target.value)}
+                          onBlur={() => setEditingTodo(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              setEditingTodo(null);
+                            }
+                          }}
+                          autoFocus
+                          className="h-8"
+                        />
+                      ) : (
+                        <div 
+                          className="flex items-center gap-2 cursor-pointer group"
+                          onClick={() => setEditingTodo(todo.id)}
+                        >
+                          <BookOpen className="h-4 w-4 text-muted-foreground" />
+                          <span className={todo.status === 'Mark received' ? 'line-through text-muted-foreground' : ''}>
+                            {todo.title}
+                          </span>
+                          <Edit2 className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <Badge 
+                        variant={todo.status === 'In progress' ? 'default' : 'secondary'}
+                        className={todo.status === 'In progress' ? 'bg-blue-500' : 'bg-green-500'}
+                      >
+                        {todo.status}
+                      </Badge>
+                    </div>
+                    
+                    <div>
+                      {editingDueDate === todo.id ? (
+                        <Input
+                          type="text"
+                          value={todo.dueDate}
+                          onChange={(e) => updateTodo(todo.id, 'dueDate', e.target.value)}
+                          onBlur={() => setEditingDueDate(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              setEditingDueDate(null);
+                            }
+                          }}
+                          autoFocus
+                          className="h-8 text-sm"
+                          placeholder="Due Date"
+                        />
+                      ) : (
+                        <div 
+                          className="text-sm flex items-center gap-2 cursor-pointer group"
+                          onClick={() => setEditingDueDate(todo.id)}
+                        >
+                          <Calendar className="h-3 w-3" />
+                          <span>{todo.dueDate}</span>
+                          <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      {editingSubmittedTime === todo.id ? (
+                        <Input
+                          type="text"
+                          value={todo.submittedTime}
+                          onChange={(e) => updateTodo(todo.id, 'submittedTime', e.target.value)}
+                          onBlur={() => setEditingSubmittedTime(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              setEditingSubmittedTime(null);
+                            }
+                          }}
+                          autoFocus
+                          className="h-8 text-sm"
+                          placeholder="Submitted Time"
+                        />
+                      ) : (
+                        <div 
+                          className="text-sm cursor-pointer group flex items-center gap-2"
+                          onClick={() => setEditingSubmittedTime(todo.id)}
+                        >
+                          <span>{todo.submittedTime || '-'}</span>
+                          <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <Select 
+                        value={todo.priority} 
+                        onValueChange={(value: 'Low' | 'Medium' | 'High') => updateTodo(todo.id, 'priority', value)}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Low">
+                            <Badge variant="outline" className="bg-gray-500">Low</Badge>
+                          </SelectItem>
+                          <SelectItem value="Medium">
+                            <Badge variant="outline" className="bg-yellow-500">Medium</Badge>
+                          </SelectItem>
+                          <SelectItem value="High">
+                            <Badge variant="outline" className="bg-red-500">High</Badge>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteTodo(todo.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

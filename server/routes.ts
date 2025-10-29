@@ -10,6 +10,8 @@ import {
   insertFlashcardSchema,
   insertFlashcardDeckSchema,
   insertFlashcardReviewSchema,
+  insertMoodEntrySchema,
+  insertJournalEntrySchema,
   insertPomodoroSessionSchema, 
   insertAiSummarySchema,
   insertNoteSchema
@@ -331,7 +333,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/assignments/:id", async (req, res) => {
     try {
+      console.log('PUT /api/assignments/:id - Request body:', req.body);
       const assignmentData = insertAssignmentSchema.partial().parse(req.body);
+      console.log('PUT /api/assignments/:id - Parsed data:', assignmentData);
       const assignment = await storage.updateAssignment(req.params.id, assignmentData);
       if (!assignment) {
         return res.status(404).json({ message: "Assignment not found" });
@@ -339,8 +343,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(assignment);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('Zod validation error:', error.errors);
         return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
       }
+      console.error('Error updating assignment:', error);
       res.status(500).json({ message: "Failed to update assignment" });
     }
   });
@@ -513,6 +519,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(curve);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch retention curve" });
+    }
+  });
+
+  // Mood entry routes
+  app.get("/api/users/:userId/mood-entries", async (req, res) => {
+    try {
+      const entries = await storage.getMoodEntriesByUserId(req.params.userId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch mood entries" });
+    }
+  });
+
+  app.post("/api/users/:userId/mood-entries", async (req, res) => {
+    try {
+      console.log(' Creating mood entry with data:', { ...req.body, userId: req.params.userId });
+      const entryData = insertMoodEntrySchema.parse({ ...req.body, userId: req.params.userId });
+      const entry = await storage.createMoodEntry(entryData);
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error(' Zod validation error:', error.errors);
+        return res.status(400).json({ message: "Invalid mood entry data", errors: error.errors });
+      }
+      console.error(' Mood entry creation error:', error);
+      res.status(500).json({ message: "Failed to create mood entry" });
+    }
+  });
+
+  // Journal entry routes
+  app.get("/api/users/:userId/journal-entries", async (req, res) => {
+    try {
+      const entries = await storage.getJournalEntriesByUserId(req.params.userId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch journal entries" });
+    }
+  });
+
+  app.post("/api/users/:userId/journal-entries", async (req, res) => {
+    try {
+      console.log(' Creating journal entry with data:', { ...req.body, userId: req.params.userId });
+      const entryData = insertJournalEntrySchema.parse({ ...req.body, userId: req.params.userId });
+      const entry = await storage.createJournalEntry(entryData);
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error(' Zod validation error:', error.errors);
+        return res.status(400).json({ message: "Invalid journal entry data", errors: error.errors });
+      }
+      console.error(' Journal entry creation error:', error);
+      res.status(500).json({ message: "Failed to create journal entry" });
+    }
+  });
+
+  app.put("/api/journal-entries/:id", async (req, res) => {
+    try {
+      const entryData = insertJournalEntrySchema.partial().parse(req.body);
+      const entry = await storage.updateJournalEntry(req.params.id, entryData);
+      if (!entry) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      res.json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid journal entry data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update journal entry" });
+    }
+  });
+
+  app.delete("/api/journal-entries/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteJournalEntry(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete journal entry" });
     }
   });
 

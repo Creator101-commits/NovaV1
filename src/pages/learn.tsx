@@ -1,17 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PomodoroTimer } from "@/components/tools/PomodoroTimer";
 import { Flashcards } from "@/components/tools/Flashcards";
-import { MoodTracker } from "@/components/tools/MoodTracker";
-import { DailyJournal } from "@/components/tools/DailyJournal";
 import { AiSummaryHistory } from "@/components/tools/AiSummaryHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActivity } from "@/contexts/ActivityContext";
 import {
   Clock,
   Brain,
-  Smile,
-  BookOpen,
-  Wrench,
   Bot,
 } from "lucide-react";
 
@@ -34,22 +29,6 @@ export default function Learn() {
       icon: Brain,
       color: "text-purple-500",
       component: Flashcards,
-    },
-    {
-      id: "mood",
-      title: "Mood Tracker",
-      description: "Track your daily mood and emotional patterns",
-      icon: Smile,
-      color: "text-yellow-500",
-      component: MoodTracker,
-    },
-    {
-      id: "journal",
-      title: "Daily Journal",
-      description: "Write daily reflections and thoughts (500 chars)",
-      icon: BookOpen,
-      color: "text-orange-500",
-      component: DailyJournal,
     },
     {
       id: "ai-summaries",
@@ -87,8 +66,8 @@ export default function Learn() {
       </div>
 
       {/* Simple Tools */}
-      <Tabs defaultValue="pomodoro" className="space-y-6" onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue="pomodoro" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
           {tools.map((tool) => {
             const Icon = tool.icon;
             return (
