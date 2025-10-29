@@ -682,9 +682,9 @@ export class DatabaseStorage implements IStorage {
     const userJournalEntries = await this.getJournalEntriesByUserId(userId);
 
     const completedAssignments = userAssignments.filter(a => a.status === "completed");
-    const totalPomodoroMinutes = userPomodoroSessions.reduce((sum, session) => sum + session.duration, 0);
+    const totalPomodoroMinutes = userPomodoroSessions.reduce((sum: number, session) => sum + session.duration, 0);
     const avgMood = userMoodEntries.length > 0 
-      ? userMoodEntries.reduce((sum, entry) => sum + entry.mood, 0) / userMoodEntries.length 
+      ? userMoodEntries.reduce((sum: number, entry) => sum + entry.mood, 0) / userMoodEntries.length 
       : 0;
 
     return {

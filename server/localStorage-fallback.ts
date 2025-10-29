@@ -567,34 +567,6 @@ export class LocalStorageFallback {
     return false;
   }
 
-  async updateJournalEntry(id: string, entryData: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined> {
-    const users = this.getFromStorage<User>('system', 'users');
-    for (const user of users) {
-      const entries = this.getFromStorage<JournalEntry>(user.id, 'journal_entries');
-      const entryIndex = entries.findIndex(e => e.id === id);
-      if (entryIndex !== -1) {
-        entries[entryIndex] = { ...entries[entryIndex], ...entryData };
-        this.saveToStorage(user.id, 'journal_entries', entries);
-        return entries[entryIndex];
-      }
-    }
-    return undefined;
-  }
-
-  async deleteJournalEntry(id: string): Promise<boolean> {
-    const users = this.getFromStorage<User>('system', 'users');
-    for (const user of users) {
-      const entries = this.getFromStorage<JournalEntry>(user.id, 'journal_entries');
-      const entryIndex = entries.findIndex(e => e.id === id);
-      if (entryIndex !== -1) {
-        entries.splice(entryIndex, 1);
-        this.saveToStorage(user.id, 'journal_entries', entries);
-        return true;
-      }
-    }
-    return false;
-  }
-
   async deleteAiSummary(id: string): Promise<boolean> {
     const users = this.getFromStorage<User>('system', 'users');
     for (const user of users) {

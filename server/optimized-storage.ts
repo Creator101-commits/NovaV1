@@ -15,10 +15,6 @@ import {
   type InsertFlashcardDeck,
   type FlashcardReview,
   type InsertFlashcardReview,
-  type MoodEntry,
-  type InsertMoodEntry,
-  type JournalEntry,
-  type InsertJournalEntry,
   type PomodoroSession,
   type InsertPomodoroSession,
   type AiSummary,
@@ -29,8 +25,6 @@ import {
   classes,
   assignments,
   flashcards,
-  moodEntries,
-  journalEntries,
   pomodoroSessions,
   aiSummaries,
   notes
@@ -490,32 +484,6 @@ export class OptimizedStorage {
 
   async getNote(id: string): Promise<Note | undefined> {
     return this.baseStorage.getNote(id);
-  }
-
-  // Mood entry methods
-  async getMoodEntriesByUserId(userId: string): Promise<MoodEntry[]> {
-    return this.baseStorage.getMoodEntriesByUserId(userId);
-  }
-
-  async createMoodEntry(entry: InsertMoodEntry): Promise<MoodEntry> {
-    return this.baseStorage.createMoodEntry(entry);
-  }
-
-  // Journal entry methods
-  async getJournalEntriesByUserId(userId: string): Promise<JournalEntry[]> {
-    return this.baseStorage.getJournalEntriesByUserId(userId);
-  }
-
-  async createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry> {
-    return this.baseStorage.createJournalEntry(entry);
-  }
-
-  async updateJournalEntry(id: string, entryData: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined> {
-    return this.baseStorage.updateJournalEntry(id, entryData);
-  }
-
-  async deleteJournalEntry(id: string): Promise<boolean> {
-    return this.baseStorage.deleteJournalEntry(id);
   }
 
   // Pomodoro session methods

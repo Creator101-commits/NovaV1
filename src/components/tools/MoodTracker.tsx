@@ -51,7 +51,7 @@ export const MoodTracker = () => {
       if (response.ok) {
         const data = await response.json();
         setMoodEntries(data);
-        console.log(' Loaded mood entries:', data.length);
+        console.log('✅ Loaded mood entries:', data.length);
       } else {
         console.error('Failed to load mood entries:', response.status);
         toast({
@@ -104,7 +104,7 @@ export const MoodTracker = () => {
         setNotes("");
         
         toast({
-          title: "Mood saved! ",
+          title: "Mood saved! 😊",
           description: `Your ${moodConfig[currentMood as keyof typeof moodConfig].label.toLowerCase()} mood has been recorded`,
         });
       } else {

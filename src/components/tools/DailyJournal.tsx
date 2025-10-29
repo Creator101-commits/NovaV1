@@ -45,7 +45,7 @@ export const DailyJournal = () => {
       if (response.ok) {
         const data = await response.json();
         setEntries(data);
-        console.log(' Loaded journal entries:', data.length);
+        console.log('✅ Loaded journal entries:', data.length);
       } else {
         console.error('Failed to load journal entries:', response.status);
         toast({
@@ -133,7 +133,7 @@ export const DailyJournal = () => {
       setEditingEntry(null);
       
       toast({
-        title: "Entry saved! ",
+        title: "Entry saved! 📖",
         description: editingEntry ? "Your journal entry has been updated" : "Your journal entry has been saved",
       });
     } catch (error) {
