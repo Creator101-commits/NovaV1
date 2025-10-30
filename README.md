@@ -1,12 +1,12 @@
-# RefyneoV1 - AI-Powered Student Productivity Platform
+# Nova - AI-Powered Student Productivity Platform
 
-RefyneoV1 is a comprehensive, AI-powered productivity platform designed specifically for students. It combines intelligent note-taking, calendar management, assignment tracking, and AI assistance to create a unified academic workspace.
+Nova is a comprehensive, AI-powered productivity platform designed specifically for students. It combines intelligent note-taking, calendar management, assignment tracking, and AI assistance to create a unified academic workspace.
 
 ![Architecture Diagram](images/software_architecture_diagram.png)
 
 ## System Architecture
 
-RefyneoV1 follows a modern, cloud-native architecture designed for scalability, performance, and reliability. The system is built using a microservices approach with clear separation between frontend, backend, and data layers.
+Nova follows a modern, cloud-native architecture designed for scalability, performance, and reliability. The system is built using a microservices approach with clear separation between frontend, backend, and data layers.
 
 ### Architecture Overview
 
@@ -148,8 +148,8 @@ The system follows a unidirectional data flow pattern:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Creator101-commits/RefyneoV1.git
-   cd RefyneoV1
+   git clone https://github.com/Creator101-commits/Nova.git
+   cd Nova
    ```
 
 2. **Install dependencies**
@@ -174,7 +174,7 @@ The system follows a unidirectional data flow pattern:
    ORACLE_WALLET_PATH=./server/oracle_wallet
    
    # Alternative: PostgreSQL
-   DATABASE_URL=postgresql://username:password@localhost:5432/refyneo
+   DATABASE_URL=postgresql://username:password@localhost:5432/nova
    
    # AI Services
    GROQ_API_KEY=your_groq_api_key
@@ -267,7 +267,7 @@ ProductivityHub/ProductivityHub/
 
 2. **PostgreSQL** (Alternative)
    - Install PostgreSQL locally
-   - Create database named `refyneo`
+   - Create database named `nova`
    - Run migrations
 
 ## Configuration
@@ -316,9 +316,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation**: Check the [docs](ProductivityHub/ProductivityHub/docs/) folder
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/Creator101-commits/RefyneoV1/issues)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/Creator101-commits/Nova/issues)
 - **Discord**: Join our community for support
-- **Email**: support@refyneo.com
+- **Email**: support@nova.com
 
 ## Roadmap
 
@@ -349,4 +349,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**RefyneoV1** - Empowering students with AI-driven productivity tools. 
+**Nova** - Empowering students with AI-driven productivity tools. 

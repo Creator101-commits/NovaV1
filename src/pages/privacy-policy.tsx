@@ -169,7 +169,7 @@ export default function PrivacyPolicy() {
                   please contact us at:
                 </p>
                 <div className="bg-muted p-4 rounded-lg">
-                  <p><strong>Email:</strong> refyneo@gmail.com</p>
+                                    <p><strong>Email:</strong> nova@gmail.com</p>
                 </div>
               </div>
             </section>

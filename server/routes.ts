@@ -100,12 +100,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syncedClasses = [];
       const syncedAssignments = [];
 
+      // First, get all existing classes for this user
+      const allExistingClasses = await optimizedStorage.getClassesByUserId(userId);
+
       // Sync classes
       for (const googleClass of googleClasses) {
         try {
           // Check if class already exists by googleClassroomId
-          const existingClasses = await optimizedStorage.getClassesByUserId(userId);
-          const existingClass = existingClasses.find(c => c.googleClassroomId === googleClass.id);
+          const existingClass = allExistingClasses.find(c => c.googleClassroomId === googleClass.id);
 
           if (existingClass) {
             // Update existing class
@@ -144,15 +146,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sync assignments
       for (const googleAssignment of googleAssignments) {
         try {
-          // Find the corresponding class in our database
+          // Find the corresponding class in our database (check both newly synced and all existing)
           const correspondingClass = syncedClasses.find(
+            c => c?.googleClassroomId === googleAssignment.courseId
+          ) || allExistingClasses.find(
             c => c?.googleClassroomId === googleAssignment.courseId
           );
 
           if (!correspondingClass) {
-            console.warn(`No class found for assignment ${googleAssignment.id}`);
+            console.warn(`⚠️ No class found for assignment "${googleAssignment.title}" (${googleAssignment.id}) with courseId ${googleAssignment.courseId}`);
+            console.warn(`Available classes:`, allExistingClasses.map(c => ({ id: c.id, googleId: c.googleClassroomId, name: c.name })));
             continue;
           }
+
+          console.log(`✓ Found class "${correspondingClass.name}" (DB ID: ${correspondingClass.id}) for assignment "${googleAssignment.title}"`);
 
           // Check if assignment already exists by googleClassroomId
           const existingAssignments = await optimizedStorage.getAssignmentsByUserId(userId);

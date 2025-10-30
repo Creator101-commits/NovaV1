@@ -3,9 +3,9 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: refyneo-postgres
+    container_name: nova-postgres
     environment:
-      POSTGRES_DB: refyneo_db
+      POSTGRES_DB: nova_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:

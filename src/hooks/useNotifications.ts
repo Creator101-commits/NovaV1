@@ -79,7 +79,7 @@ export const useNotifications = () => {
       if (permission === 'granted') {
         toast({
           title: "Notifications Enabled",
-          description: "You'll now receive Refyneo notifications.",
+          description: "You'll now receive Nova notifications.",
         });
         return true;
       } else {

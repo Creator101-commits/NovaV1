@@ -84,26 +84,31 @@ body {
 }
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(0, 0%, 0%);
-  --muted: hsl(0, 0%, 96%);
-  --muted-foreground: hsl(0, 0%, 45%);
+  --background: hsl(0, 0%, 98%);
+  --foreground: hsl(0, 0%, 10%);
+  --muted: hsl(0, 0%, 94%);
+  --muted-foreground: hsl(0, 0%, 40%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(0, 0%, 10%);
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(0, 0%, 0%);
-  --border: hsl(0, 0%, 90%);
-  --input: hsl(0, 0%, 90%);
-  --primary: hsl(0, 0%, 100%);
-  --primary-foreground: hsl(0, 0%, 0%);
-  --secondary: hsl(0, 0%, 96%);
-  --secondary-foreground: hsl(0, 0%, 0%);
-  --accent: hsl(0, 0%, 96%);
-  --accent-foreground: hsl(0, 0%, 0%);
-  --destructive: hsl(0, 0%, 0%);
+  --card-foreground: hsl(0, 0%, 10%);
+  --border: hsl(0, 0%, 85%);
+  --input: hsl(0, 0%, 85%);
+  --primary: hsl(220, 90%, 50%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(0, 0%, 92%);
+  --secondary-foreground: hsl(0, 0%, 10%);
+  --accent: hsl(220, 90%, 95%);
+  --accent-foreground: hsl(220, 90%, 30%);
+  --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: hsl(0, 0%, 0%);
+  --ring: hsl(220, 90%, 50%);
   --radius: 0.75rem;
+  --chart-1: hsl(220, 70%, 50%);
+  --chart-2: hsl(160, 60%, 45%);
+  --chart-3: hsl(30, 80%, 55%);
+  --chart-4: hsl(280, 65%, 60%);
+  --chart-5: hsl(340, 75%, 55%);
 }
 
 .dark {
@@ -127,6 +132,11 @@ body {
   --destructive-foreground: hsl(0, 0%, 0%);
   --ring: hsl(0, 0%, 100%);
   --radius: 0.75rem;
+  --chart-1: hsl(220, 70%, 50%);
+  --chart-2: hsl(160, 60%, 45%);
+  --chart-3: hsl(30, 80%, 55%);
+  --chart-4: hsl(280, 65%, 60%);
+  --chart-5: hsl(340, 75%, 55%);
 }
 
 @layer base {
@@ -141,7 +151,14 @@ body {
 
 @layer utilities {
   .gradient-text {
-    background: linear-gradient(135deg, hsl(0, 0%, 0%), hsl(0, 0%, 50%));
+    background: linear-gradient(135deg, hsl(220, 90%, 50%), hsl(220, 90%, 70%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .dark .gradient-text {
+    background: linear-gradient(135deg, hsl(0, 0%, 100%), hsl(0, 0%, 70%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -154,8 +171,13 @@ body {
   
   .glass-effect {
     backdrop-filter: blur(10px);
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid hsl(0, 0%, 90%);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid hsl(0, 0%, 85%);
+  }
+  
+  .dark .glass-effect {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid hsl(0, 0%, 20%);
   }
   
   .dark-surface {
@@ -204,21 +226,26 @@ body {
   animation: slideUp 0.8s ease-out;
 }
 
-/* Scrollbar styling for monochrome theme */
+/* Scrollbar styling for light and dark modes */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(0, 0%, 96%);
+  background: hsl(0, 0%, 94%);
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: hsl(0, 0%, 70%);
-  border-radius: 4px;
+  border-radius: 5px;
+  border: 2px solid hsl(0, 0%, 94%);
 }
 
-/* Scrollbar hover effects removed */
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(0, 0%, 60%);
+}
 
 .dark ::-webkit-scrollbar-track {
   background: hsl(0, 0%, 10%);
@@ -226,10 +253,12 @@ body {
 
 .dark ::-webkit-scrollbar-thumb {
   background: hsl(0, 0%, 40%);
-  border-radius: 4px;
+  border: 2px solid hsl(0, 0%, 10%);
 }
 
-/* Dark scrollbar hover effects removed */
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(0, 0%, 50%);
+}
 
 /* Custom animations for landing page */
 @keyframes fade-in {

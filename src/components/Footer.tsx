@@ -12,7 +12,7 @@ export function Footer() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">
-                © {new Date().getFullYear()} Refyneo. All rights reserved.
+                © {new Date().getFullYear()} Nova. All rights reserved.
               </p>
             </div>
           </div>
@@ -32,7 +32,7 @@ export function Footer() {
               Terms of Service
             </Link>
             <a 
-              href="mailto:support@refyneo.app"
+              href="mailto:support@nova.app"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Support
@@ -43,7 +43,7 @@ export function Footer() {
         {/* Additional Info */}
         <div className="mt-6 pt-6 border-t border-border text-center">
           <p className="text-xs text-muted-foreground">
-            Refyneo helps students stay organized and productive. 
+            Nova helps students stay organized and productive. 
             Built with privacy and academic integrity in mind.
           </p>
         </div>

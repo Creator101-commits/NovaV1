@@ -88,7 +88,7 @@ function AppNavigation() {
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <GraduationCap className="h-5 w-5 text-primary" />
-            <span className="text-lg font-medium text-foreground">Refyneo</span>
+            <span className="text-lg font-medium text-foreground">Nova</span>
           </div>
         </div>
         
@@ -190,7 +190,7 @@ function Router() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <PageLoading message="Initializing Refyneo..." />;
+    return <PageLoading message="Initializing Nova..." />;
   }
 
   return (

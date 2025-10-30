@@ -138,7 +138,7 @@ export function OptimizedNavigation({ className }: OptimizedNavigationProps) {
 
   const getCurrentPageLabel = useCallback(() => {
     const currentItem = navigationItems.find(item => item.path === location);
-    return currentItem?.label || 'Refyneo';
+    return currentItem?.label || 'Nova';
   }, [location]);
 
   const navVariants = {
@@ -182,7 +182,7 @@ export function OptimizedNavigation({ className }: OptimizedNavigationProps) {
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-8">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">Refyneo</span>
+            <span className="text-lg font-semibold">Nova</span>
           </div>
           
           <div className="space-y-2">
@@ -285,7 +285,7 @@ export function OptimizedNavigation({ className }: OptimizedNavigationProps) {
             className="flex items-center space-x-2 mb-8"
           >
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">Refyneo</span>
+            <span className="text-lg font-semibold">Nova</span>
           </motion.div>
 
           {/* Navigation items */}

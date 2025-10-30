@@ -81,7 +81,7 @@ export const PrivacyControls = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `refyneo-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `nova-data-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -132,7 +132,7 @@ export const PrivacyControls = () => {
       <Alert>
         <CheckCircle className="h-4 w-4" />
         <AlertDescription>
-          Refyneo is designed with privacy-first principles and complies with GDPR and FERPA regulations. 
+          Nova is designed with privacy-first principles and complies with GDPR and FERPA regulations. 
           Your data is stored locally and you have full control over what information is collected and shared.
         </AlertDescription>
       </Alert>
@@ -297,7 +297,7 @@ export const PrivacyControls = () => {
             Delete All Data
           </CardTitle>
           <CardDescription>
-            Permanently delete all your data from Refyneo
+            Permanently delete all your data from Nova
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

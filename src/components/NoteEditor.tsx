@@ -18,39 +18,29 @@ import {
   Underline,
   List,
   ListOrdered,
-  Quote,
-  Heading1,
-  Heading2,
-  Heading3,
   Pin,
   PinOff,
   Undo,
   Redo,
   Printer,
-  CheckCircle,
-  Palette,
-  Link,
-  MessageSquarePlus,
-  Image,
   AlignLeft,
   AlignCenter,
   AlignRight,
   AlignJustify,
-  MoreHorizontal,
   FileText,
-  Star,
-  Folder,
-  Cloud,
-  Clock,
-  Video,
-  Share,
-  MoreVertical
+  MessageSquare,
+  X,
+  Send,
+  Sparkles,
+  Copy,
+  Check
 } from "lucide-react";
 import { createEditor, Descendant, Editor, BaseEditor, Transforms, Element as SlateElement, Text } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react';
 import { withHistory, HistoryEditor } from 'slate-history';
 import DOMPurify from 'dompurify';
 import type { Note, InsertNote, Class } from "../../shared/schema";
+import { groqAPI } from "@/lib/groq";
 
 // Custom types for Slate
 type CustomElement = {
@@ -300,6 +290,20 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
   const [zoom, setZoom] = useState("100%");
   const [fontFamily, setFontFamily] = useState("Arial");
   const [fontSize, setFontSize] = useState(11);
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [aiMessages, setAiMessages] = useState<Array<{ 
+    role: 'user' | 'assistant', 
+    content: string,
+    changes?: {
+      added: number,
+      removed: number,
+      preview: string,
+      newContent: Descendant[]
+    }
+  }>>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   
   const { toast } = useToast();
 
@@ -383,6 +387,302 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAiChat = async () => {
+    if (!aiInput.trim()) return;
+
+    const userMessage = aiInput.trim();
+    setAiInput("");
+    setAiMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsAiLoading(true);
+
+    try {
+      // Get current note content for context
+      const currentContent = serializeToHtml(value);
+      const plainTextContent = currentContent.replace(/<[^>]*>/g, '').trim();
+
+      // Detect if this is an edit request
+      const isEditRequest = userMessage.toLowerCase().includes('edit') || 
+                           userMessage.toLowerCase().includes('change') || 
+                           userMessage.toLowerCase().includes('fix') ||
+                           userMessage.toLowerCase().includes('improve') ||
+                           userMessage.toLowerCase().includes('rewrite') ||
+                           userMessage.toLowerCase().includes('update');
+
+      // Build context-aware system message
+      let systemContext = `You are a helpful AI writing assistant for students. You help them write, expand, edit, and improve their notes.`;
+      
+      if (title) {
+        systemContext += `\n\nCurrent note title: "${title}"`;
+      }
+      
+      if (plainTextContent) {
+        systemContext += `\n\nCurrent note content:\n${plainTextContent}`;
+      }
+      
+      if (category !== 'general') {
+        systemContext += `\n\nNote category: ${category}`;
+      }
+
+      if (isEditRequest && plainTextContent) {
+        systemContext += `\n\nThe user wants to EDIT the existing content. Provide the COMPLETE revised version of the entire note content with your improvements applied. Maintain the structure but make the requested changes.`;
+      } else {
+        systemContext += `\n\nProvide clear, well-structured content that can be added to the note. Use paragraphs, lists, and headings where appropriate.`;
+      }
+
+      // Use Groq API for chat
+      const response = await groqAPI.chat({
+        messages: [
+          {
+            role: 'system',
+            content: systemContext
+          },
+          ...aiMessages.filter(msg => !msg.changes).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ],
+        maxTokens: 2000,
+        temperature: 0.7,
+      });
+
+      // If this is an edit request and we have existing content, calculate the diff
+      if (isEditRequest && plainTextContent) {
+        const oldLines = plainTextContent.split('\n').filter(l => l.trim());
+        const newLines = response.content.split('\n').filter(l => l.trim());
+        
+        const added = newLines.length - oldLines.length;
+        const removed = added < 0 ? Math.abs(added) : 0;
+        const actualAdded = added > 0 ? added : 0;
+
+        // Convert new content to Slate format
+        const newSlateContent = convertTextToSlate(response.content);
+
+        setAiMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: response.content,
+          changes: {
+            added: actualAdded,
+            removed: removed,
+            preview: response.content.substring(0, 200) + (response.content.length > 200 ? '...' : ''),
+            newContent: newSlateContent
+          }
+        }]);
+        
+        toast({
+          title: "Changes proposed",
+          description: `+${actualAdded} lines, -${removed} lines`,
+        });
+      } else {
+        // Regular response without diff
+        setAiMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
+        
+        toast({
+          title: "Response received",
+          description: "Content ready to insert",
+        });
+      }
+    } catch (error) {
+      console.error('AI chat error:', error);
+      
+      let errorMessage = "Failed to get AI response. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          errorMessage = "AI service not configured. Please check settings.";
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = "Too many requests. Please wait a moment.";
+        }
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  // Helper function to clean markdown symbols from text
+  const cleanMarkdownSymbols = (text: string): string => {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '$1')  // Remove bold **text**
+      .replace(/\*(.+?)\*/g, '$1')      // Remove italic *text*
+      .replace(/_(.+?)_/g, '$1')        // Remove italic _text_
+      .replace(/`(.+?)`/g, '$1')        // Remove inline code `text`
+      .replace(/~~(.+?)~~/g, '$1')      // Remove strikethrough ~~text~~
+      .trim();
+  };
+
+  const convertTextToSlate = (text: string): Descendant[] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    const nodes: Descendant[] = [];
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      
+      // Check if line looks like a heading
+      if (trimmed.startsWith('# ')) {
+        const cleanText = cleanMarkdownSymbols(trimmed.replace('# ', ''));
+        nodes.push({
+          type: 'heading-one',
+          children: [{ text: cleanText }]
+        } as CustomElement);
+      } else if (trimmed.startsWith('## ')) {
+        const cleanText = cleanMarkdownSymbols(trimmed.replace('## ', ''));
+        nodes.push({
+          type: 'heading-two',
+          children: [{ text: cleanText }]
+        } as CustomElement);
+      } else if (trimmed.startsWith('### ')) {
+        const cleanText = cleanMarkdownSymbols(trimmed.replace('### ', ''));
+        nodes.push({
+          type: 'heading-three',
+          children: [{ text: cleanText }]
+        } as CustomElement);
+      } else if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+        const cleanText = cleanMarkdownSymbols(trimmed.replace(/^[-•]\s*/, ''));
+        nodes.push({
+          type: 'list-item',
+          children: [{ text: cleanText }]
+        } as CustomElement);
+      } else {
+        const cleanText = cleanMarkdownSymbols(trimmed);
+        nodes.push({
+          type: 'paragraph',
+          children: [{ text: cleanText }]
+        } as CustomElement);
+      }
+    });
+
+    return nodes.length > 0 ? nodes : [{ type: 'paragraph', children: [{ text: '' }] } as CustomElement];
+  };
+
+  const acceptChanges = (newContent: Descendant[]) => {
+    // Clean the content before setting it
+    const cleanedContent = newContent.map(node => {
+      if ('children' in node && Array.isArray(node.children)) {
+        return {
+          ...node,
+          children: node.children.map((child: any) => {
+            if ('text' in child) {
+              return {
+                ...child,
+                text: child.text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/_/g, '').replace(/`/g, '')
+              };
+            }
+            return child;
+          })
+        };
+      }
+      return node;
+    });
+    
+    setValue(cleanedContent as Descendant[]);
+    toast({
+      title: "Changes accepted",
+      description: "Your note has been updated",
+    });
+  };
+
+  const rejectChanges = () => {
+    toast({
+      title: "Changes rejected",
+      description: "Original content preserved",
+    });
+  };
+
+  const insertAiContentIntoNote = (content: string) => {
+    try {
+      // Move cursor to the end of the document
+      Transforms.select(editor, {
+        anchor: Editor.end(editor, []),
+        focus: Editor.end(editor, [])
+      });
+
+      // Add a blank line before inserting new content
+      Transforms.insertNodes(editor, {
+        type: 'paragraph',
+        children: [{ text: '' }]
+      } as CustomElement);
+
+      // Split content into lines and insert each as a paragraph with cleaned text
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      lines.forEach((line) => {
+        // Check if line looks like a heading
+        if (line.startsWith('# ')) {
+          const cleanText = cleanMarkdownSymbols(line.replace('# ', ''));
+          Transforms.insertNodes(editor, {
+            type: 'heading-one',
+            children: [{ text: cleanText }]
+          } as CustomElement);
+        } else if (line.startsWith('## ')) {
+          const cleanText = cleanMarkdownSymbols(line.replace('## ', ''));
+          Transforms.insertNodes(editor, {
+            type: 'heading-two',
+            children: [{ text: cleanText }]
+          } as CustomElement);
+        } else if (line.startsWith('### ')) {
+          const cleanText = cleanMarkdownSymbols(line.replace('### ', ''));
+          Transforms.insertNodes(editor, {
+            type: 'heading-three',
+            children: [{ text: cleanText }]
+          } as CustomElement);
+        } else if (line.startsWith('- ') || line.startsWith('• ')) {
+          const cleanText = cleanMarkdownSymbols(line.replace(/^[-•]\s*/, ''));
+          Transforms.insertNodes(editor, {
+            type: 'list-item',
+            children: [{ text: cleanText }]
+          } as CustomElement);
+        } else {
+          const cleanText = cleanMarkdownSymbols(line);
+          Transforms.insertNodes(editor, {
+            type: 'paragraph',
+            children: [{ text: cleanText }]
+          } as CustomElement);
+        }
+      });
+
+      // Trigger auto-save
+      setValue([...value]);
+
+      toast({
+        title: "Content Inserted",
+        description: "AI-generated content has been added to your note",
+      });
+    } catch (error) {
+      console.error('Error inserting content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to insert content into note",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyToClipboard = async (content: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+      toast({
+        title: "Copied!",
+        description: "Content copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy content",
+        variant: "destructive",
+      });
     }
   };
 
@@ -495,20 +795,22 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
               </span>
             </div>
             
-            <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
-                <Star className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
-                <Folder className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
-                <Cloud className="h-4 w-4" />
-              </Button>
-            </div>
+
           </div>
 
           <div className="flex items-center space-x-2">
+            <Button 
+              onClick={() => setShowAiChat(!showAiChat)}
+              variant={showAiChat ? "default" : "outline"}
+              className={`px-3 py-1 h-8 text-sm transition-all ${
+                showAiChat 
+                  ? "bg-foreground text-background hover:bg-foreground/90 shadow-md" 
+                  : "border-border hover:bg-muted"
+              }`}
+            >
+              <Sparkles className="h-4 w-4 mr-1" />
+              AI Assistant
+            </Button>
             <Button 
               onClick={handleManualSave} 
               disabled={isSaving}
@@ -516,9 +818,6 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
             >
               <Save className="h-4 w-4 mr-1" />
               {isSaving ? "Saving..." : "Save"}
-            </Button>
-            <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
-              <MoreVertical className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -528,7 +827,7 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
       {/* Google Docs-style Toolbar */}
       <div className="border-b border-border bg-background p-2 flex-shrink-0">
         <div className="flex items-center space-x-1 flex-wrap">
-          {/* Left Section - Undo/Redo/Print/Spell */}
+          {/* Left Section - Undo/Redo/Print */}
           <div className="flex items-center space-x-1 border-r border-border pr-2">
             <Button 
               variant="ghost" 
@@ -555,22 +854,6 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
               onClick={() => window.print()}
             >
               <Printer className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Spell check", description: "Spell check feature coming soon!" })}
-            >
-              <CheckCircle className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Paint format", description: "Paint format feature coming soon!" })}
-            >
-              <Palette className="h-4 w-4" />
             </Button>
           </div>
 
@@ -688,50 +971,6 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
             >
               <Underline className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Text color", description: "Text color picker coming soon!" })}
-            >
-              <Palette className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Highlight color", description: "Highlight color picker coming soon!" })}
-            >
-              <Palette className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Right Section - Link, Comment, Image, Alignment */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Insert Link", description: "Link insertion feature coming soon!" })}
-            >
-              <Link className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Add Comment", description: "Comment feature coming soon!" })}
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Insert Image", description: "Image insertion feature coming soon!" })}
-            >
-              <Image className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Alignment */}
@@ -806,47 +1045,13 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
             >
               <ListOrdered className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Decrease Indent", description: "Decrease indent feature coming soon!" })}
-            >
-              <div className="h-4 w-4 flex items-center justify-center">
-                <div className="w-3 h-0.5 bg-current"></div>
-                <div className="w-1 h-0.5 bg-current ml-1"></div>
-              </div>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "Increase Indent", description: "Increase indent feature coming soon!" })}
-            >
-              <div className="h-4 w-4 flex items-center justify-center">
-                <div className="w-1 h-0.5 bg-current"></div>
-                <div className="w-3 h-0.5 bg-current ml-1"></div>
-              </div>
-            </Button>
-          </div>
-
-          {/* More Options */}
-          <div className="flex items-center space-x-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => toast({ title: "More Options", description: "Additional formatting options coming soon!" })}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </div>
 
       {/* Editor */}
       <div className="flex-1 overflow-y-auto bg-background">
-        <div className="flex">
+        <div className="flex relative">
           {/* Vertical Ruler */}
           <div className="w-8 bg-muted/20 border-r border-border flex flex-col items-center py-4 text-xs text-muted-foreground">
             <span className="transform -rotate-90 whitespace-nowrap">1</span>
@@ -862,7 +1067,7 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
           </div>
 
           {/* Document Area */}
-          <div className="flex-1 bg-white shadow-inner">
+          <div className={`flex-1 bg-white shadow-inner transition-all duration-300 ${showAiChat ? 'mr-96' : ''}`}>
             <div className="max-w-4xl mx-auto p-12 min-h-[800px]">
               {/* Title */}
               <Input
@@ -896,6 +1101,265 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
               </Slate>
             </div>
           </div>
+
+          {/* AI Chat Sidebar */}
+          {showAiChat && (
+            <div className="fixed right-0 top-0 bottom-0 w-96 bg-background border-l border-border shadow-2xl flex flex-col z-50">
+              {/* AI Chat Header */}
+              <div className="p-4 border-b border-border bg-background">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-lg bg-foreground/5 flex items-center justify-center border border-border">
+                      <Sparkles className="h-4 w-4 text-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-base">AI Writing Assistant</h3>
+                      <p className="text-xs text-muted-foreground">Powered by Groq</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAiChat(false)}
+                    className="h-8 w-8 p-0 hover:bg-muted rounded-md"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* AI Chat Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
+                {aiMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-6 px-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-xl bg-muted border border-border flex items-center justify-center">
+                        <MessageSquare className="h-8 w-8 text-foreground" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-foreground border-2 border-background"></div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2 text-lg">AI Writing Assistant</h4>
+                      <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+                        I'll help you write amazing notes! Ask me anything:
+                      </p>
+                      <div className="mt-4 space-y-2 text-left bg-muted/50 rounded-lg p-4 border border-border">
+                        <div className="flex items-start space-x-2">
+                          <div className="w-1 h-1 rounded-full bg-foreground mt-2"></div>
+                          <p className="text-xs text-muted-foreground">Generate content on any topic</p>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <div className="w-1 h-1 rounded-full bg-foreground mt-2"></div>
+                          <p className="text-xs text-muted-foreground">Expand existing points</p>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <div className="w-1 h-1 rounded-full bg-foreground mt-2"></div>
+                          <p className="text-xs text-muted-foreground">Create outlines & structures</p>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <div className="w-1 h-1 rounded-full bg-foreground mt-2"></div>
+                          <p className="text-xs text-muted-foreground">Improve writing clarity</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  aiMessages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                    >
+                      <div
+                        className={`max-w-[90%] rounded-lg ${
+                          message.role === 'user'
+                            ? 'bg-foreground text-background p-3'
+                            : message.changes 
+                              ? 'bg-muted/50 border border-border p-4'
+                              : 'bg-card border border-border text-foreground p-3'
+                        }`}
+                      >
+                        {message.role === 'assistant' && message.changes ? (
+                          // Edit/Diff View
+                          <div className="space-y-3">
+                            {/* Diff Header */}
+                            <div className="flex items-center justify-between pb-3 border-b border-border">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-7 h-7 rounded-md bg-foreground/10 flex items-center justify-center">
+                                  <FileText className="h-4 w-4 text-foreground" />
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-sm text-foreground">Changes Proposed</h4>
+                                  <div className="flex items-center space-x-3 text-xs">
+                                    {message.changes.added > 0 && (
+                                      <span className="text-muted-foreground font-mono">
+                                        +{message.changes.added}
+                                      </span>
+                                    )}
+                                    {message.changes.removed > 0 && (
+                                      <span className="text-muted-foreground font-mono">
+                                        -{message.changes.removed}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Preview */}
+                            <div className="bg-background rounded-md p-3 border border-border">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Preview:</p>
+                              <p className="text-sm text-foreground leading-relaxed line-clamp-4">
+                                {message.changes.preview}
+                              </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center space-x-2 pt-2">
+                              <Button
+                                size="sm"
+                                onClick={() => acceptChanges(message.changes!.newContent)}
+                                className="flex-1 bg-foreground text-background hover:bg-foreground/90 h-9 font-medium"
+                              >
+                                <Check className="h-4 w-4 mr-2" />
+                                Accept Changes
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={rejectChanges}
+                                className="flex-1 border-border hover:bg-muted h-9"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </div>
+
+                            {/* Full content expandable */}
+                            <details className="mt-2">
+                              <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                                View full content
+                              </summary>
+                              <div className="mt-2 bg-background rounded-md p-3 text-xs font-mono text-foreground max-h-40 overflow-y-auto border border-border">
+                                {message.content}
+                              </div>
+                            </details>
+                          </div>
+                        ) : (
+                          // Regular message view
+                          <>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                            {message.role === 'assistant' && (
+                              <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-border">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => insertAiContentIntoNote(message.content)}
+                                  className="h-8 text-xs bg-foreground text-background hover:bg-foreground/90"
+                                >
+                                  <FileText className="h-3 w-3 mr-1.5" />
+                                  Insert
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(message.content, index)}
+                                  className="h-8 text-xs hover:bg-muted border border-border"
+                                >
+                                  {copiedIndex === index ? (
+                                    <>
+                                      <Check className="h-3 w-3 mr-1.5" />
+                                      Copied
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="h-3 w-3 mr-1.5" />
+                                      Copy
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isAiLoading && (
+                  <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="bg-muted/50 border border-border rounded-lg p-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 rounded-full bg-foreground/60 animate-bounce"></div>
+                          <div className="w-2 h-2 rounded-full bg-foreground/60 animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 rounded-full bg-foreground/60 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">AI is thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* AI Chat Input */}
+              <div className="p-4 border-t border-border bg-background">
+                <div className="flex items-end space-x-2">
+                  <div className="flex-1">
+                    <Input
+                      value={aiInput}
+                      onChange={(e) => setAiInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAiChat();
+                        }
+                      }}
+                      placeholder="Ask AI to help with your notes..."
+                      className="flex-1 h-10"
+                      disabled={isAiLoading}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleAiChat}
+                    disabled={isAiLoading || !aiInput.trim()}
+                    className="bg-foreground text-background hover:bg-foreground/90 h-10 px-4"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setAiInput("Write an introduction about")}
+                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                    disabled={isAiLoading}
+                  >
+                    ✨ Write intro
+                  </button>
+                  <button
+                    onClick={() => setAiInput("Improve and edit this note")}
+                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                    disabled={isAiLoading}
+                  >
+                    ✏️ Edit note
+                  </button>
+                  <button
+                    onClick={() => setAiInput("Expand on")}
+                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                    disabled={isAiLoading}
+                  >
+                    📝 Expand
+                  </button>
+                  <button
+                    onClick={() => setAiInput("Create an outline for")}
+                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                    disabled={isAiLoading}
+                  >
+                    📋 Outline
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

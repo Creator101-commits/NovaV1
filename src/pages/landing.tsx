@@ -35,7 +35,7 @@ export default function Landing() {
       }`}>
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-medium tracking-wide">Refyneo</div>
+            <div className="text-2xl font-medium tracking-wide">Nova</div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Features</a>
               <button 
@@ -136,7 +136,7 @@ export default function Landing() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-8">
             <p className="text-xl md:text-2xl text-foreground mb-6 font-normal leading-relaxed">
-              "Refyneo transformed how I manage my coursework. My productivity increased by 300%."
+              "Nova transformed how I manage my coursework. My productivity increased by 300%."
             </p>
             <div className="space-y-1">
               <p className="text-lg font-medium">Sarah Chen</p>
@@ -157,7 +157,7 @@ export default function Landing() {
       <section className="py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-normal mb-6 tracking-tight">Ready to start?</h2>
-          <p className="text-lg text-muted-foreground mb-8">Join thousands of students already using Refyneo</p>
+          <p className="text-lg text-muted-foreground mb-8">Join thousands of students already using Nova</p>
           <button 
             onClick={handleSignIn}
             className="group inline-flex items-center bg-foreground text-background px-6 py-3 text-base font-medium rounded-md hover:bg-foreground/90 transition-all duration-200 btn-hover"
@@ -172,7 +172,7 @@ export default function Landing() {
       <footer className="py-12 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
-            <div className="text-lg font-medium">Refyneo</div>
+            <div className="text-lg font-medium">Nova</div>
             <div className="flex space-x-6">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover text-sm">Privacy</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover text-sm">Terms</a>
@@ -180,7 +180,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="mt-6 text-center text-muted-foreground">
-            <p className="text-xs">&copy; 2025 Refyneo. All rights reserved.</p>
+            <p className="text-xs">&copy; 2025 Nova. All rights reserved.</p>
           </div>
         </div>
       </footer>

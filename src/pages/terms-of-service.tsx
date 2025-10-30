@@ -35,7 +35,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-3">1. Acceptance of Terms</h2>
               <div className="space-y-3 text-muted-foreground">
                 <p>
-                  By accessing and using Refyneo ("the Service"), you accept and agree to 
+                  By accessing and using Nova ("the Service"), you accept and agree to 
                   be bound by the terms and provision of this agreement. If you do not 
                   agree to abide by the above, please do not use this service.
                 </p>
@@ -45,7 +45,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-2xl font-semibold mb-3">2. Description of Service</h2>
               <div className="space-y-3 text-muted-foreground">
-                <p>Refyneo is a comprehensive student productivity platform that provides:</p>
+                <p>Nova is a comprehensive student productivity platform that provides:</p>
                 <ul className="list-disc ml-6 space-y-1">
                   <li>Assignment and deadline tracking</li>
                   <li>Calendar integration and scheduling</li>
@@ -84,7 +84,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-3">4. Third-Party Integrations</h2>
               <div className="space-y-3 text-muted-foreground">
                 <h3 className="text-lg font-medium text-foreground">4.1 Supported Platforms</h3>
-                <p>Refyneo integrates with various third-party services including:</p>
+                <p>Nova integrates with various third-party services including:</p>
                 <ul className="list-disc ml-6 space-y-1">
                   <li>Google Workspace (Calendar, Classroom)</li>
                   <li>Microsoft Outlook Calendar</li>
@@ -113,7 +113,7 @@ export default function TermsOfService() {
 
                 <h3 className="text-lg font-medium text-foreground">5.2 Our Platform</h3>
                 <ul className="list-disc ml-6 space-y-1">
-                  <li>Refyneo platform and features are our intellectual property</li>
+                  <li>Nova platform and features are our intellectual property</li>
                   <li>You may not copy, modify, or distribute our code</li>
                   <li>Reverse engineering is prohibited</li>
                 </ul>
@@ -156,7 +156,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-3">8. Limitation of Liability</h2>
               <div className="space-y-3 text-muted-foreground">
                 <p>
-                  Refyneo is provided "as is" without warranties. We are not liable for:
+                  Nova is provided "as is" without warranties. We are not liable for:
                 </p>
                 <ul className="list-disc ml-6 space-y-1">
                   <li>Data loss or corruption</li>
@@ -172,7 +172,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-3">9. Academic Integrity</h2>
               <div className="space-y-3 text-muted-foreground">
                 <p>
-                  Refyneo is designed to enhance your learning, not replace it. Users must:
+                  Nova is designed to enhance your learning, not replace it. Users must:
                 </p>
                 <ul className="list-disc ml-6 space-y-1">
                   <li>Follow their institution's academic honesty policies</li>
@@ -220,8 +220,8 @@ export default function TermsOfService() {
                   Questions about these Terms of Service should be directed to:
                 </p>
                 <div className="bg-muted p-4 rounded-lg">
-                  <p><strong>Email:</strong> legal@refyneo.app</p>
-                  <p><strong>Support:</strong> support@refyneo.app</p>
+                  <p><strong>Email:</strong> legal@nova.app</p>
+                  <p><strong>Support:</strong> support@nova.app</p>
                 </div>
               </div>
             </section>

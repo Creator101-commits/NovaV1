@@ -37,7 +37,7 @@ export function OptimizedPageWrapper({
   useEffect(() => {
     // Set page title
     if (title) {
-      document.title = `${title} - Refyneo`;
+      document.title = `${title} - Nova`;
     }
 
     // Trigger entrance animation

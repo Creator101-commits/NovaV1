@@ -27,7 +27,7 @@ export const useNotes = () => {
     queryKey: ['notes', user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
-      const response = await apiGet(`/api/users/${user.uid}/notes`);
+      const response = await apiGet(`/api/notes`);
       if (!response.ok) throw new Error('Failed to fetch notes');
       return response.json();
     },

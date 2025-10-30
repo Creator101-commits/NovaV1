@@ -419,7 +419,7 @@ export const PomodoroTimer = () => {
         </div>
         
         {/* Large Timer Display */}
-        <div className="text-8xl md:text-9xl font-mono font-bold text-primary">
+        <div className="text-8xl md:text-9xl font-mono font-bold text-foreground">
           {formatTime(timeLeft)}
         </div>
         
@@ -511,7 +511,7 @@ export const PomodoroTimer = () => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-primary" />
+            <Clock className="h-5 w-5 mr-2 text-foreground" />
             Pomodoro Timer
           </div>
           <Button 
@@ -536,7 +536,7 @@ export const PomodoroTimer = () => {
             </Badge>
           </div>
           
-          <div className="text-6xl font-mono font-bold text-primary">
+          <div className="text-6xl font-mono font-bold text-foreground">
             {formatTime(timeLeft)}
           </div>
           
@@ -572,7 +572,7 @@ export const PomodoroTimer = () => {
         <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Music className="h-4 w-4 text-primary" />
+              <Music className="h-4 w-4 text-foreground" />
               <span className="text-sm font-medium">Focus Music</span>
             </div>
             <Button 

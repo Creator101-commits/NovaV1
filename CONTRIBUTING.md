@@ -1,6 +1,6 @@
-# Contributing to RefyneoV1
+# Contributing to Nova
 
-Thank you for your interest in contributing to RefyneoV1! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Nova! This document provides guidelines and information for contributors.
 
 ## Table of Contents
 
@@ -42,8 +42,8 @@ We pledge to make participation in our project a harassment-free experience for 
 1. **Fork the Repository**
    ```bash
    # Fork the repository on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/RefyneoV1.git
-   cd RefyneoV1
+   git clone https://github.com/YOUR_USERNAME/Nova.git
+   cd Nova
    ```
 
 2. **Install Dependencies**
@@ -487,4 +487,4 @@ Contributors will be recognized in:
 - Release notes
 - Project documentation
 
-Thank you for contributing to RefyneoV1! 
+Thank you for contributing to Nova! 

@@ -122,7 +122,7 @@ export const EnhancedSignInPage: React.FC<EnhancedSignInPageProps> = ({
                   Choose Your Experience
                 </h1>
                 <p className="text-muted-foreground">
-                  Select how you'd like to use Google integration with Refyneo
+                  Select how you'd like to use Google integration with Nova
                 </p>
               </div>
 

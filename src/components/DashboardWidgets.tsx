@@ -109,13 +109,31 @@ export const DraggableWidget: React.FC<WidgetProps> = ({
 
 // Pre-built widget components
 export const CalendarWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
+  const { analytics, assignments, isLoading } = useDashboardAnalytics();
   const [, setLocation] = useLocation();
   
+  if (isLoading) {
+    return (
+      <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
+        </div>
+      </DraggableWidget>
+    );
+  }
+
+  // Get upcoming assignments
+  const upcomingAssignments = assignments
+    .filter((a: any) => a.dueDate && new Date(a.dueDate) > new Date() && a.status !== 'completed')
+    .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .slice(0, 3);
+
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Calendar</span>
+          <span className="text-sm text-muted-foreground">Upcoming</span>
           <Button 
             variant="ghost" 
             size="sm" 
@@ -126,11 +144,30 @@ export const CalendarWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }
             <ArrowRight className="h-3 w-3 ml-1" />
           </Button>
         </div>
-        <div className="text-center py-4">
-          <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Calendar Widget</p>
-          <p className="text-xs text-muted-foreground">Click "View All" to open calendar</p>
-        </div>
+        
+        {upcomingAssignments.length === 0 ? (
+          <div className="text-center py-4">
+            <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">No upcoming deadlines</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {upcomingAssignments.map((assignment: any) => (
+              <div key={assignment.id} className="flex items-start gap-2 text-xs p-2 rounded-lg bg-muted/50">
+                <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-foreground truncate">{assignment.title}</div>
+                  <div className="text-muted-foreground">
+                    {new Date(assignment.dueDate).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </DraggableWidget>
   );
@@ -186,33 +223,112 @@ export const AssignmentsWidget: React.FC<{ widget: DashboardWidget }> = ({ widge
   );
 };
 
-export const HabitsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => (
-  <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-    <div className="space-y-3">
-      <div className="text-sm text-muted-foreground">Today's Progress</div>
-      <div className="space-y-2">
-        <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span>Study 2 hours</span>
-            <span>1.5/2</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
-          </div>
+export const HabitsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
+  const { analytics, pomodoroSessions, assignments, isLoading } = useDashboardAnalytics();
+  const [, setLocation] = useLocation();
+  
+  if (isLoading) {
+    return (
+      <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
-        <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span>Exercise</span>
-            <span></span>
+      </DraggableWidget>
+    );
+  }
+
+  // Calculate today's study progress (goal: 2 hours = 120 minutes)
+  const todayStudyMinutes = pomodoroSessions
+    .filter((s: any) => {
+      const sessionDate = new Date(s.createdAt);
+      const today = new Date();
+      return sessionDate.toDateString() === today.toDateString();
+    })
+    .reduce((total: number, session: any) => total + (session.duration || 0), 0);
+  
+  const studyGoal = 120; // 2 hours
+  const studyProgress = Math.min((todayStudyMinutes / studyGoal) * 100, 100);
+
+  // Calculate assignments completed today
+  const today = new Date();
+  const todayCompletions = assignments.filter((a: any) => {
+    if (a.status !== 'completed' || !a.completedAt) return false;
+    const completedDate = new Date(a.completedAt);
+    return completedDate.toDateString() === today.toDateString();
+  }).length;
+
+  // Calculate total assignments due today
+  const assignmentsDueToday = assignments.filter((a: any) => {
+    if (!a.dueDate) return false;
+    const dueDate = new Date(a.dueDate);
+    return dueDate.toDateString() === today.toDateString();
+  }).length;
+
+  const assignmentProgress = assignmentsDueToday > 0 
+    ? (todayCompletions / assignmentsDueToday) * 100 
+    : 0;
+
+  return (
+    <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Today's Progress</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation('/learn')}
+            className="h-6 px-2 text-xs"
+          >
+            Track
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
+        
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Study Time
+              </span>
+              <span className="text-muted-foreground">
+                {Math.round(todayStudyMinutes)}m / {studyGoal}m
+              </span>
+            </div>
+            <Progress value={studyProgress} className="h-2" />
           </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-green-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+          
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-foreground flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Assignments Due
+              </span>
+              <span className="text-muted-foreground">
+                {todayCompletions} / {assignmentsDueToday}
+              </span>
+            </div>
+            <Progress value={assignmentProgress} className="h-2" />
+          </div>
+          
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-foreground flex items-center gap-1">
+                <Timer className="h-3 w-3" />
+                Study Sessions
+              </span>
+              <span className="text-muted-foreground">
+                {analytics.todaySessions}
+              </span>
+            </div>
+            <Progress value={Math.min(analytics.todaySessions * 25, 100)} className="h-2" />
           </div>
         </div>
       </div>
-    </div>
-  </DraggableWidget>
-);
+    </DraggableWidget>
+  );
+};
 
 export const PomodoroWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
   const { analytics, isLoading } = useDashboardAnalytics();
@@ -322,7 +438,8 @@ export const AnalyticsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget 
 };
 
 export const NotesWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
-  const { analytics, isLoading } = useDashboardAnalytics();
+  const { analytics, notes, isLoading } = useDashboardAnalytics();
+  const [, setLocation] = useLocation();
   
   if (isLoading) {
     return (
@@ -335,31 +452,68 @@ export const NotesWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) =
     );
   }
 
+  // Get recent notes (last 3)
+  const recentNotesList = [...notes]
+    .sort((a: any, b: any) => {
+      const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+      const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+      return dateB - dateA;
+    })
+    .slice(0, 3);
+
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-      <div className="space-y-4">
-        <div className="text-center">
-          <div className="text-2xl font-semibold text-foreground">{analytics.totalNotes}</div>
-          <div className="text-xs text-muted-foreground">Total Notes</div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-center flex-1">
+            <div className="text-2xl font-semibold text-foreground">{analytics.totalNotes}</div>
+            <div className="text-xs text-muted-foreground">Total Notes</div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation('/notes')}
+            className="h-6 px-2 text-xs"
+          >
+            View All
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
         </div>
         
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Recent</span>
-            <span className="text-foreground">{analytics.recentNotes}</span>
+        {recentNotesList.length === 0 ? (
+          <div className="text-center py-4">
+            <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">No notes yet</p>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">This Week</span>
-            <span className="text-foreground">{analytics.recentNotes}</span>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground mb-1">Recent Notes</div>
+            {recentNotesList.map((note: any) => (
+              <div 
+                key={note.id} 
+                className="text-xs p-2 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                onClick={() => setLocation('/notes')}
+              >
+                <div className="font-medium text-foreground truncate">{note.title || 'Untitled'}</div>
+                <div className="text-muted-foreground">
+                  {new Date(note.updatedAt || note.createdAt).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                  {note.category && ` • ${note.category}`}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
       </div>
     </DraggableWidget>
   );
 };
 
 export const FlashcardsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget }) => {
-  const { analytics, isLoading } = useDashboardAnalytics();
+  const { analytics, flashcards, isLoading } = useDashboardAnalytics();
+  const [, setLocation] = useLocation();
   
   if (isLoading) {
     return (
@@ -376,27 +530,69 @@ export const FlashcardsWidget: React.FC<{ widget: DashboardWidget }> = ({ widget
     ? Math.round((analytics.reviewedFlashcards / analytics.totalFlashcards) * 100)
     : 0;
 
+  // Count cards due for review (cards reviewed more than 1 day ago or never reviewed)
+  const dueForReview = flashcards.filter((card: any) => {
+    if (!card.lastReviewed) return true;
+    const lastReview = new Date(card.lastReviewed);
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    return lastReview < oneDayAgo;
+  }).length;
+
+  // Calculate accuracy if cards have been reviewed
+  const cardsWithReviews = flashcards.filter((card: any) => 
+    (card.correctCount || 0) + (card.incorrectCount || 0) > 0
+  );
+  
+  const accuracy = cardsWithReviews.length > 0
+    ? Math.round(
+        cardsWithReviews.reduce((sum: number, card: any) => {
+          const total = (card.correctCount || 0) + (card.incorrectCount || 0);
+          return sum + ((card.correctCount || 0) / total);
+        }, 0) / cardsWithReviews.length * 100
+      )
+    : 0;
+
   return (
     <DraggableWidget widget={widget} onRemove={() => {}} onResize={() => {}}>
-      <div className="space-y-4">
-        <div className="text-center">
-          <div className="text-2xl font-semibold text-foreground">{analytics.totalFlashcards}</div>
-          <div className="text-xs text-muted-foreground">Total Cards</div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-center flex-1">
+            <div className="text-2xl font-semibold text-foreground">{analytics.totalFlashcards}</div>
+            <div className="text-xs text-muted-foreground">Total Cards</div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation('/learn')}
+            className="h-6 px-2 text-xs"
+          >
+            Study
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
         </div>
         
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Reviewed</span>
-            <span className="text-foreground">{analytics.reviewedFlashcards}</span>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="text-center p-2 rounded-lg bg-muted/50">
+              <div className="font-medium text-foreground">{analytics.reviewedFlashcards}</div>
+              <div className="text-muted-foreground">Reviewed</div>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-muted/50">
+              <div className="font-medium text-foreground">{dueForReview}</div>
+              <div className="text-muted-foreground">Due</div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="text-foreground">{reviewProgress}%</span>
-          </div>
-        </div>
-        
-        <div className="pt-1">
-          <Progress value={reviewProgress} className="h-1" />
+          
+          {cardsWithReviews.length > 0 && (
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-muted-foreground">Accuracy</span>
+                <span className="text-foreground">{accuracy}%</span>
+              </div>
+              <Progress value={accuracy} className="h-1" />
+            </div>
+          )}
         </div>
       </div>
     </DraggableWidget>

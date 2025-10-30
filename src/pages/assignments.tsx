@@ -664,8 +664,11 @@ export default function Assignments() {
         {filteredAssignments.map((assignment) => {
           const status = getAssignmentStatus(assignment);
           const StatusIcon = status.icon;
-          const courseName = courses.find(c => c.id === assignment.classId)?.name || 
-                           (assignment.classId ? 'Unknown Course' : 'No Class');
+          
+          // Find course name by database ID
+          // All courses now use database IDs, so simple lookup works
+          const course = courses.find(c => c.id === assignment.classId);
+          const courseName = course?.name || (assignment.classId ? 'Unknown Course' : 'No Class');
           
           return (
             <Card key={assignment.id} className="hover:shadow-md transition-shadow">

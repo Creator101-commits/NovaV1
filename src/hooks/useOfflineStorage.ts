@@ -12,7 +12,7 @@ interface StoredData {
 }
 
 class OfflineStorage {
-  private dbName = 'RefyneoOfflineDB';
+  private dbName = 'NovaOfflineDB';
   private version = 1;
   private db: IDBDatabase | null = null;
 

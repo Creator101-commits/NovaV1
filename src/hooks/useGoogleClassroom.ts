@@ -73,21 +73,19 @@ export const useGoogleClassroom = () => {
         }
       }
 
-      // Merge Google Classroom classes with database classes
-      // Filter out Google classes that are already in database to avoid duplicates
-      const googleClassIds = new Set(googleData.courses.map(c => c.id));
-      const uniqueDatabaseClasses = databaseClasses.filter(c => !c.googleClassroomId || !googleClassIds.has(c.googleClassroomId));
-      const allCourses = [...googleData.courses, ...uniqueDatabaseClasses];
+      // Use ONLY database classes - they have the correct database IDs
+      // Google Classroom data is already synced to database via the sync endpoint
+      // Using Google courses directly would cause ID mismatches with assignment.classId
+      const allCourses = databaseClasses;
 
       // Merge assignments - database is source of truth
       // Google Classroom assignments are already in database from sync endpoint
       const allAssignments = databaseAssignments;
       
       console.log('Classroom sync results:', {
-        googleCourses: googleData.courses.length,
+        googleCoursesFetched: googleData.courses.length,
         databaseClasses: databaseClasses.length,
-        uniqueDatabaseClasses: uniqueDatabaseClasses.length,
-        googleAssignments: googleData.assignments.length,
+        googleAssignmentsFetched: googleData.assignments.length,
         databaseAssignments: databaseAssignments.length,
         totalCourses: allCourses.length,
         totalAssignments: allAssignments.length,

@@ -45,7 +45,7 @@ export const DailyJournal = () => {
       if (response.ok) {
         const data = await response.json();
         setEntries(data);
-        console.log('✅ Loaded journal entries:', data.length);
+        console.log(' Loaded journal entries:', data.length);
       } else {
         console.error('Failed to load journal entries:', response.status);
         toast({
@@ -133,7 +133,7 @@ export const DailyJournal = () => {
       setEditingEntry(null);
       
       toast({
-        title: "Entry saved! 📖",
+        title: "Entry saved! ",
         description: editingEntry ? "Your journal entry has been updated" : "Your journal entry has been saved",
       });
     } catch (error) {
@@ -257,7 +257,7 @@ export const DailyJournal = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center">
-                  <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                  <BookOpen className="h-5 w-5 mr-2 text-foreground" />
                   {editingEntry ? "Edit Entry" : "Today's Journal"}
                 </CardTitle>
                 {editingEntry && (
