@@ -181,7 +181,7 @@ export function OptimizedNavigation({ className }: OptimizedNavigationProps) {
       <nav className={cn('fixed left-0 top-0 h-full w-64 bg-background border-r border-border z-50', className)}>
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-8">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <img src="../images/nova-logo.png" alt="Nova Logo" className="h-6 w-6 object-contain" />
             <span className="text-lg font-semibold">Nova</span>
           </div>
           
@@ -284,7 +284,7 @@ export function OptimizedNavigation({ className }: OptimizedNavigationProps) {
             transition={{ delay: 0.1 }}
             className="flex items-center space-x-2 mb-8"
           >
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <img src="../images/nova-logo.png" alt="Nova Logo" className="h-6 w-6 object-contain" />
             <span className="text-lg font-semibold">Nova</span>
           </motion.div>
 

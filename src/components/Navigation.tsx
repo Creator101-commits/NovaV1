@@ -41,7 +41,7 @@ export const Navigation = () => {
       >
         <div className="flex justify-between items-center w-full px-6">
           <div className="flex items-center space-x-2">
-            <GraduationCap className="h-8 w-8 text-blue-400" />
+            <img src="../images/nova-logo.png" alt="Nova Logo" className="h-8 w-8 object-contain" />
             <span className="text-xl font-bold text-blue-400">Nova</span>
           </div>
           

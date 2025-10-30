@@ -7,9 +7,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           {/* Logo and Copyright */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">SP</span>
-            </div>
+            <img src="../images/nova-logo.png" alt="Nova Logo" className="h-8 w-8 object-contain" />
             <div>
               <p className="text-sm text-muted-foreground">
                 © {new Date().getFullYear()} Nova. All rights reserved.

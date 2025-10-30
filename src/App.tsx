@@ -87,7 +87,7 @@ function AppNavigation() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
-            <GraduationCap className="h-5 w-5 text-primary" />
+            <img src="../images/nova-logo.png" alt="Nova Logo" className="h-5 w-5 object-contain" />
             <span className="text-lg font-medium text-foreground">Nova</span>
           </div>
         </div>

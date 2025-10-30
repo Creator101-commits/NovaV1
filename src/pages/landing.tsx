@@ -35,7 +35,10 @@ export default function Landing() {
       }`}>
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-medium tracking-wide">Nova</div>
+            <div className="flex items-center space-x-3">
+              <img src="../images/nova-logo.png" alt="Nova Logo" className="h-8 w-8 object-contain" />
+              <span className="text-2xl font-medium tracking-wide">Nova</span>
+            </div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Features</a>
               <button 
