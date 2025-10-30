@@ -66,54 +66,113 @@ The system follows a unidirectional data flow pattern:
 ## Features
 
 ### Smart Note-Taking
-- **Rich Text Editor**: Advanced note editor with formatting, tables, and task lists
-- **Organization**: Categorize notes by type (lecture, homework, study, etc.)
+- **Rich Text Editor**: Google Docs-style editor powered by Slate.js with comprehensive formatting options
+- **AI Writing Assistant**: Minimalistic black-and-white AI sidebar that helps write, edit, and improve notes
+- **Context-Aware AI**: AI receives note title, content, and category for intelligent suggestions
+- **Coding Agent-Style Editing**: View proposed changes with line count diff (plus/minus lines) before accepting
+- **Accept/Reject Changes**: Review AI edits with preview window before applying to notes
+- **Clean Text Formatting**: Automatic removal of markdown symbols (asterisks, underscores, backticks) when inserting AI content
+- **Text Formatting**: Bold, italic, underline, strikethrough, code, headings, and more
+- **Advanced Features**: Lists (ordered/unordered), blockquotes, tables, and alignment options
+- **Organization**: Categorize notes by type (lecture, homework, study, research, project, exam, general)
 - **Search & Filter**: Powerful search across all notes with category and class filters
 - **Pinning System**: Pin important notes for quick access
 - **Class Integration**: Link notes to specific classes for better organization
+- **Auto-Save**: Continuous auto-saving every 3 seconds with last saved timestamp
+- **Color Customization**: Assign colors to notes for visual organization
+- **Print Support**: Print notes directly from the editor
+
+### AI Chat Assistant
+- **Groq AI Integration**: Powered by llama-3.1-8b-instant and llama-3.1-70b-versatile models
+- **Multi-Purpose Chat**: Ask questions, get explanations, and receive study help
+- **Content Summarization**: Summarize text, PDFs, and YouTube videos
+- **AI Note Assistant**: Integrated directly into note editor for seamless writing help
+- **Quick Actions**: Pre-defined prompts for common tasks (write intro, edit note, expand, outline)
+- **Smart Insert**: Insert AI-generated content directly into notes with proper formatting
+- **Copy Functionality**: Easy copy-to-clipboard for AI responses
+- **Message History**: Keep track of conversation context for better AI responses
+- **Loading States**: Clear visual feedback during AI processing
 
 ### Calendar & Scheduling
 - **Unified Calendar**: View all events, assignments, and classes in one place
 - **Google Calendar Sync**: Two-way synchronization with Google Calendar
+- **Auto-Sync**: Automatic background synchronization every 5 minutes
+- **Manual Sync**: On-demand sync with visual feedback
 - **Smart Scheduling**: AI-powered optimal study time suggestions
-- **Event Management**: Create, edit, and manage calendar events
-- **Assignment Integration**: Automatic due date tracking
+- **Event Management**: Create, edit, and manage calendar events with full CRUD operations
+- **Assignment Integration**: Automatic due date tracking linked to calendar
+- **Multiple Views**: Month, week, and day views for flexible planning
+- **Color Coding**: Visual distinction between different event types
 
 ### Assignment Management
-- **Assignment Tracking**: Track homework, projects, and exams
+- **Assignment Tracking**: Comprehensive tracking of homework, projects, and exams
 - **Priority System**: Mark assignments by priority (low, medium, high)
-- **Status Management**: Track completion status (pending, completed, overdue)
-- **Class Integration**: Link assignments to specific classes
-- **Due Date Alerts**: Never miss important deadlines
-
-### AI-Powered Tools
-- **AI Chat Assistant**: Get help with studying and academic questions
-- **Content Summarization**: Summarize text, PDFs, and YouTube videos
-- **Smart Study Planning**: AI-generated optimal study schedules
-- **Learning Analytics**: Track progress and identify improvement areas
+- **Status Management**: Track completion status (pending, in-progress, completed, overdue)
+- **Class Integration**: Link assignments to specific classes with color coding
+- **Due Date Alerts**: Never miss important deadlines with visual indicators
+- **Completion Tracking**: Mark assignments as complete and track progress
+- **Filtering**: Filter by status, priority, or class for focused view
+- **Calendar Integration**: Assignments automatically appear on calendar
 
 ### Study Tools
-- **Flashcards**: Create and study with spaced repetition
-- **Pomodoro Timer**: Focus sessions with built-in timer
-- **Mood Tracking**: Monitor academic stress and well-being
-- **Daily Journal**: Reflect on your learning journey
-- **Habit Tracking**: Build consistent study habits
+- **Flashcards**: Create and study flashcards with spaced repetition algorithm
+- **Deck Management**: Organize flashcards into decks by subject or topic
+- **Study Modes**: Multiple study modes including shuffle and focused review
+- **Progress Tracking**: Track which cards have been mastered
+- **Pomodoro Timer**: Customizable focus timer with work and break intervals
+- **Session History**: View past Pomodoro sessions and total study time
+- **Mood Tracking**: Monitor emotional well-being with emoji-based mood entries
+- **Mood Analytics**: Visualize mood patterns over time with charts
+- **Daily Journal**: Reflect on learning experiences with daily journal entries
+- **Habit Tracking**: Build and maintain consistent study habits with visual streaks
+
+### Productivity Features
+- **Pomodoro Timer**: 
+  - Customizable work and break durations
+  - Audio notifications for session transitions
+  - Background music support with volume control
+  - Session statistics and total time tracking
+  - Auto-start next session option
+  - Fullscreen focus mode
+- **Light Mode Support**: All components optimized for both light and dark themes
+- **Theme Consistency**: Uniform black text in light mode, white text in dark mode
+- **Responsive Design**: Mobile-friendly interface that adapts to all screen sizes
+- **Offline Capability**: Local storage fallback for basic operations without internet
 
 ### Analytics & Insights
-- **Progress Tracking**: Visualize your academic progress
-- **Study Analytics**: Understand your study patterns
-- **Productivity Metrics**: Track time spent on different activities
+- **Progress Tracking**: Visualize academic progress with charts and graphs
+- **Study Analytics**: Understand study patterns and productivity trends
+- **Productivity Metrics**: Track time spent on different activities and subjects
 - **Performance Insights**: Identify strengths and areas for improvement
+- **Class Performance**: View performance breakdown by class
+- **Time Management**: Analyze how time is distributed across subjects
+
+### User Experience
+- **Modern UI Design**: Clean, minimalistic interface following modern design principles
+- **Glass Morphism**: Beautiful glassmorphic design elements for premium feel
+- **Smooth Animations**: Framer Motion animations for delightful interactions
+- **Loading States**: Skeleton loaders and loading indicators for better UX
+- **Error Handling**: Comprehensive error boundaries and user-friendly error messages
+- **Toast Notifications**: Non-intrusive notifications for user feedback
+- **Empty States**: Helpful empty state designs with clear call-to-actions
+- **Network Status**: Real-time network connectivity indicator
+- **Accessibility**: WCAG-compliant components from Radix UI
 
 ## Architecture
 
 ### Frontend
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **Tailwind CSS** for styling with custom design system
-- **Radix UI** for accessible component primitives
-- **Framer Motion** for smooth animations
-- **Wouter** for lightweight routing
+- **React 18** with TypeScript for type-safe component development
+- **Vite** for lightning-fast development and optimized production builds
+- **Tailwind CSS** for utility-first styling with custom design system
+- **Radix UI** for accessible, unstyled component primitives
+- **Framer Motion** for smooth, performant animations and transitions
+- **Wouter** for lightweight client-side routing
+- **Slate.js** for rich text editing in note editor
+- **Recharts** for data visualization and analytics charts
+- **Lucide React** for consistent iconography
+- **date-fns** for date manipulation and formatting
+- **DOMPurify** for sanitizing HTML content
+- **React Hook Form** for efficient form management
 
 ### Backend
 - **Node.js** with Express.js
@@ -130,11 +189,14 @@ The system follows a unidirectional data flow pattern:
 - **Data migration support** between database systems
 
 ### Integrations
-- **Google Calendar API** for calendar synchronization
-- **Google Classroom API** for assignment import
-- **Microsoft Graph API** for Outlook integration
-- **Groq AI** for intelligent features
-- **Firebase** for authentication and real-time features
+- **Google Calendar API** for two-way calendar synchronization with auto-sync
+- **Google Classroom API** for assignment import and tracking
+- **Microsoft Graph API** for Outlook calendar integration
+- **Groq AI** for intelligent features (llama-3.1-8b-instant, llama-3.1-70b-versatile)
+- **Firebase Authentication** for secure user management with Google SSO
+- **Firebase Firestore** for real-time data synchronization
+- **YouTube API** for video content summarization
+- **PDF.js** for PDF document processing and summarization
 
 ## Quick Start
 
@@ -222,10 +284,40 @@ The system follows a unidirectional data flow pattern:
 6. **Use AI Features**: Leverage AI for study help and content summarization
 
 ### Key Workflows
-- **Daily Planning**: Check your calendar and upcoming assignments
-- **Note-Taking**: Create and organize notes by class and category
-- **Study Sessions**: Use flashcards and Pomodoro timer for focused study
-- **Progress Review**: Check analytics to understand your learning patterns
+
+#### Note-Taking with AI
+1. Create a new note and select class/category
+2. Start writing with rich text formatting
+3. Click "AI Assistant" to open the minimalistic sidebar
+4. Use quick actions or type custom prompts for help
+5. Review AI suggestions with line count diff view
+6. Accept changes to update your note or reject to keep original
+7. Insert AI content directly into your note with clean formatting
+
+#### Study Session Planning
+1. Check your dashboard for upcoming assignments and events
+2. Review calendar for the day/week with color-coded events
+3. Use AI chat to generate an optimal study plan
+4. Start a Pomodoro session with customized work/break intervals
+5. Take notes during study with AI writing assistance
+6. Track your mood and journal about the session
+7. Review analytics to understand study patterns
+
+#### Assignment Management
+1. Add assignments with due dates, priority, and linked class
+2. View assignments on calendar for timeline visualization
+3. Filter assignments by status, priority, or class
+4. Mark assignments as in-progress or completed
+5. Receive visual alerts for approaching deadlines
+6. Track completion progress across all classes
+
+#### Calendar Synchronization
+1. Connect your Google Calendar in settings
+2. Enable auto-sync for background synchronization every 5 minutes
+3. Create events in Nova that sync to Google Calendar
+4. Import events from Google Calendar to Nova
+5. Use manual sync button for immediate synchronization
+6. View sync status with visual indicators
 
 ## Development
 
@@ -322,22 +414,52 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
+### Completed Features
+- [x] AI Writing Assistant with coding agent-style diff view
+- [x] Context-aware AI suggestions in note editor
+- [x] Markdown symbol removal for clean text formatting
+- [x] Accept/Reject workflow for AI edits
+- [x] Light mode optimization across all components
+- [x] Google Calendar auto-sync with background jobs
+- [x] Minimalistic black-and-white AI design
+- [x] Nova logo integration throughout app
+- [x] Auto-save functionality for notes
+- [x] Quick action buttons for common AI tasks
+- [x] Real-time network status monitoring
+- [x] Comprehensive error handling
+
 ### Upcoming Features
 - [ ] Mobile app (React Native)
-- [ ] Offline support with sync
-- [ ] Advanced AI tutoring
-- [ ] Collaborative study groups
-- [ ] Integration with more learning platforms
-- [ ] Advanced analytics dashboard
-- [ ] Custom study plans
-- [ ] Voice notes and transcription
+- [ ] Offline support with service workers and local sync
+- [ ] Advanced AI tutoring with personalized learning paths
+- [ ] Collaborative study groups with real-time editing
+- [ ] Integration with Canvas, Moodle, and Blackboard
+- [ ] Advanced analytics dashboard with predictive insights
+- [ ] Custom study plans generated by AI
+- [ ] Voice notes with transcription and AI summarization
+- [ ] Browser extension for quick note capture
+- [ ] OCR support for handwritten notes
+- [ ] Spaced repetition algorithm improvements
+- [ ] AI-powered quiz generation from notes
+- [ ] Multi-language support
+- [ ] Export notes to PDF, Word, and Markdown
+- [ ] Video call integration for study groups
 
 ### Recent Updates
-- Google Calendar integration
-- AI-powered content summarization
-- Advanced note organization
-- Real-time collaboration features
-- Comprehensive analytics
+- AI Writing Assistant integrated into note editor with coding agent-style diff view
+- Minimalistic black-and-white design system for AI assistant
+- Markdown symbol removal for clean text insertion
+- Accept/Reject workflow for AI-proposed changes with line count visualization
+- Light mode optimization across all components (Pomodoro, Daily Journal, Mood Tracker)
+- Nova logo integration throughout application (landing page, navigation, footer, sidebar)
+- Google Calendar auto-sync with background synchronization
+- Enhanced note editor with context-aware AI suggestions
+- Quick action buttons for common AI tasks (write intro, edit, expand, outline)
+- Improved theme consistency with foreground/background color system
+- Auto-save functionality for notes with 3-second intervals
+- Comprehensive error handling and loading states
+- Real-time network status monitoring
+- Mobile-responsive design improvements
 
 ## Acknowledgments
 
