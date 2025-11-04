@@ -42,18 +42,6 @@ export default function Landing() {
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover">Features</a>
               <button 
-                onClick={() => setLocation("/spotlight-demo")}
-                className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover"
-              >
-                Spotlight Demo
-              </button>
-              <button 
-                onClick={() => setLocation("/signin-demo")}
-                className="text-muted-foreground hover:text-foreground transition-all duration-200 link-hover"
-              >
-                Sign-In Demo
-              </button>
-              <button 
                 onClick={handleSignIn}
                 className="bg-foreground text-background px-4 py-1.5 rounded-md text-sm font-medium hover:bg-foreground/90 transition-all duration-200 btn-hover"
               >
