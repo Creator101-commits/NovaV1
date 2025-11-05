@@ -774,35 +774,105 @@ You can now ask me anything about this document. Try questions like:
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check file type
-    const allowedTypes = ["text/plain", "application/pdf"];
+    // Check file type - now supporting PDF, PPTX, XLSX, and TXT
+    const allowedTypes = [
+      "text/plain", 
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ];
+    
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Error",
-        description: "Please upload a PDF or TXT file",
+        description: "Please upload a PDF, PPTX, XLSX, or TXT file",
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-    addMessage("user", `Summarize file (${summaryType}): ${file.name}`);
+    addMessage("user", `📄 Summarize file (${summaryType}): ${file.name}`);
 
     try {
       let content = "";
+      let fileType: "pdf" | "text" | "audio" | "youtube" = "text";
       
       if (file.type === "text/plain") {
+        // Handle text files directly
         content = await file.text();
-      } else if (file.type === "application/pdf") {
-        // For PDF files, we would typically use a PDF parsing library
-        // For now, we'll show an error message
-        throw new Error("PDF processing not implemented yet. Please use text files for now.");
+        fileType = "text";
+      } else {
+        // Handle PDF, PPTX, XLSX using document processing service
+        addMessage("assistant", "📤 Uploading document for processing...");
+        
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadResponse = await fetch("/api/document-intel/sessions", {
+          method: "POST",
+          headers: {
+            "x-user-id": user?.uid || "",
+          },
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload document");
+        }
+
+        const uploadData = await uploadResponse.json();
+        const jobId = uploadData.jobId;
+
+        addMessage("assistant", "⚙️ Processing document...");
+
+        // Poll for document content
+        let documentReady = false;
+        let attempts = 0;
+        const maxAttempts = 30; // 60 seconds maximum
+
+        while (!documentReady && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+          attempts++;
+
+          try {
+            const contentResponse = await fetch(`/api/document-intel/sessions/${jobId}/content`, {
+              headers: {
+                "x-user-id": user?.uid || "",
+              }
+            });
+
+            if (contentResponse.ok) {
+              const contentData = await contentResponse.json();
+              content = contentData.content;
+              documentReady = true;
+              
+              // Determine file type
+              if (file.type === "application/pdf") {
+                fileType = "pdf";
+              } else if (file.type.includes("presentation")) {
+                fileType = "pdf"; // Use pdf type for presentation
+              } else if (file.type.includes("spreadsheet")) {
+                fileType = "pdf"; // Use pdf type for spreadsheet
+              }
+            }
+          } catch (error) {
+            console.log("Still processing...", error);
+          }
+        }
+
+        if (!documentReady) {
+          throw new Error("Document processing timeout. Please try again.");
+        }
+
+        addMessage("assistant", "✅ Document processed! Generating summary...");
       }
 
+      // Generate summary using Groq
       const response = await groqAPI.summarizeContent({
         content,
         type: summaryType,
-        fileType: file.type === "application/pdf" ? "pdf" : "text",
+        fileType,
       });
 
       addMessage("assistant", response.summary, summaryType);
@@ -814,10 +884,13 @@ You can now ask me anything about this document. Try questions like:
         content,
         summary: response.summary,
         summaryType,
-        fileType: file.type === "application/pdf" ? "pdf" : "text",
+        fileType,
         timestamp: new Date(),
       };
       setSummaries(prev => [summary, ...prev]);
+
+      // Save to database
+      await saveSummaryToDatabase(summary);
 
       toast({
         title: "Success",
@@ -825,7 +898,7 @@ You can now ask me anything about this document. Try questions like:
       });
     } catch (error) {
       console.error("File summarization error:", error);
-      addMessage("assistant", "Sorry, I encountered an error while processing the file. Please try again.");
+      addMessage("assistant", "❌ Sorry, I encountered an error while processing the file. Please try again.");
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to process file. Please try again.",
@@ -1458,7 +1531,7 @@ You can now ask me anything about this document. Try questions like:
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".txt,.pdf"
+                      accept=".txt,.pdf,.pptx,.xlsx"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
@@ -1469,7 +1542,7 @@ You can now ask me anything about this document. Try questions like:
                       className="w-full"
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      Upload PDF/TXT File
+                      Upload Document (PDF/PPTX/XLSX/TXT)
                     </Button>
                   </div>
                 </CardContent>

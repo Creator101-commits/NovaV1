@@ -71,13 +71,16 @@ export const Flashcards = () => {
 
   // AI Flashcards state
   const [notes, setNotes] = useState<Note[]>([]);
-  const [aiInputType, setAiInputType] = useState<"text" | "note" | "file">("text");
+  const [aiInputType, setAiInputType] = useState<"text" | "note" | "file" | "document">("text");
   const [aiInputText, setAiInputText] = useState("");
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCards, setGeneratedCards] = useState<{ front: string; back: string; difficulty: string }[]>([]);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [uploadedDocument, setUploadedDocument] = useState<{ jobId: string; fileName: string; status: string } | null>(null);
+  const [isProcessingDocument, setIsProcessingDocument] = useState(false);
+  const [documentContent, setDocumentContent] = useState<string>("");
 
   // Deck management state
   const [decks, setDecks] = useState<Array<{id: string; name: string; parentDeckId?: string}>>([]);
@@ -277,6 +280,113 @@ export const Flashcards = () => {
     }
   };
 
+  // Handle document upload for AI flashcards
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Please upload a PDF, PPTX, or XLSX file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessingDocument(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/document-intel/sessions", {
+        method: "POST",
+        headers: {
+          "x-user-id": user?.uid || "",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload document");
+      }
+
+      const data = await response.json();
+      
+      setUploadedDocument({
+        jobId: data.jobId,
+        fileName: file.name,
+        status: "processing",
+      });
+
+      toast({
+        title: "Document Uploaded",
+        description: "Processing your document...",
+      });
+
+      // Poll for document content
+      pollDocumentContent(data.jobId);
+    } catch (error) {
+      console.error("Document upload error:", error);
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload document",
+        variant: "destructive",
+      });
+      setIsProcessingDocument(false);
+    }
+  };
+
+  // Poll for document content
+  const pollDocumentContent = async (jobId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/document-intel/sessions/${jobId}/content`, {
+          headers: {
+            "x-user-id": user?.uid || "",
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          clearInterval(pollInterval);
+          
+          setDocumentContent(data.content);
+          setUploadedDocument(prev => prev ? { ...prev, status: "ready" } : null);
+          setIsProcessingDocument(false);
+          
+          toast({
+            title: "Document Ready",
+            description: "Your document has been processed and is ready for flashcard generation!",
+          });
+        } else if (response.status === 404) {
+          // Still processing
+          console.log("Document still processing...");
+        } else {
+          // Error occurred
+          console.error("Error fetching document:", response.statusText);
+          clearInterval(pollInterval);
+          setIsProcessingDocument(false);
+          setUploadedDocument(prev => prev ? { ...prev, status: "error" } : null);
+          toast({
+            title: "Processing Failed",
+            description: "Failed to process document",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error polling document status:", error);
+      }
+    }, 2000);
+  };
+
   // Generate flashcards using AI
   const generateFlashcards = async () => {
     if (!user?.uid) return;
@@ -294,6 +404,8 @@ export const Flashcards = () => {
     } else if (aiInputType === "file" && uploadedFile) {
       const text = await uploadedFile.text();
       content = text;
+    } else if (aiInputType === "document" && documentContent) {
+      content = documentContent;
     }
 
     if (!content.trim()) {
@@ -889,7 +1001,7 @@ Return only the JSON array, no other text.`;
               <CardContent className="space-y-4">
                 <div>
                   <Label>Input Source</Label>
-                  <Select value={aiInputType} onValueChange={(value: "text" | "note" | "file") => setAiInputType(value)}>
+                  <Select value={aiInputType} onValueChange={(value: "text" | "note" | "file" | "document") => setAiInputType(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -904,6 +1016,12 @@ Return only the JSON array, no other text.`;
                         <div className="flex items-center">
                           <StickyNote className="h-4 w-4 mr-2" />
                           From Notes
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="document">
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Upload Document (PDF/PPTX/XLSX)
                         </div>
                       </SelectItem>
                       <SelectItem value="file">
@@ -980,6 +1098,59 @@ Return only the JSON array, no other text.`;
                   </div>
                 )}
 
+                {/* Document Upload */}
+                {aiInputType === "document" && (
+                  <div>
+                    <Label htmlFor="document-upload">Upload Document</Label>
+                    <div className="mt-2 space-y-3">
+                      <Input
+                        id="document-upload"
+                        type="file"
+                        accept=".pdf,.pptx,.xlsx"
+                        onChange={handleDocumentUpload}
+                        disabled={isProcessingDocument}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground"
+                      />
+                      {uploadedDocument && (
+                        <div className="p-4 border rounded-lg space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">{uploadedDocument.fileName}</span>
+                            </div>
+                            {uploadedDocument.status === "processing" && (
+                              <Badge variant="outline" className="animate-pulse">
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Processing
+                              </Badge>
+                            )}
+                            {uploadedDocument.status === "ready" && (
+                              <Badge className="bg-green-500">
+                                Ready
+                              </Badge>
+                            )}
+                            {uploadedDocument.status === "error" && (
+                              <Badge variant="destructive">
+                                Error
+                              </Badge>
+                            )}
+                          </div>
+                          {uploadedDocument.status === "processing" && (
+                            <p className="text-xs text-muted-foreground">
+                              Please wait while we extract content from your document...
+                            </p>
+                          )}
+                          {uploadedDocument.status === "ready" && (
+                            <p className="text-xs text-muted-foreground">
+                              ✓ Document processed! Ready to generate flashcards.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* File Upload */}
                 {aiInputType === "file" && (
                   <div>
@@ -1005,13 +1176,22 @@ Return only the JSON array, no other text.`;
 
                 <Button
                   onClick={generateFlashcards}
-                  disabled={isGenerating || (!aiInputText.trim() && !selectedNoteId && !uploadedFile)}
+                  disabled={
+                    isGenerating || 
+                    isProcessingDocument ||
+                    (!aiInputText.trim() && !selectedNoteId && !uploadedFile && !documentContent)
+                  }
                   className="w-full"
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Generating...
+                    </>
+                  ) : isProcessingDocument ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing Document...
                     </>
                   ) : (
                     <>
