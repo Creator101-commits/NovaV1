@@ -5,6 +5,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import { optimizedStorage } from "./optimized-storage";
+import { documentProcessingService } from "./document-processing";
 
 const app = express();
 
@@ -65,6 +66,10 @@ app.use((req, res, next) => {
       console.warn(' Fallback storage initialization failed:', (fallbackError as Error).message);
     }
   }
+
+  // Register document processing route BEFORE other routes
+  documentProcessingService.bindUploadRoute(app);
+  console.log(' Document Intelligence service enabled at /api/document-intel/sessions');
 
   const server = await registerRoutes(app);
 

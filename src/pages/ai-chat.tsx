@@ -67,6 +67,15 @@ interface ChatMessage {
   model?: string;
 }
 
+interface UploadedDocument {
+  jobId: string;
+  fileName: string;
+  kind: "pdf" | "pptx" | "xlsx";
+  phase: string;
+  extractedContent?: string;
+  status: "uploading" | "processing" | "ready" | "error";
+}
+
 interface Summary {
   id: string;
   title: string;
@@ -108,7 +117,10 @@ export default function AiChat() {
   const [notes, setNotes] = useState<any[]>([]);
   const [selectedNote, setSelectedNote] = useState<any | null>(null);
   const [showNoteSelector, setShowNoteSelector] = useState(false);
+  const [uploadedDocument, setUploadedDocument] = useState<UploadedDocument | null>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { addActivity } = useActivity();
@@ -251,11 +263,24 @@ export default function AiChat() {
     addMessage("user", chatInput);
 
     try {
+      // Build system context with document information if available
+      let systemContext = `You are a helpful AI assistant designed to help students with their academic work. Provide clear, educational, and constructive responses using rich Markdown formatting.`;
+      
+      if (uploadedDocument && uploadedDocument.status === "ready") {
+        systemContext += `\n\n**IMPORTANT CONTEXT:** The user has uploaded a document: "${uploadedDocument.fileName}" (${uploadedDocument.kind.toUpperCase()}).`;
+        
+        if (uploadedDocument.extractedContent) {
+          systemContext += `\n\n**DOCUMENT CONTENT:**\n${uploadedDocument.extractedContent}\n\n**INSTRUCTIONS:** When answering questions, reference the above document content directly. Provide specific information from the document, quote relevant sections when helpful, and help the user understand the content thoroughly.`;
+        } else {
+          systemContext += `\n\nWhen answering questions, reference this document and help the user understand its content.`;
+        }
+      }
+
       // Convert our chat messages to Groq format
       const chatHistory: GroqChatMessage[] = [
         {
           role: 'system' as const,
-          content: `You are a helpful AI assistant designed to help students with their academic work. Provide clear, educational, and constructive responses using rich Markdown formatting.
+          content: systemContext + `
 
 **Advanced Formatting Guidelines:**
 - Use **bold** for important terms and key concepts
@@ -597,6 +622,154 @@ ${msg}
     }
   };
 
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Please upload a PDF, PPTX, or XLSX file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    addMessage("user", `📎 Uploading document: ${file.name}`);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/document-intel/sessions", {
+        method: "POST",
+        headers: {
+          "x-user-id": user?.uid || "anonymous",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload document");
+      }
+
+      const data = await response.json();
+      
+      const doc: UploadedDocument = {
+        jobId: data.jobId,
+        fileName: file.name,
+        kind: file.type.includes("pdf") ? "pdf" : file.type.includes("presentation") ? "pptx" : "xlsx",
+        phase: data.phase,
+        status: "processing",
+      };
+
+      setUploadedDocument(doc);
+
+      addMessage(
+        "assistant",
+        `✅ **Document Uploaded Successfully!**
+
+📄 **${file.name}**
+
+I'm now processing your document. This may take a moment depending on the size. Once complete, you can:
+
+- Ask me questions about the document
+- Request summaries of specific sections
+- Generate study materials (flashcards, notes, assignments)
+- Discuss key concepts and ideas
+
+**Processing Status:** ${data.phase}
+
+Feel free to start asking questions while I process the document!`
+      );
+
+      // Poll for document processing status
+      pollDocumentStatus(data.jobId);
+
+      toast({
+        title: "Document Uploaded",
+        description: "Processing your document...",
+      });
+    } catch (error) {
+      console.error("Document upload error:", error);
+      addMessage(
+        "assistant",
+        "❌ Sorry, I encountered an error while uploading the document. Please try again."
+      );
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingDoc(false);
+      if (documentInputRef.current) {
+        documentInputRef.current.value = "";
+      }
+    }
+  };
+
+  const pollDocumentStatus = async (jobId: string) => {
+    // Poll every 2 seconds for status updates
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/document-intel/sessions/${jobId}/content`, {
+          headers: {
+            "x-user-id": user?.uid || "",
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          clearInterval(pollInterval);
+          
+          setUploadedDocument(prev => {
+            if (prev && prev.jobId === jobId) {
+              addMessage(
+                "assistant",
+                `🎉 **Document Processing Complete!**
+
+Your document has been fully processed and I've extracted all the text content and structure.
+
+You can now ask me anything about this document. Try questions like:
+- "Summarize the main points"
+- "What are the key takeaways?"
+- "Explain [specific concept] from the document"
+- "What is this document about?"`
+              );
+              
+              return { 
+                ...prev, 
+                status: "ready", 
+                phase: "completed",
+                extractedContent: data.content 
+              };
+            }
+            return prev;
+          });
+        } else if (response.status === 404) {
+          // Document not ready yet, keep polling
+          console.log("Document still processing...");
+        } else {
+          // Error occurred
+          console.error("Error fetching document:", response.statusText);
+          clearInterval(pollInterval);
+          setUploadedDocument(prev => prev ? { ...prev, status: "error" } : prev);
+        }
+      } catch (error) {
+        console.error("Error polling document status:", error);
+      }
+    }, 2000);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -820,15 +993,40 @@ ${msg}
 
                     <div className="flex items-center justify-between p-3 border-t border-border">
                       <div className="flex items-center gap-2">
+                        <input
+                          ref={documentInputRef}
+                          type="file"
+                          accept=".pdf,.pptx,.xlsx"
+                          onChange={handleDocumentUpload}
+                          className="hidden"
+                        />
                         <button
                           type="button"
-                          className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1"
+                          onClick={() => documentInputRef.current?.click()}
+                          disabled={isUploadingDoc}
+                          className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                          title="Upload PDF, PPTX, or XLSX"
                         >
-                          <Upload className="w-4 h-4 text-muted-foreground" />
+                          {isUploadingDoc ? (
+                            <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                          ) : (
+                            <Upload className="w-4 h-4 text-muted-foreground" />
+                          )}
                           <span className="text-xs text-muted-foreground hidden group-hover:inline transition-opacity">
-                            Attach
+                            {isUploadingDoc ? "Uploading..." : "Attach Document"}
                           </span>
                         </button>
+                        {uploadedDocument && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg border border-primary/20">
+                            <FileText className="w-3 h-3 text-primary" />
+                            <span className="text-xs text-primary truncate max-w-[100px]">
+                              {uploadedDocument.fileName}
+                            </span>
+                            {uploadedDocument.status === "processing" && (
+                              <Loader2 className="w-3 h-3 text-primary animate-spin ml-1" />
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border">
@@ -995,13 +1193,31 @@ ${msg}
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1"
+                            onClick={() => documentInputRef.current?.click()}
+                            disabled={isUploadingDoc}
+                            className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                            title="Upload PDF, PPTX, or XLSX"
                           >
-                            <Upload className="w-4 h-4 text-muted-foreground" />
+                            {isUploadingDoc ? (
+                              <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                            ) : (
+                              <Upload className="w-4 h-4 text-muted-foreground" />
+                            )}
                             <span className="text-xs text-muted-foreground hidden group-hover:inline transition-opacity">
-                              Attach
+                              {isUploadingDoc ? "Uploading..." : "Attach Document"}
                             </span>
                           </button>
+                          {uploadedDocument && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg border border-primary/20">
+                              <FileText className="w-3 h-3 text-primary" />
+                              <span className="text-xs text-primary truncate max-w-[100px]">
+                                {uploadedDocument.fileName}
+                              </span>
+                              {uploadedDocument.status === "processing" && (
+                                <Loader2 className="w-3 h-3 text-primary animate-spin ml-1" />
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border">

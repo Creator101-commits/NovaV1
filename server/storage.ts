@@ -750,4 +750,95 @@ try {
   storage = new LocalStorageFallback();
 }
 
+// Document Processing Session Storage
+export async function createDocumentSession(data: {
+  userId: string;
+  jobId: string;
+  fileName: string;
+  kind: "pdf" | "pptx" | "xlsx";
+}) {
+  // Store session metadata in memory or database
+  // For now, return a simple session object
+  return {
+    id: randomUUID(),
+    ...data,
+    createdAt: new Date().toISOString(),
+    status: "processing",
+  };
+}
+
+export async function updateDocumentSession(
+  sessionId: string,
+  updates: {
+    status?: string;
+    phase?: string;
+    error?: string;
+  }
+) {
+  // Update session in storage
+  // For now, just log the update
+  console.log(`Updating session ${sessionId}:`, updates);
+  return true;
+}
+
+export async function saveGeneratedAssets(data: {
+  sessionId: string;
+  userId: string;
+  notes?: InsertNote[];
+  flashcards?: InsertFlashcard[];
+  assignments?: InsertAssignment[];
+}) {
+  const results = {
+    notes: [] as Note[],
+    flashcards: [] as Flashcard[],
+    assignments: [] as Assignment[],
+  };
+
+  // Save notes
+  if (data.notes) {
+    for (const note of data.notes) {
+      try {
+        // Ensure tags is an array (fix Oracle array binding issue)
+        const noteToSave = {
+          ...note,
+          tags: Array.isArray(note.tags) ? note.tags : []
+        };
+        const saved = await storage.createNote(noteToSave);
+        results.notes.push(saved);
+      } catch (error) {
+        console.error(`Failed to save note "${note.title}":`, error);
+        // Continue with other notes even if one fails
+      }
+    }
+  }
+
+  // Save flashcards
+  if (data.flashcards) {
+    for (const flashcard of data.flashcards) {
+      try {
+        const saved = await storage.createFlashcard(flashcard);
+        results.flashcards.push(saved);
+      } catch (error) {
+        console.error(`Failed to save flashcard:`, error);
+        // Continue with other flashcards even if one fails
+      }
+    }
+  }
+
+  // Save assignments
+  if (data.assignments) {
+    for (const assignment of data.assignments) {
+      try {
+        const saved = await storage.createAssignment(assignment);
+        results.assignments.push(saved);
+      } catch (error) {
+        console.error(`Failed to save assignment "${assignment.title}":`, error);
+        // Continue with other assignments even if one fails
+      }
+    }
+  }
+
+  return results;
+}
+
 export { storage };
