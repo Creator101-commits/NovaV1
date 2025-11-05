@@ -11,16 +11,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import NoteEditor from "@/components/NoteEditor";
 import { 
@@ -37,10 +27,7 @@ import {
   FileText,
   Clock,
   History,
-  Eye,
-  Upload,
-  Sparkles,
-  Loader2
+  Eye
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -74,19 +61,6 @@ export default function NotesPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [currentView, setCurrentView] = useState<"notes" | "history">("notes");
-  
-  // AI Note Creation State
-  const [showAiDialog, setShowAiDialog] = useState(false);
-  const [aiInputType, setAiInputType] = useState<"text" | "document">("text");
-  const [aiInputText, setAiInputText] = useState("");
-  const [uploadedDocument, setUploadedDocument] = useState<{
-    jobId: string;
-    fileName: string;
-    status: "uploading" | "processing" | "ready" | "error";
-    content?: string;
-  } | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -243,197 +217,6 @@ export default function NotesPage() {
     return classes.find(c => c.id === classId)?.name;
   };
 
-  // AI Note Creation Functions
-  const handleDocumentUpload = async (file: File) => {
-    setUploadedDocument({
-      jobId: "",
-      fileName: file.name,
-      status: "uploading",
-    });
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/document-intel/sessions", {
-        method: "POST",
-        headers: {
-          "x-user-id": user?.uid || "anonymous",
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload document");
-      }
-
-      const data = await response.json();
-      setUploadedDocument({
-        jobId: data.jobId,
-        fileName: file.name,
-        status: "processing",
-      });
-
-      // Poll for document content
-      pollDocumentContent(data.jobId);
-    } catch (error) {
-      console.error("Document upload error:", error);
-      setUploadedDocument({
-        jobId: "",
-        fileName: file.name,
-        status: "error",
-      });
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload document. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const pollDocumentContent = async (jobId: string) => {
-    let attempts = 0;
-    const maxAttempts = 30;
-
-    const poll = async () => {
-      if (attempts >= maxAttempts) {
-        setUploadedDocument(prev => prev ? { ...prev, status: "error" } : null);
-        toast({
-          title: "Processing Timeout",
-          description: "Document processing took too long. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/document-intel/sessions/${jobId}/content`, {
-          headers: {
-            "x-user-id": user?.uid || "anonymous",
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.content) {
-            setUploadedDocument(prev => prev ? {
-              ...prev,
-              status: "ready",
-              content: data.content,
-            } : null);
-            toast({
-              title: "Document Ready",
-              description: "Document processed successfully!",
-            });
-            return;
-          }
-        }
-
-        attempts++;
-        setTimeout(poll, 2000);
-      } catch (error) {
-        console.error("Polling error:", error);
-        attempts++;
-        setTimeout(poll, 2000);
-      }
-    };
-
-    poll();
-  };
-
-  const generateAiNote = async () => {
-    if (!aiInputText && !uploadedDocument?.content) {
-      toast({
-        title: "No Content",
-        description: "Please provide text or upload a document first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      const content = aiInputType === "text" ? aiInputText : uploadedDocument?.content || "";
-
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-70b-versatile",
-          messages: [
-            {
-              role: "system",
-              content: `You are a helpful assistant that creates well-structured study notes. 
-              Given content, create organized notes with:
-              1. A clear, descriptive title
-              2. Well-formatted content with headings, bullet points, and key information
-              3. Important concepts highlighted
-              4. Suggested category from: ${noteCategories.join(", ")}
-              5. Relevant tags (3-5 keywords)
-              
-              Format your response as JSON:
-              {
-                "title": "Note title",
-                "content": "HTML formatted content with <h2>, <p>, <ul>, <li>, <strong> tags",
-                "category": "one of the categories",
-                "tags": ["tag1", "tag2", "tag3"]
-              }`,
-            },
-            {
-              role: "user",
-              content: `Create study notes from this content:\n\n${content}`,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate note");
-      }
-
-      const data = await response.json();
-      const aiResponse = data.choices[0].message.content;
-      
-      // Parse JSON response
-      const noteData = JSON.parse(aiResponse);
-
-      // Save the generated note
-      await handleSaveNote({
-        title: noteData.title,
-        content: noteData.content,
-        category: noteData.category,
-        tags: noteData.tags,
-        isPinned: false,
-      });
-
-      // Close AI dialog and reset state
-      setShowAiDialog(false);
-      setAiInputText("");
-      setUploadedDocument(null);
-      setAiInputType("text");
-
-      toast({
-        title: "Note Created!",
-        description: "AI-generated note has been saved successfully.",
-      });
-    } catch (error) {
-      console.error("AI generation error:", error);
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate note. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const filteredNotes = useMemo(
     () =>
       notes.filter((note) => {
@@ -460,175 +243,6 @@ export default function NotesPage() {
       />
     );
   }
-
-  // AI Note Creation Dialog Component
-  const AiNoteDialog = () => (
-    <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Create Note with AI
-          </DialogTitle>
-          <DialogDescription>
-            Choose how you want to create your note - type in content or upload a document for AI to extract key information.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {/* Input Type Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">How would you like to create your note?</Label>
-            <RadioGroup value={aiInputType} onValueChange={(value: "text" | "document") => setAiInputType(value)}>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-accent/50 transition-colors cursor-pointer">
-                <RadioGroupItem value="text" id="text" />
-                <Label htmlFor="text" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <FileText className="h-4 w-4" />
-                  <div>
-                    <div className="font-medium">Type or Paste Content</div>
-                    <div className="text-xs text-muted-foreground">Enter text for AI to format as notes</div>
-                  </div>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-accent/50 transition-colors cursor-pointer">
-                <RadioGroupItem value="document" id="document" />
-                <Label htmlFor="document" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Upload className="h-4 w-4" />
-                  <div>
-                    <div className="font-medium">Upload Document</div>
-                    <div className="text-xs text-muted-foreground">PDF, PPTX, or XLSX (AI will extract content)</div>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Text Input */}
-          {aiInputType === "text" && (
-            <div className="space-y-2">
-              <Label htmlFor="ai-text">Enter Content</Label>
-              <Textarea
-                id="ai-text"
-                placeholder="Paste lecture notes, article content, or any text you want to convert into structured notes..."
-                value={aiInputText}
-                onChange={(e) => setAiInputText(e.target.value)}
-                rows={8}
-                className="resize-none"
-              />
-            </div>
-          )}
-
-          {/* Document Upload */}
-          {aiInputType === "document" && (
-            <div className="space-y-3">
-              <Label>Upload Document</Label>
-              
-              {!uploadedDocument ? (
-                <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    PDF, PPTX, XLSX (Max 10MB)
-                  </p>
-                  <Input
-                    type="file"
-                    accept=".pdf,.pptx,.xlsx"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleDocumentUpload(file);
-                    }}
-                    className="hidden"
-                    id="document-upload"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById("document-upload")?.click()}
-                  >
-                    Choose File
-                  </Button>
-                </div>
-              ) : (
-                <div className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-medium">{uploadedDocument.fileName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {uploadedDocument.status === "uploading" && "Uploading..."}
-                          {uploadedDocument.status === "processing" && "Processing document..."}
-                          {uploadedDocument.status === "ready" && "Ready to generate notes"}
-                          {uploadedDocument.status === "error" && "Upload failed"}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setUploadedDocument(null)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                  
-                  {uploadedDocument.status === "processing" && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Extracting content from document...
-                    </div>
-                  )}
-                  
-                  {uploadedDocument.status === "ready" && (
-                    <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
-                      Document processed successfully
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowAiDialog(false);
-                setAiInputText("");
-                setUploadedDocument(null);
-              }}
-              disabled={isGenerating}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={generateAiNote}
-              disabled={
-                isGenerating ||
-                (aiInputType === "text" && !aiInputText.trim()) ||
-                (aiInputType === "document" && uploadedDocument?.status !== "ready")
-              }
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Note
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
 
   const NoteCard = ({ note }: { note: Note }) => (
     <Card 
@@ -787,9 +401,6 @@ export default function NotesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* AI Note Creation Dialog */}
-      <AiNoteDialog />
-      
       <div className="max-w-4xl mx-auto py-8 px-6">
         {/* Gentle Header */}
         <div className="mb-8">
@@ -803,30 +414,14 @@ export default function NotesPage() {
 
         {/* Simple Actions */}
         <div className="flex gap-3 mb-6">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" className="text-sm">
-                <Plus className="mr-1 h-3 w-3" />
-                New Note
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem onClick={() => setShowAiDialog(true)} className="cursor-pointer">
-                <Sparkles className="mr-2 h-4 w-4 text-primary" />
-                <div>
-                  <div className="font-medium">Create with AI</div>
-                  <div className="text-xs text-muted-foreground">Generate from text or document</div>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openEditor()} className="cursor-pointer">
-                <Edit3 className="mr-2 h-4 w-4" />
-                <div>
-                  <div className="font-medium">Manual Entry</div>
-                  <div className="text-xs text-muted-foreground">Write your own note</div>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button 
+            onClick={() => openEditor()} 
+            size="sm"
+            className="text-sm"
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            New Note
+          </Button>
           {/* Simple Navigation */}
           <div className="flex gap-2">
             <Button

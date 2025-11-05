@@ -122,10 +122,15 @@ export const useGoogleClassroom = () => {
         }
       }
 
+      // Update last sync time in localStorage (for 4-hour interval tracking)
+      if (user?.uid) {
+        localStorage.setItem(`last_sync_${user.uid}`, Date.now().toString());
+      }
+
       if (showToast) {
         toast({
           title: "Sync Successful",
-          description: `Synced ${allCourses.length} classes and ${allAssignments.length} assignments.`,
+          description: `Synced ${allCourses.length} classes and ${allAssignments.length} assignments. Next auto-sync in 4 hours.`,
         });
       }
 
@@ -156,25 +161,53 @@ export const useGoogleClassroom = () => {
     });
   };
 
-  // Auto-sync on component mount and when user changes (silent sync)
+  // Auto-sync on component mount and every 4 hours
   useEffect(() => {
-    if (user?.uid && data.courses.length === 0 && !data.isLoading) {
+    if (!user?.uid) return;
+
+    const FOUR_HOURS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+
+    const checkAndSync = async () => {
+      // Check last sync time from localStorage
+      const lastSyncKey = `last_sync_${user.uid}`;
+      const lastSyncTime = localStorage.getItem(lastSyncKey);
+      const now = Date.now();
+
       // First try to load from cached data if available
       const cachedData = (window as any).cachedClassroomData;
-      if (cachedData) {
-        console.log(' Loading Google Classroom data from cache');
+      if (cachedData && data.courses.length === 0) {
+        console.log('📚 Loading Google Classroom data from cache');
         setData(prev => ({
           ...prev,
           courses: cachedData.courses || [],
           assignments: cachedData.assignments || [],
           lastSynced: cachedData.lastSynced || null,
         }));
-      } else {
-        // No cached data, sync fresh data
-        syncClassroomData(false).catch(console.error); // false = no toast notifications
       }
-    }
-  }, [user?.uid]); // Re-sync when user changes
+
+      // Sync if: no last sync time OR more than 4 hours have passed
+      if (!lastSyncTime || (now - parseInt(lastSyncTime)) > FOUR_HOURS) {
+        console.log('🔄 Auto-syncing classroom data (4-hour interval)');
+        try {
+          await syncClassroomData(false); // Silent sync
+          localStorage.setItem(lastSyncKey, now.toString());
+        } catch (error) {
+          console.error('Auto-sync failed:', error);
+        }
+      } else {
+        const timeUntilNextSync = FOUR_HOURS - (now - parseInt(lastSyncTime));
+        console.log(`⏰ Next auto-sync in ${Math.round(timeUntilNextSync / 1000 / 60)} minutes`);
+      }
+    };
+
+    // Run initial check
+    checkAndSync();
+
+    // Set up interval to check every 4 hours
+    const interval = setInterval(checkAndSync, FOUR_HOURS);
+
+    return () => clearInterval(interval);
+  }, [user?.uid]); // Only re-run when user changes
 
   // Listen for auth restoration and update data accordingly
   useEffect(() => {

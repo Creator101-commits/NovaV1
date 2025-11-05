@@ -85,13 +85,6 @@ const navigationItems: NavItem[] = [
     description: 'Chat with AI assistant',
   },
   {
-    id: 'analytics',
-    label: 'Analytics',
-    path: '/analytics',
-    icon: BarChart3,
-    description: 'View your progress',
-  },
-  {
     id: 'habits',
     label: 'Habits',
     path: '/habits',

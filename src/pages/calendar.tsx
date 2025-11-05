@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
   Dialog,
   DialogContent,
@@ -87,8 +88,8 @@ export default function Calendar() {
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
-    startTime: "",
-    endTime: "",
+    startTime: undefined as Date | undefined,
+    endTime: undefined as Date | undefined,
     type: "event" as const,
     location: "",
     isAllDay: false,
@@ -170,8 +171,8 @@ export default function Calendar() {
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.startTime) return;
 
-    const startTime = new Date(newEvent.startTime);
-    const endTime = newEvent.endTime ? new Date(newEvent.endTime) : new Date(startTime.getTime() + 60 * 60 * 1000);
+    const startTime = newEvent.startTime;
+    const endTime = newEvent.endTime || new Date(startTime.getTime() + 60 * 60 * 1000);
 
     // Add to local calendar
     const eventId = addEvent({
@@ -223,8 +224,8 @@ export default function Calendar() {
     setNewEvent({
       title: "",
       description: "",
-      startTime: "",
-      endTime: "",
+      startTime: undefined,
+      endTime: undefined,
       type: "event",
       location: "",
       isAllDay: false,
@@ -410,21 +411,20 @@ export default function Calendar() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="datetime-local"
-                      value={newEvent.startTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                    <Label htmlFor="startTime">Start Date & Time</Label>
+                    <DateTimePicker
+                      date={newEvent.startTime}
+                      onDateChange={(date) => setNewEvent({ ...newEvent, startTime: date })}
+                      placeholder="Pick start date & time"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="datetime-local"
-                      value={newEvent.endTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                    <Label htmlFor="endTime">End Date & Time</Label>
+                    <DateTimePicker
+                      date={newEvent.endTime}
+                      onDateChange={(date) => setNewEvent({ ...newEvent, endTime: date })}
+                      placeholder="Pick end date & time"
+                      disabled={!newEvent.startTime}
                     />
                   </div>
                 </div>

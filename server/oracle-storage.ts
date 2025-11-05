@@ -260,6 +260,17 @@ export class OracleStorage {
           }
         }
         
+        // Parse tags JSON string back to array
+        let tags = null;
+        if (row.TAGS) {
+          try {
+            tags = typeof row.TAGS === 'string' ? JSON.parse(row.TAGS) : row.TAGS;
+          } catch (e) {
+            console.error('Error parsing tags JSON:', e);
+            tags = null;
+          }
+        }
+        
         return {
           id: row.ID,
           userId: row.USER_ID,
@@ -267,7 +278,7 @@ export class OracleStorage {
           title: row.TITLE,
           content: content,
           category: row.CATEGORY,
-          tags: row.TAGS,
+          tags: tags,
           isPinned: row.IS_PINNED === 1,
           color: row.COLOR,
           createdAt: row.CREATED_AT,
@@ -307,6 +318,17 @@ export class OracleStorage {
         }
       }
       
+      // Parse tags JSON string back to array
+      let tags = null;
+      if (row.TAGS) {
+        try {
+          tags = typeof row.TAGS === 'string' ? JSON.parse(row.TAGS) : row.TAGS;
+        } catch (e) {
+          console.error('Error parsing tags JSON:', e);
+          tags = null;
+        }
+      }
+      
       return {
         id: row.ID,
         userId: row.USER_ID,
@@ -314,7 +336,7 @@ export class OracleStorage {
         title: row.TITLE,
         content: content,
         category: row.CATEGORY,
-        tags: row.TAGS,
+        tags: tags,
         isPinned: row.IS_PINNED === 1,
         color: row.COLOR,
         createdAt: row.CREATED_AT,
@@ -343,7 +365,7 @@ export class OracleStorage {
       title: note.title,
       content: note.content,
       category: note.category || null,
-      tags: note.tags || null,
+      tags: note.tags ? JSON.stringify(note.tags) : null,
       isPinned: note.isPinned ? 1 : 0,
       color: note.color || null,
       createdAt,
@@ -393,6 +415,9 @@ export class OracleStorage {
         if (key === 'isPinned') {
           setParts.push(`${columnName} = :isPinned`);
           binds.isPinned = value ? 1 : 0;
+        } else if (key === 'tags') {
+          setParts.push(`${columnName} = :${key}`);
+          binds[key] = Array.isArray(value) ? JSON.stringify(value) : value;
         } else {
           setParts.push(`${columnName} = :${key}`);
           binds[key] = value;

@@ -85,12 +85,6 @@ const dockItems: DockItem[] = [
     path: '/learn',
     icon: Wrench,
   },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    path: '/analytics',
-    icon: BarChart3,
-  },
 ];
 
 interface OptimizedDockProps {

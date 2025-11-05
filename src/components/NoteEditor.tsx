@@ -304,6 +304,7 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
   const [aiInput, setAiInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const tags = note?.tags || [];
   
   const { toast } = useToast();
 
@@ -402,37 +403,187 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
       // Get current note content for context
       const currentContent = serializeToHtml(value);
       const plainTextContent = currentContent.replace(/<[^>]*>/g, '').trim();
+      const wordCount = plainTextContent.split(/\s+/).filter(w => w.length > 0).length;
 
-      // Detect if this is an edit request
-      const isEditRequest = userMessage.toLowerCase().includes('edit') || 
-                           userMessage.toLowerCase().includes('change') || 
-                           userMessage.toLowerCase().includes('fix') ||
-                           userMessage.toLowerCase().includes('improve') ||
-                           userMessage.toLowerCase().includes('rewrite') ||
-                           userMessage.toLowerCase().includes('update');
+      // Advanced command detection with patterns
+      const commandPatterns = {
+        edit: /\b(edit|change|fix|correct|revise|modify|adjust|alter|update|rewrite)\b/i,
+        expand: /\b(expand|elaborate|detail|explain more|add more|develop|extend)\b/i,
+        summarize: /\b(summarize|summary|tldr|brief|condense|shorten|key points)\b/i,
+        outline: /\b(outline|structure|organize|format|layout)\b/i,
+        grammar: /\b(grammar|spelling|punctuation|typo|error|mistake)\b/i,
+        style: /\b(style|tone|voice|rephrase|reword|professional|casual|academic)\b/i,
+        explain: /\b(explain|clarify|what does|what is|define|meaning of)\b/i,
+        example: /\b(example|instance|case|scenario|demonstrate)\b/i,
+        questions: /\b(questions|quiz|test|study questions|review questions)\b/i,
+        citations: /\b(cite|citation|reference|source|bibliography)\b/i,
+        translate: /\b(translate|convert to|in spanish|in french|in german)\b/i,
+        critique: /\b(critique|analyze|evaluate|assess|review|feedback)\b/i,
+      };
 
-      // Build context-aware system message
-      let systemContext = `You are a helpful AI writing assistant for students. You help them write, expand, edit, and improve their notes.`;
+      // Detect command type
+      let commandType = 'general';
+      for (const [type, pattern] of Object.entries(commandPatterns)) {
+        if (pattern.test(userMessage)) {
+          commandType = type;
+          break;
+        }
+      }
+
+      // Build enhanced context-aware system message
+      let systemContext = `You are an advanced AI academic assistant with expertise in education, writing, and research. You help students create exceptional notes by providing intelligent assistance.
+
+**Your Capabilities:**
+- Write, expand, and improve content with academic rigor
+- Analyze and summarize information effectively  
+- Check grammar, style, and clarity
+- Generate study questions and quizzes
+- Provide examples and explanations
+- Suggest citations and references
+- Create structured outlines
+- Offer constructive feedback
+
+**Current Context:**`;
       
       if (title) {
-        systemContext += `\n\nCurrent note title: "${title}"`;
-      }
-      
-      if (plainTextContent) {
-        systemContext += `\n\nCurrent note content:\n${plainTextContent}`;
+        systemContext += `\n- Note Title: "${title}"`;
       }
       
       if (category !== 'general') {
-        systemContext += `\n\nNote category: ${category}`;
+        systemContext += `\n- Category: ${category}`;
       }
 
-      if (isEditRequest && plainTextContent) {
-        systemContext += `\n\nThe user wants to EDIT the existing content. Provide the COMPLETE revised version of the entire note content with your improvements applied. Maintain the structure but make the requested changes.`;
-      } else {
-        systemContext += `\n\nProvide clear, well-structured content that can be added to the note. Use paragraphs, lists, and headings where appropriate.`;
+      if (tags && tags.length > 0) {
+        systemContext += `\n- Tags: ${tags.join(', ')}`;
       }
 
-      // Use Groq API for chat
+      if (plainTextContent) {
+        systemContext += `\n- Word Count: ${wordCount} words`;
+        systemContext += `\n- Current Content:\n${plainTextContent.substring(0, 1500)}${plainTextContent.length > 1500 ? '...' : ''}`;
+      }
+
+      // Command-specific instructions
+      const commandInstructions = {
+        edit: `\n\n**Task: EDIT CONTENT**
+Improve the existing note by:
+- Fixing any errors (grammar, spelling, facts)
+- Enhancing clarity and readability
+- Improving structure and flow
+- Adding transitional phrases
+- Removing redundancies
+Provide the COMPLETE revised version.`,
+        
+        expand: `\n\n**Task: EXPAND CONTENT**
+Add substantial depth by:
+- Providing more detailed explanations
+- Including relevant examples
+- Adding supporting evidence
+- Elaborating on key concepts
+- Including additional context
+Maintain the existing structure while enriching it.`,
+        
+        summarize: `\n\n**Task: SUMMARIZE CONTENT**
+Create a concise summary with:
+- Main ideas and key points (bullet points)
+- Essential concepts only
+- Clear and direct language
+- Logical flow
+- 30-40% of original length`,
+        
+        outline: `\n\n**Task: CREATE OUTLINE**
+Organize the content with:
+- Clear hierarchical structure
+- Main topics and subtopics
+- Logical progression
+- Brief descriptions
+- Easy-to-scan format`,
+        
+        grammar: `\n\n**Task: GRAMMAR & SPELLING CHECK**
+Review and correct:
+- Grammar errors
+- Spelling mistakes
+- Punctuation issues
+- Sentence structure
+- Word choice
+Provide the corrected version with explanations.`,
+        
+        style: `\n\n**Task: STYLE IMPROVEMENT**
+Enhance writing style by:
+- Adjusting tone appropriately
+- Improving word choice
+- Varying sentence structure
+- Enhancing clarity
+- Making it more engaging`,
+        
+        explain: `\n\n**Task: EXPLAIN CONCEPT**
+Provide clear explanation with:
+- Simple, accessible language
+- Step-by-step breakdown
+- Relevant analogies
+- Practical examples
+- Key takeaways`,
+        
+        example: `\n\n**Task: PROVIDE EXAMPLES**
+Give concrete examples that:
+- Illustrate the concept clearly
+- Are relatable and practical
+- Cover different scenarios
+- Include explanations
+- Aid understanding`,
+        
+        questions: `\n\n**Task: GENERATE STUDY QUESTIONS**
+Create 5-10 study questions:
+- Mix of difficulty levels (easy, medium, hard)
+- Different question types (multiple choice, short answer, essay)
+- Cover main concepts
+- Promote critical thinking
+- Include answer guidelines`,
+        
+        citations: `\n\n**Task: CITATION SUGGESTIONS**
+Suggest how to cite:
+- Key claims that need sources
+- Facts and statistics
+- Theories and concepts
+- Recommend source types
+- Provide citation format examples (APA/MLA)`,
+        
+        translate: `\n\n**Task: TRANSLATE CONTENT**
+Translate accurately while:
+- Maintaining meaning and context
+- Preserving formatting
+- Using appropriate terminology
+- Keeping academic tone
+- Noting any cultural adaptations`,
+        
+        critique: `\n\n**Task: CRITIQUE & FEEDBACK**
+Provide constructive analysis:
+- Strengths of the content
+- Areas for improvement
+- Clarity and organization
+- Depth and accuracy
+- Specific suggestions
+- Overall assessment`,
+        
+        general: `\n\n**Task: GENERAL ASSISTANCE**
+Help with the request by:
+- Understanding the intent clearly
+- Providing relevant, useful content
+- Using appropriate formatting
+- Being clear and concise
+- Maintaining academic quality`
+      };
+
+      systemContext += commandInstructions[commandType as keyof typeof commandInstructions] || commandInstructions.general;
+
+      systemContext += `\n\n**Formatting Guidelines:**
+- Use clear paragraphs for readability
+- Use headings (# ## ###) to structure information
+- Use bullet points (-) for lists
+- Keep sentences clear and concise
+- Avoid markdown formatting symbols like ** or * in the final output
+- Focus on content quality and clarity`;
+
+      // Use Groq API for chat with enhanced settings
       const response = await groqAPI.chat({
         messages: [
           {
@@ -448,9 +599,12 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
             content: userMessage
           }
         ],
-        maxTokens: 2000,
-        temperature: 0.7,
+        maxTokens: 3000,
+        temperature: commandType === 'grammar' ? 0.3 : commandType === 'creative' ? 0.9 : 0.7,
       });
+
+      // Check if this is an edit-type command
+      const isEditRequest = ['edit', 'grammar', 'style', 'critique'].includes(commandType);
 
       // If this is an edit request and we have existing content, calculate the diff
       if (isEditRequest && plainTextContent) {
@@ -1327,35 +1481,66 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setAiInput("Write an introduction about")}
-                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
-                    disabled={isAiLoading}
-                  >
-                    ✨ Write intro
-                  </button>
-                  <button
-                    onClick={() => setAiInput("Improve and edit this note")}
-                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
-                    disabled={isAiLoading}
-                  >
-                    ✏️ Edit note
-                  </button>
-                  <button
-                    onClick={() => setAiInput("Expand on")}
-                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
-                    disabled={isAiLoading}
-                  >
-                    📝 Expand
-                  </button>
-                  <button
-                    onClick={() => setAiInput("Create an outline for")}
-                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
-                    disabled={isAiLoading}
-                  >
-                    📋 Outline
-                  </button>
+                <div className="mt-3 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Quick Actions:</div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setAiInput("Summarize this note with key points and main takeaways")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      📊 Summarize
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Check grammar, spelling, and punctuation errors")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      ✓ Grammar Check
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Improve writing style and clarity")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      ✨ Improve Style
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Expand with more details and examples")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      📝 Expand
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Create a structured outline")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      📋 Outline
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Generate study questions for review")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      ❓ Study Questions
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Provide examples to illustrate concepts")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      � Add Examples
+                    </button>
+                    <button
+                      onClick={() => setAiInput("Critique and provide constructive feedback")}
+                      className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-md transition-colors border border-border"
+                      disabled={isAiLoading}
+                    >
+                      🎯 Get Feedback
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

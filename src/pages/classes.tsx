@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { SyncFeatureWrapper } from '@/components/SyncFeatureWrapper';
 import { useGoogleClassroom } from '@/hooks/useGoogleClassroom';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { usePersistentData } from '@/hooks/usePersistentData';
 import { useClassManagement } from '@/hooks/useClassManagement';
@@ -26,6 +27,7 @@ export default function Classes() {
   const { toast } = useToast();
   const { isRestoring } = usePersistentData();
   const { createClass, confirmDeleteClass, isDeleting, isCreating } = useClassManagement();
+  const { user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [newClass, setNewClass] = useState({
     name: '',

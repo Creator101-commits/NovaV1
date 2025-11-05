@@ -22,7 +22,6 @@ const navigationItems = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/habits", label: "Habits", icon: CheckCircle },
   { href: "/ai-chat", label: "AI Chatbot", icon: Bot },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/learn", label: "Learn", icon: Wrench },
 ];
 
