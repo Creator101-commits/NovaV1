@@ -151,6 +151,74 @@ export const notes = pgTable("notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Todo Boards (Trello-inspired Kanban)
+export const boards = pgTable("boards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  background: text("background"), // Color hex or image URL
+  position: integer("position").default(0),
+  isArchived: boolean("is_archived").default(false),
+  isFavorited: boolean("is_favorited").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const todoLists = pgTable("todo_lists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  boardId: varchar("board_id").references(() => boards.id, { onDelete: "cascade" }).notNull(),
+  title: text("title").notNull(),
+  position: integer("position").default(0),
+  isArchived: boolean("is_archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const cards = pgTable("cards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listId: varchar("list_id").references(() => todoLists.id, { onDelete: "cascade" }),
+  boardId: varchar("board_id").references(() => boards.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  dueDate: timestamp("due_date"),
+  isCompleted: boolean("is_completed").default(false),
+  position: integer("position").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const checklists = pgTable("checklists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }).notNull(),
+  title: text("title").notNull(),
+  isChecked: boolean("is_checked").default(false),
+  position: integer("position").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const labels = pgTable("labels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const cardLabels = pgTable("card_labels", {
+  cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }).notNull(),
+  labelId: varchar("label_id").references(() => labels.id, { onDelete: "cascade" }).notNull(),
+});
+
+export const attachments = pgTable("attachments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }).notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type"),
+  fileSize: integer("file_size"),
+  fileUrl: text("file_url").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertClassSchema = createInsertSchema(classes).omit({ id: true, createdAt: true });
@@ -163,6 +231,13 @@ export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit(
 export const insertPomodoroSessionSchema = createInsertSchema(pomodoroSessions).omit({ id: true });
 export const insertAiSummarySchema = createInsertSchema(aiSummaries).omit({ id: true, createdAt: true });
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertBoardSchema = createInsertSchema(boards).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTodoListSchema = createInsertSchema(todoLists).omit({ id: true, createdAt: true });
+export const insertCardSchema = createInsertSchema(cards).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertChecklistSchema = createInsertSchema(checklists).omit({ id: true, createdAt: true });
+export const insertLabelSchema = createInsertSchema(labels).omit({ id: true, createdAt: true });
+export const insertCardLabelSchema = createInsertSchema(cardLabels);
+export const insertAttachmentSchema = createInsertSchema(attachments).omit({ id: true, uploadedAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -187,3 +262,17 @@ export type AiSummary = typeof aiSummaries.$inferSelect;
 export type InsertAiSummary = z.infer<typeof insertAiSummarySchema>;
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = z.infer<typeof insertNoteSchema>;
+export type Board = typeof boards.$inferSelect;
+export type InsertBoard = z.infer<typeof insertBoardSchema>;
+export type TodoList = typeof todoLists.$inferSelect;
+export type InsertTodoList = z.infer<typeof insertTodoListSchema>;
+export type Card = typeof cards.$inferSelect;
+export type InsertCard = z.infer<typeof insertCardSchema>;
+export type Checklist = typeof checklists.$inferSelect;
+export type InsertChecklist = z.infer<typeof insertChecklistSchema>;
+export type Label = typeof labels.$inferSelect;
+export type InsertLabel = z.infer<typeof insertLabelSchema>;
+export type CardLabel = typeof cardLabels.$inferSelect;
+export type InsertCardLabel = z.infer<typeof insertCardLabelSchema>;
+export type Attachment = typeof attachments.$inferSelect;
+export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;

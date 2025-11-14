@@ -14,6 +14,7 @@ export const LazyLearn = lazy(() => import('@/pages/learn'));
 export const LazyAiChat = lazy(() => import('@/pages/ai-chat'));
 export const LazyAnalytics = lazy(() => import('@/pages/analytics'));
 export const LazyHabits = lazy(() => import('@/pages/habits'));
+export const LazyTodos = lazy(() => import('@/pages/todos'));
 export const LazyProfile = lazy(() => import('@/pages/profile'));
 export const LazySettings = lazy(() => import('@/pages/settings'));
 

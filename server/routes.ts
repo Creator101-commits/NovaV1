@@ -14,7 +14,13 @@ import {
   insertJournalEntrySchema,
   insertPomodoroSessionSchema, 
   insertAiSummarySchema,
-  insertNoteSchema
+  insertNoteSchema,
+  insertBoardSchema,
+  insertTodoListSchema,
+  insertCardSchema,
+  insertChecklistSchema,
+  insertLabelSchema,
+  insertCardLabelSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -887,6 +893,354 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(config);
     } catch (error) {
       res.status(500).json({ message: "Failed to check configuration" });
+    }
+  });
+
+  // ========== TODO BOARD ENDPOINTS ==========
+
+  // Board endpoints
+  app.get("/api/boards", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const boards = await optimizedStorage.getBoardsByUserId(userId);
+      res.json(boards);
+    } catch (error: any) {
+      console.error('Error fetching boards:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch boards" });
+    }
+  });
+
+  app.get("/api/boards/:id", async (req, res) => {
+    try {
+      const board = await optimizedStorage.getBoard(req.params.id);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(board);
+    } catch (error: any) {
+      console.error('Error fetching board:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch board" });
+    }
+  });
+
+  app.post("/api/boards", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const boardData = insertBoardSchema.parse({ ...req.body, userId });
+      const newBoard = await optimizedStorage.createBoard(boardData);
+      res.status(201).json(newBoard);
+    } catch (error: any) {
+      console.error('Error creating board:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid board data", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message || "Failed to create board" });
+    }
+  });
+
+  app.patch("/api/boards/:id", async (req, res) => {
+    try {
+      const updated = await optimizedStorage.updateBoard(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating board:', error);
+      res.status(500).json({ message: error.message || "Failed to update board" });
+    }
+  });
+
+  app.delete("/api/boards/:id", async (req, res) => {
+    try {
+      const success = await optimizedStorage.deleteBoard(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting board:', error);
+      res.status(500).json({ message: error.message || "Failed to delete board" });
+    }
+  });
+
+  // List endpoints
+  app.get("/api/boards/:boardId/lists", async (req, res) => {
+    try {
+      const lists = await optimizedStorage.getListsByBoardId(req.params.boardId);
+      res.json(lists);
+    } catch (error: any) {
+      console.error('Error fetching lists:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch lists" });
+    }
+  });
+
+  app.post("/api/boards/:boardId/lists", async (req, res) => {
+    try {
+      const listData = insertTodoListSchema.parse({ ...req.body, boardId: req.params.boardId });
+      const newList = await optimizedStorage.createList(listData);
+      res.status(201).json(newList);
+    } catch (error: any) {
+      console.error('Error creating list:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid list data", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message || "Failed to create list" });
+    }
+  });
+
+  app.patch("/api/lists/:id", async (req, res) => {
+    try {
+      const updated = await optimizedStorage.updateList(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "List not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating list:', error);
+      res.status(500).json({ message: error.message || "Failed to update list" });
+    }
+  });
+
+  app.delete("/api/lists/:id", async (req, res) => {
+    try {
+      const success = await optimizedStorage.deleteList(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "List not found" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting list:', error);
+      res.status(500).json({ message: error.message || "Failed to delete list" });
+    }
+  });
+
+  // Card endpoints
+  app.get("/api/cards/inbox", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const cards = await optimizedStorage.getInboxCards(userId);
+      res.json(cards);
+    } catch (error: any) {
+      console.error('Error fetching inbox cards:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch inbox cards" });
+    }
+  });
+
+  app.get("/api/lists/:listId/cards", async (req, res) => {
+    try {
+      const cards = await optimizedStorage.getCardsByListId(req.params.listId);
+      res.json(cards);
+    } catch (error: any) {
+      console.error('Error fetching cards:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch cards" });
+    }
+  });
+
+  app.get("/api/cards/:id", async (req, res) => {
+    try {
+      const card = await optimizedStorage.getCard(req.params.id);
+      if (!card) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json(card);
+    } catch (error: any) {
+      console.error('Error fetching card:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch card" });
+    }
+  });
+
+  app.post("/api/cards", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const cardData = insertCardSchema.parse({ ...req.body, userId });
+      const newCard = await optimizedStorage.createCard(cardData);
+      res.status(201).json(newCard);
+    } catch (error: any) {
+      console.error('Error creating card:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid card data", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message || "Failed to create card" });
+    }
+  });
+
+  app.patch("/api/cards/:id", async (req, res) => {
+    try {
+      const updated = await optimizedStorage.updateCard(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating card:', error);
+      res.status(500).json({ message: error.message || "Failed to update card" });
+    }
+  });
+
+  app.patch("/api/cards/:id/move", async (req, res) => {
+    try {
+      const { listId, boardId, position } = req.body;
+      const updated = await optimizedStorage.updateCard(req.params.id, { listId, boardId, position });
+      if (!updated) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error moving card:', error);
+      res.status(500).json({ message: error.message || "Failed to move card" });
+    }
+  });
+
+  app.delete("/api/cards/:id", async (req, res) => {
+    try {
+      const success = await optimizedStorage.deleteCard(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting card:', error);
+      res.status(500).json({ message: error.message || "Failed to delete card" });
+    }
+  });
+
+  // Checklist endpoints
+  app.get("/api/cards/:cardId/checklists", async (req, res) => {
+    try {
+      const checklists = await optimizedStorage.getChecklistsByCardId(req.params.cardId);
+      res.json(checklists);
+    } catch (error: any) {
+      console.error('Error fetching checklists:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch checklists" });
+    }
+  });
+
+  app.post("/api/cards/:cardId/checklists", async (req, res) => {
+    try {
+      const checklistData = insertChecklistSchema.parse({ ...req.body, cardId: req.params.cardId });
+      const newChecklist = await optimizedStorage.createChecklist(checklistData);
+      res.status(201).json(newChecklist);
+    } catch (error: any) {
+      console.error('Error creating checklist:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid checklist data", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message || "Failed to create checklist" });
+    }
+  });
+
+  app.patch("/api/checklists/:id", async (req, res) => {
+    try {
+      const updated = await optimizedStorage.updateChecklist(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Checklist item not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating checklist:', error);
+      res.status(500).json({ message: error.message || "Failed to update checklist" });
+    }
+  });
+
+  app.delete("/api/checklists/:id", async (req, res) => {
+    try {
+      const success = await optimizedStorage.deleteChecklist(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Checklist item not found" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting checklist:', error);
+      res.status(500).json({ message: error.message || "Failed to delete checklist" });
+    }
+  });
+
+  // Label endpoints
+  app.get("/api/labels", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const labels = await optimizedStorage.getLabelsByUserId(userId);
+      res.json(labels);
+    } catch (error: any) {
+      console.error('Error fetching labels:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch labels" });
+    }
+  });
+
+  app.post("/api/labels", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const labelData = insertLabelSchema.parse({ ...req.body, userId });
+      const newLabel = await optimizedStorage.createLabel(labelData);
+      res.status(201).json(newLabel);
+    } catch (error: any) {
+      console.error('Error creating label:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid label data", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message || "Failed to create label" });
+    }
+  });
+
+  app.patch("/api/labels/:id", async (req, res) => {
+    try {
+      const updated = await optimizedStorage.updateLabel(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Label not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating label:', error);
+      res.status(500).json({ message: error.message || "Failed to update label" });
+    }
+  });
+
+  app.delete("/api/labels/:id", async (req, res) => {
+    try {
+      const success = await optimizedStorage.deleteLabel(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Label not found" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting label:', error);
+      res.status(500).json({ message: error.message || "Failed to delete label" });
+    }
+  });
+
+  // Card-Label association endpoints
+  app.post("/api/cards/:cardId/labels", async (req, res) => {
+    try {
+      const { labelId } = req.body;
+      if (!labelId) {
+        return res.status(400).json({ message: "Label ID required" });
+      }
+      await optimizedStorage.addLabelToCard(req.params.cardId, labelId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error adding label to card:', error);
+      res.status(500).json({ message: error.message || "Failed to add label to card" });
+    }
+  });
+
+  app.delete("/api/cards/:cardId/labels/:labelId", async (req, res) => {
+    try {
+      await optimizedStorage.removeLabelFromCard(req.params.cardId, req.params.labelId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error removing label from card:', error);
+      res.status(500).json({ message: error.message || "Failed to remove label from card" });
+    }
+  });
+
+  app.get("/api/cards/:cardId/labels", async (req, res) => {
+    try {
+      const labels = await optimizedStorage.getCardLabels(req.params.cardId);
+      res.json(labels);
+    } catch (error: any) {
+      console.error('Error fetching card labels:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch card labels" });
     }
   });
 

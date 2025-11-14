@@ -21,6 +21,18 @@ import {
   type InsertAiSummary,
   type Note,
   type InsertNote,
+  type Board,
+  type InsertBoard,
+  type TodoList,
+  type InsertTodoList,
+  type Card,
+  type InsertCard,
+  type Checklist,
+  type InsertChecklist,
+  type Label,
+  type InsertLabel,
+  type CardLabel,
+  type InsertCardLabel,
   users,
   classes,
   assignments,
@@ -29,7 +41,13 @@ import {
   journalEntries,
   pomodoroSessions,
   aiSummaries,
-  notes
+  notes,
+  boards,
+  todoLists,
+  cards,
+  checklists,
+  labels,
+  cardLabels
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { eq, and } from "drizzle-orm";
@@ -108,6 +126,43 @@ export interface IStorage {
   createNote(note: InsertNote): Promise<Note>;
   updateNote(id: string, note: Partial<InsertNote>): Promise<Note | undefined>;
   deleteNote(id: string): Promise<boolean>;
+  
+  // Todo Board methods
+  getBoardsByUserId(userId: string): Promise<Board[]>;
+  getBoard(id: string): Promise<Board | undefined>;
+  createBoard(board: InsertBoard): Promise<Board>;
+  updateBoard(id: string, board: Partial<InsertBoard>): Promise<Board | undefined>;
+  deleteBoard(id: string): Promise<boolean>;
+  
+  // Todo List methods
+  getListsByBoardId(boardId: string): Promise<TodoList[]>;
+  createList(list: InsertTodoList): Promise<TodoList>;
+  updateList(id: string, list: Partial<InsertTodoList>): Promise<TodoList | undefined>;
+  deleteList(id: string): Promise<boolean>;
+  
+  // Card methods
+  getCardsByUserId(userId: string): Promise<Card[]>;
+  getCardsByListId(listId: string): Promise<Card[]>;
+  getInboxCards(userId: string): Promise<Card[]>;
+  getCard(id: string): Promise<Card | undefined>;
+  createCard(card: InsertCard): Promise<Card>;
+  updateCard(id: string, card: Partial<InsertCard>): Promise<Card | undefined>;
+  deleteCard(id: string): Promise<boolean>;
+  
+  // Checklist methods
+  getChecklistsByCardId(cardId: string): Promise<Checklist[]>;
+  createChecklist(checklist: InsertChecklist): Promise<Checklist>;
+  updateChecklist(id: string, checklist: Partial<InsertChecklist>): Promise<Checklist | undefined>;
+  deleteChecklist(id: string): Promise<boolean>;
+  
+  // Label methods
+  getLabelsByUserId(userId: string): Promise<Label[]>;
+  createLabel(label: InsertLabel): Promise<Label>;
+  updateLabel(id: string, label: Partial<InsertLabel>): Promise<Label | undefined>;
+  deleteLabel(id: string): Promise<boolean>;
+  addLabelToCard(cardId: string, labelId: string): Promise<void>;
+  removeLabelFromCard(cardId: string, labelId: string): Promise<void>;
+  getCardLabels(cardId: string): Promise<Label[]>;
   
   // Analytics methods
   getUserAnalytics(userId: string): Promise<any>;
@@ -502,6 +557,35 @@ export class MemStorage implements IStorage {
   async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
     throw new Error('Statistics not available in MemStorage - requires Oracle database');
   }
+
+  // Todo Board stub methods (not implemented in MemStorage)
+  async getBoardsByUserId(userId: string): Promise<any[]> { return []; }
+  async getBoard(id: string): Promise<any | undefined> { return undefined; }
+  async createBoard(board: any): Promise<any> { throw new Error('Todo boards not available in MemStorage'); }
+  async updateBoard(id: string, board: any): Promise<any | undefined> { return undefined; }
+  async deleteBoard(id: string): Promise<boolean> { return false; }
+  async getListsByBoardId(boardId: string): Promise<any[]> { return []; }
+  async createList(list: any): Promise<any> { throw new Error('Todo boards not available in MemStorage'); }
+  async updateList(id: string, list: any): Promise<any | undefined> { return undefined; }
+  async deleteList(id: string): Promise<boolean> { return false; }
+  async getCardsByUserId(userId: string): Promise<any[]> { return []; }
+  async getCardsByListId(listId: string): Promise<any[]> { return []; }
+  async getInboxCards(userId: string): Promise<any[]> { return []; }
+  async getCard(id: string): Promise<any | undefined> { return undefined; }
+  async createCard(card: any): Promise<any> { throw new Error('Todo boards not available in MemStorage'); }
+  async updateCard(id: string, card: any): Promise<any | undefined> { return undefined; }
+  async deleteCard(id: string): Promise<boolean> { return false; }
+  async getChecklistsByCardId(cardId: string): Promise<any[]> { return []; }
+  async createChecklist(checklist: any): Promise<any> { throw new Error('Todo boards not available in MemStorage'); }
+  async updateChecklist(id: string, checklist: any): Promise<any | undefined> { return undefined; }
+  async deleteChecklist(id: string): Promise<boolean> { return false; }
+  async getLabelsByUserId(userId: string): Promise<any[]> { return []; }
+  async createLabel(label: any): Promise<any> { throw new Error('Todo boards not available in MemStorage'); }
+  async updateLabel(id: string, label: any): Promise<any | undefined> { return undefined; }
+  async deleteLabel(id: string): Promise<boolean> { return false; }
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> {}
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {}
+  async getCardLabels(cardId: string): Promise<any[]> { return []; }
 }
 
 // Database Storage Implementation
@@ -736,6 +820,35 @@ export class DatabaseStorage implements IStorage {
   async getRetentionCurve(userId: string, deckId?: string): Promise<any[]> {
     throw new Error('Statistics not available in DatabaseStorage - requires Oracle database');
   }
+
+  // Todo Board stub methods (not implemented in DatabaseStorage)
+  async getBoardsByUserId(userId: string): Promise<any[]> { return []; }
+  async getBoard(id: string): Promise<any | undefined> { return undefined; }
+  async createBoard(board: any): Promise<any> { throw new Error('Todo boards not available in DatabaseStorage'); }
+  async updateBoard(id: string, board: any): Promise<any | undefined> { return undefined; }
+  async deleteBoard(id: string): Promise<boolean> { return false; }
+  async getListsByBoardId(boardId: string): Promise<any[]> { return []; }
+  async createList(list: any): Promise<any> { throw new Error('Todo boards not available in DatabaseStorage'); }
+  async updateList(id: string, list: any): Promise<any | undefined> { return undefined; }
+  async deleteList(id: string): Promise<boolean> { return false; }
+  async getCardsByUserId(userId: string): Promise<any[]> { return []; }
+  async getCardsByListId(listId: string): Promise<any[]> { return []; }
+  async getInboxCards(userId: string): Promise<any[]> { return []; }
+  async getCard(id: string): Promise<any | undefined> { return undefined; }
+  async createCard(card: any): Promise<any> { throw new Error('Todo boards not available in DatabaseStorage'); }
+  async updateCard(id: string, card: any): Promise<any | undefined> { return undefined; }
+  async deleteCard(id: string): Promise<boolean> { return false; }
+  async getChecklistsByCardId(cardId: string): Promise<any[]> { return []; }
+  async createChecklist(checklist: any): Promise<any> { throw new Error('Todo boards not available in DatabaseStorage'); }
+  async updateChecklist(id: string, checklist: any): Promise<any | undefined> { return undefined; }
+  async deleteChecklist(id: string): Promise<boolean> { return false; }
+  async getLabelsByUserId(userId: string): Promise<any[]> { return []; }
+  async createLabel(label: any): Promise<any> { throw new Error('Todo boards not available in DatabaseStorage'); }
+  async updateLabel(id: string, label: any): Promise<any | undefined> { return undefined; }
+  async deleteLabel(id: string): Promise<boolean> { return false; }
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> {}
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {}
+  async getCardLabels(cardId: string): Promise<any[]> { return []; }
 }
 
 // Initialize storage with fallback handling

@@ -53,6 +53,7 @@ import {
   LazyAnalytics,
   LazyProfile,
   LazyHabits,
+  LazyTodos,
   LazySettings,
 } from "@/components/LazyComponents";
 
@@ -289,6 +290,16 @@ function Router() {
           <AppLayout>
             <Suspense fallback={<PageLoading message="Loading Habits..." />}>
               <LazyHabits />
+            </Suspense>
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/todos">
+        <ProtectedRoute fallback={<Landing />}>
+          <AppLayout>
+            <Suspense fallback={<PageLoading message="Loading Todos..." />}>
+              <LazyTodos />
             </Suspense>
           </AppLayout>
         </ProtectedRoute>

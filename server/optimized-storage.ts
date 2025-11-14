@@ -25,6 +25,16 @@ import {
   type InsertAiSummary,
   type Note,
   type InsertNote,
+  type Board,
+  type InsertBoard,
+  type TodoList,
+  type InsertTodoList,
+  type Card,
+  type InsertCard,
+  type Checklist,
+  type InsertChecklist,
+  type Label,
+  type InsertLabel,
   users,
   classes,
   assignments,
@@ -33,7 +43,12 @@ import {
   journalEntries,
   pomodoroSessions,
   aiSummaries,
-  notes
+  notes,
+  boards,
+  todoLists,
+  cards,
+  checklists,
+  labels
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
@@ -597,6 +612,256 @@ export class OptimizedStorage {
     }
     
     return this.createUser(userData);
+  }
+
+  // ========== TODO BOARD METHODS ==========
+  
+  // Board methods
+  async getBoardsByUserId(userId: string): Promise<any[]> {
+    const cacheKey = `boards:user:${userId}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) return cached;
+
+    const boards = await this.baseStorage.getBoardsByUserId(userId);
+    this.queryCache.set(cacheKey, boards);
+    return boards;
+  }
+
+  async getBoard(id: string): Promise<any | undefined> {
+    const cacheKey = `board:${id}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) return cached;
+
+    const board = await this.baseStorage.getBoard(id);
+    if (board) this.queryCache.set(cacheKey, board);
+    return board;
+  }
+
+  async createBoard(board: any): Promise<any> {
+    const newBoard = await this.baseStorage.createBoard(board);
+    
+    // Invalidate user's boards cache
+    this.queryCache.delete(`boards:user:${board.userId}`);
+    
+    return newBoard;
+  }
+
+  async updateBoard(id: string, board: any): Promise<any | undefined> {
+    const updated = await this.baseStorage.updateBoard(id, board);
+    
+    if (updated) {
+      // Invalidate caches
+      this.queryCache.delete(`board:${id}`);
+      this.queryCache.delete(`boards:user:${updated.userId}`);
+    }
+    
+    return updated;
+  }
+
+  async deleteBoard(id: string): Promise<boolean> {
+    const board = await this.baseStorage.getBoard(id);
+    const success = await this.baseStorage.deleteBoard(id);
+    
+    if (success && board) {
+      this.queryCache.delete(`board:${id}`);
+      this.queryCache.delete(`boards:user:${board.userId}`);
+    }
+    
+    return success;
+  }
+
+  // List methods
+  async getListsByBoardId(boardId: string): Promise<any[]> {
+    const cacheKey = `lists:board:${boardId}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) return cached;
+
+    const lists = await this.baseStorage.getListsByBoardId(boardId);
+    this.queryCache.set(cacheKey, lists);
+    return lists;
+  }
+
+  async createList(list: any): Promise<any> {
+    const newList = await this.baseStorage.createList(list);
+    
+    // Invalidate board's lists cache
+    this.queryCache.delete(`lists:board:${list.boardId}`);
+    
+    return newList;
+  }
+
+  async updateList(id: string, list: any): Promise<any | undefined> {
+    const existing = await this.baseStorage.getListsByBoardId(list.boardId || '');
+    const updated = await this.baseStorage.updateList(id, list);
+    
+    if (updated) {
+      this.queryCache.delete(`lists:board:${updated.boardId}`);
+    }
+    
+    return updated;
+  }
+
+  async deleteList(id: string): Promise<boolean> {
+    // Note: We'd need to fetch the list first to get boardId for cache invalidation
+    const success = await this.baseStorage.deleteList(id);
+    
+    if (success) {
+      // Clear all list caches (inefficient but safe)
+      const keys = Array.from((this.queryCache as any).cache.keys()) as string[];
+      keys.forEach(key => {
+        if (key.startsWith('lists:board:')) {
+          this.queryCache.delete(key);
+        }
+      });
+    }
+    
+    return success;
+  }
+
+  // Card methods
+  async getCardsByUserId(userId: string): Promise<any[]> {
+    return this.baseStorage.getCardsByUserId(userId);
+  }
+
+  async getCardsByListId(listId: string): Promise<any[]> {
+    const cacheKey = `cards:list:${listId}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) return cached;
+
+    const cards = await this.baseStorage.getCardsByListId(listId);
+    this.queryCache.set(cacheKey, cards, 2 * 60 * 1000); // 2 min TTL for cards
+    return cards;
+  }
+
+  async getInboxCards(userId: string): Promise<any[]> {
+    const cacheKey = `cards:inbox:${userId}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) return cached;
+
+    const cards = await this.baseStorage.getInboxCards(userId);
+    this.queryCache.set(cacheKey, cards, 2 * 60 * 1000);
+    return cards;
+  }
+
+  async getCard(id: string): Promise<any | undefined> {
+    return this.baseStorage.getCard(id);
+  }
+
+  async createCard(card: any): Promise<any> {
+    const newCard = await this.baseStorage.createCard(card);
+    
+    // Invalidate caches
+    if (card.listId) {
+      this.queryCache.delete(`cards:list:${card.listId}`);
+    } else {
+      this.queryCache.delete(`cards:inbox:${card.userId}`);
+    }
+    
+    return newCard;
+  }
+
+  async updateCard(id: string, card: any): Promise<any | undefined> {
+    const updated = await this.baseStorage.updateCard(id, card);
+    
+    if (updated) {
+      // Invalidate relevant caches
+      if (updated.listId) {
+        this.queryCache.delete(`cards:list:${updated.listId}`);
+      }
+      if (card.listId && card.listId !== updated.listId) {
+        this.queryCache.delete(`cards:list:${card.listId}`);
+      }
+      this.queryCache.delete(`cards:inbox:${updated.userId}`);
+    }
+    
+    return updated;
+  }
+
+  async deleteCard(id: string): Promise<boolean> {
+    const success = await this.baseStorage.deleteCard(id);
+    
+    if (success) {
+      // Clear all card caches
+      const keys = Array.from((this.queryCache as any).cache.keys()) as string[];
+      keys.forEach(key => {
+        if (key.startsWith('cards:')) {
+          this.queryCache.delete(key);
+        }
+      });
+    }
+    
+    return success;
+  }
+
+  // Checklist methods
+  async getChecklistsByCardId(cardId: string): Promise<any[]> {
+    return this.baseStorage.getChecklistsByCardId(cardId);
+  }
+
+  async createChecklist(checklist: any): Promise<any> {
+    return this.baseStorage.createChecklist(checklist);
+  }
+
+  async updateChecklist(id: string, checklist: any): Promise<any | undefined> {
+    return this.baseStorage.updateChecklist(id, checklist);
+  }
+
+  async deleteChecklist(id: string): Promise<boolean> {
+    return this.baseStorage.deleteChecklist(id);
+  }
+
+  // Label methods
+  async getLabelsByUserId(userId: string): Promise<any[]> {
+    const cacheKey = `labels:user:${userId}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) return cached;
+
+    const labels = await this.baseStorage.getLabelsByUserId(userId);
+    this.queryCache.set(cacheKey, labels);
+    return labels;
+  }
+
+  async createLabel(label: any): Promise<any> {
+    const newLabel = await this.baseStorage.createLabel(label);
+    this.queryCache.delete(`labels:user:${label.userId}`);
+    return newLabel;
+  }
+
+  async updateLabel(id: string, label: any): Promise<any | undefined> {
+    const updated = await this.baseStorage.updateLabel(id, label);
+    
+    if (updated) {
+      this.queryCache.delete(`labels:user:${updated.userId}`);
+    }
+    
+    return updated;
+  }
+
+  async deleteLabel(id: string): Promise<boolean> {
+    const success = await this.baseStorage.deleteLabel(id);
+    
+    if (success) {
+      const keys = Array.from((this.queryCache as any).cache.keys()) as string[];
+      keys.forEach(key => {
+        if (key.startsWith('labels:user:')) {
+          this.queryCache.delete(key);
+        }
+      });
+    }
+    
+    return success;
+  }
+
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> {
+    return this.baseStorage.addLabelToCard(cardId, labelId);
+  }
+
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {
+    return this.baseStorage.removeLabelFromCard(cardId, labelId);
+  }
+
+  async getCardLabels(cardId: string): Promise<any[]> {
+    return this.baseStorage.getCardLabels(cardId);
   }
 }
 

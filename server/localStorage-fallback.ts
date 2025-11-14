@@ -609,4 +609,37 @@ export class LocalStorageFallback {
     return false;
   }
 
+  // ========== TODO BOARD STUB METHODS (Not implemented in localStorage fallback) ==========
+  async getBoardsByUserId(userId: string): Promise<any[]> { return []; }
+  async getBoard(id: string): Promise<any | undefined> { return undefined; }
+  async createBoard(board: any): Promise<any> { throw new Error('Todo boards require Oracle database'); }
+  async updateBoard(id: string, board: any): Promise<any | undefined> { return undefined; }
+  async deleteBoard(id: string): Promise<boolean> { return false; }
+  
+  async getListsByBoardId(boardId: string): Promise<any[]> { return []; }
+  async createList(list: any): Promise<any> { throw new Error('Todo boards require Oracle database'); }
+  async updateList(id: string, list: any): Promise<any | undefined> { return undefined; }
+  async deleteList(id: string): Promise<boolean> { return false; }
+  
+  async getCardsByUserId(userId: string): Promise<any[]> { return []; }
+  async getCardsByListId(listId: string): Promise<any[]> { return []; }
+  async getInboxCards(userId: string): Promise<any[]> { return []; }
+  async getCard(id: string): Promise<any | undefined> { return undefined; }
+  async createCard(card: any): Promise<any> { throw new Error('Todo boards require Oracle database'); }
+  async updateCard(id: string, card: any): Promise<any | undefined> { return undefined; }
+  async deleteCard(id: string): Promise<boolean> { return false; }
+  
+  async getChecklistsByCardId(cardId: string): Promise<any[]> { return []; }
+  async createChecklist(checklist: any): Promise<any> { throw new Error('Todo boards require Oracle database'); }
+  async updateChecklist(id: string, checklist: any): Promise<any | undefined> { return undefined; }
+  async deleteChecklist(id: string): Promise<boolean> { return false; }
+  
+  async getLabelsByUserId(userId: string): Promise<any[]> { return []; }
+  async createLabel(label: any): Promise<any> { throw new Error('Todo boards require Oracle database'); }
+  async updateLabel(id: string, label: any): Promise<any | undefined> { return undefined; }
+  async deleteLabel(id: string): Promise<boolean> { return false; }
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> {}
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {}
+  async getCardLabels(cardId: string): Promise<any[]> { return []; }
+
 }

@@ -22,7 +22,17 @@ import type {
   AiSummary,
   InsertAiSummary,
   Note,
-  InsertNote
+  InsertNote,
+  Board,
+  InsertBoard,
+  TodoList,
+  InsertTodoList,
+  Card,
+  InsertCard,
+  Checklist,
+  InsertChecklist,
+  Label,
+  InsertLabel
 } from "@shared/schema";
 
 export class OracleStorage {
@@ -1636,6 +1646,650 @@ export class OracleStorage {
     }
     
     return success;
+  }
+  
+  // ========== TODO BOARD METHODS ==========
+  
+  // Board methods
+  async getBoardsByUserId(userId: string): Promise<Board[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM boards WHERE user_id = :userId AND is_archived = 0 ORDER BY position ASC',
+      { userId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      userId: row.USER_ID,
+      title: row.TITLE,
+      background: row.BACKGROUND,
+      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
+      isFavorited: Boolean(row.IS_FAVORITED),
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    }));
+  }
+
+  async getBoard(id: string): Promise<Board | undefined> {
+    await this.initialize();
+    const result = await executeQuery('SELECT * FROM boards WHERE id = :id', { id });
+    
+    if (!result.rows || result.rows.length === 0) return undefined;
+    
+    const row: any = result.rows[0];
+    return {
+      id: row.ID,
+      userId: row.USER_ID,
+      title: row.TITLE,
+      background: row.BACKGROUND,
+      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
+      isFavorited: Boolean(row.IS_FAVORITED),
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    };
+  }
+
+  async createBoard(board: InsertBoard): Promise<Board> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    await executeQuery(
+      `INSERT INTO boards (id, user_id, title, background, position, is_archived, is_favorited, created_at, updated_at)
+       VALUES (:id, :userId, :title, :background, :position, :isArchived, :isFavorited, :createdAt, :updatedAt)`,
+      {
+        id,
+        userId: board.userId,
+        title: board.title,
+        background: board.background || null,
+        position: board.position || 0,
+        isArchived: board.isArchived ? 1 : 0,
+        isFavorited: board.isFavorited ? 1 : 0,
+        createdAt,
+        updatedAt
+      }
+    );
+    
+    return {
+      id,
+      userId: board.userId,
+      title: board.title,
+      background: board.background || null,
+      position: board.position || 0,
+      isArchived: board.isArchived || false,
+      isFavorited: board.isFavorited || false,
+      createdAt,
+      updatedAt
+    };
+  }
+
+  async updateBoard(id: string, board: Partial<InsertBoard>): Promise<Board | undefined> {
+    await this.initialize();
+    const updatedAt = new Date();
+    
+    const updates: string[] = [];
+    const params: any = { id, updatedAt };
+    
+    if (board.title !== undefined) {
+      updates.push('title = :title');
+      params.title = board.title;
+    }
+    if (board.background !== undefined) {
+      updates.push('background = :background');
+      params.background = board.background;
+    }
+    if (board.position !== undefined) {
+      updates.push('position = :position');
+      params.position = board.position;
+    }
+    if (board.isArchived !== undefined) {
+      updates.push('is_archived = :isArchived');
+      params.isArchived = board.isArchived ? 1 : 0;
+    }
+    if (board.isFavorited !== undefined) {
+      updates.push('is_favorited = :isFavorited');
+      params.isFavorited = board.isFavorited ? 1 : 0;
+    }
+    
+    if (updates.length === 0) return this.getBoard(id);
+    
+    updates.push('updated_at = :updatedAt');
+    
+    await executeQuery(
+      `UPDATE boards SET ${updates.join(', ')} WHERE id = :id`,
+      params
+    );
+    
+    return this.getBoard(id);
+  }
+
+  async deleteBoard(id: string): Promise<boolean> {
+    await this.initialize();
+    const result = await executeQuery('DELETE FROM boards WHERE id = :id', { id });
+    return Boolean(result.rowsAffected && result.rowsAffected > 0);
+  }
+
+  // List methods
+  async getListsByBoardId(boardId: string): Promise<TodoList[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM todo_lists WHERE board_id = :boardId AND is_archived = 0 ORDER BY position ASC',
+      { boardId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      boardId: row.BOARD_ID,
+      title: row.TITLE,
+      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
+      createdAt: row.CREATED_AT
+    }));
+  }
+
+  async createList(list: InsertTodoList): Promise<TodoList> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    
+    await executeQuery(
+      `INSERT INTO todo_lists (id, board_id, title, position, is_archived, created_at)
+       VALUES (:id, :boardId, :title, :position, :isArchived, :createdAt)`,
+      {
+        id,
+        boardId: list.boardId,
+        title: list.title,
+        position: list.position || 0,
+        isArchived: list.isArchived ? 1 : 0,
+        createdAt
+      }
+    );
+    
+    return {
+      id,
+      boardId: list.boardId,
+      title: list.title,
+      position: list.position || 0,
+      isArchived: list.isArchived || false,
+      createdAt
+    };
+  }
+
+  async updateList(id: string, list: Partial<InsertTodoList>): Promise<TodoList | undefined> {
+    await this.initialize();
+    
+    const updates: string[] = [];
+    const params: any = { id };
+    
+    if (list.title !== undefined) {
+      updates.push('title = :title');
+      params.title = list.title;
+    }
+    if (list.position !== undefined) {
+      updates.push('position = :position');
+      params.position = list.position;
+    }
+    if (list.isArchived !== undefined) {
+      updates.push('is_archived = :isArchived');
+      params.isArchived = list.isArchived ? 1 : 0;
+    }
+    
+    if (updates.length === 0) {
+      const result = await executeQuery('SELECT * FROM todo_lists WHERE id = :id', { id });
+      if (!result.rows || result.rows.length === 0) return undefined;
+      const row: any = result.rows[0];
+      return {
+        id: row.ID,
+        boardId: row.BOARD_ID,
+        title: row.TITLE,
+        position: row.POSITION,
+        isArchived: Boolean(row.IS_ARCHIVED),
+        createdAt: row.CREATED_AT
+      };
+    }
+    
+    await executeQuery(
+      `UPDATE todo_lists SET ${updates.join(', ')} WHERE id = :id`,
+      params
+    );
+    
+    const result = await executeQuery('SELECT * FROM todo_lists WHERE id = :id', { id });
+    if (!result.rows || result.rows.length === 0) return undefined;
+    
+    const row: any = result.rows[0];
+    return {
+      id: row.ID,
+      boardId: row.BOARD_ID,
+      title: row.TITLE,
+      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
+      createdAt: row.CREATED_AT
+    };
+  }
+
+  async deleteList(id: string): Promise<boolean> {
+    await this.initialize();
+    const result = await executeQuery('DELETE FROM todo_lists WHERE id = :id', { id });
+    return Boolean(result.rowsAffected && result.rowsAffected > 0);
+  }
+
+  // Card methods
+  async getCardsByUserId(userId: string): Promise<Card[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM cards WHERE user_id = :userId ORDER BY position ASC',
+      { userId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      listId: row.LIST_ID,
+      boardId: row.BOARD_ID,
+      userId: row.USER_ID,
+      title: row.TITLE,
+      description: row.DESCRIPTION,
+      dueDate: row.DUE_DATE,
+      isCompleted: Boolean(row.IS_COMPLETED),
+      position: row.POSITION,
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    }));
+  }
+
+  async getCardsByListId(listId: string): Promise<Card[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM cards WHERE list_id = :listId ORDER BY position ASC',
+      { listId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      listId: row.LIST_ID,
+      boardId: row.BOARD_ID,
+      userId: row.USER_ID,
+      title: row.TITLE,
+      description: row.DESCRIPTION,
+      dueDate: row.DUE_DATE,
+      isCompleted: Boolean(row.IS_COMPLETED),
+      position: row.POSITION,
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    }));
+  }
+
+  async getInboxCards(userId: string): Promise<Card[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM cards WHERE user_id = :userId AND list_id IS NULL ORDER BY position ASC',
+      { userId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      listId: row.LIST_ID,
+      boardId: row.BOARD_ID,
+      userId: row.USER_ID,
+      title: row.TITLE,
+      description: row.DESCRIPTION,
+      dueDate: row.DUE_DATE,
+      isCompleted: Boolean(row.IS_COMPLETED),
+      position: row.POSITION,
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    }));
+  }
+
+  async getCard(id: string): Promise<Card | undefined> {
+    await this.initialize();
+    const result = await executeQuery('SELECT * FROM cards WHERE id = :id', { id });
+    
+    if (!result.rows || result.rows.length === 0) return undefined;
+    
+    const row: any = result.rows[0];
+    return {
+      id: row.ID,
+      listId: row.LIST_ID,
+      boardId: row.BOARD_ID,
+      userId: row.USER_ID,
+      title: row.TITLE,
+      description: row.DESCRIPTION,
+      dueDate: row.DUE_DATE,
+      isCompleted: Boolean(row.IS_COMPLETED),
+      position: row.POSITION,
+      createdAt: row.CREATED_AT,
+      updatedAt: row.UPDATED_AT
+    };
+  }
+
+  async createCard(card: InsertCard): Promise<Card> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    await executeQuery(
+      `INSERT INTO cards (id, list_id, board_id, user_id, title, description, due_date, is_completed, position, created_at, updated_at)
+       VALUES (:id, :listId, :boardId, :userId, :title, :description, :dueDate, :isCompleted, :position, :createdAt, :updatedAt)`,
+      {
+        id,
+        listId: card.listId || null,
+        boardId: card.boardId || null,
+        userId: card.userId,
+        title: card.title,
+        description: card.description || null,
+        dueDate: card.dueDate || null,
+        isCompleted: card.isCompleted ? 1 : 0,
+        position: card.position || 0,
+        createdAt,
+        updatedAt
+      }
+    );
+    
+    return {
+      id,
+      listId: card.listId || null,
+      boardId: card.boardId || null,
+      userId: card.userId,
+      title: card.title,
+      description: card.description || null,
+      dueDate: card.dueDate || null,
+      isCompleted: card.isCompleted || false,
+      position: card.position || 0,
+      createdAt,
+      updatedAt
+    };
+  }
+
+  async updateCard(id: string, card: Partial<InsertCard>): Promise<Card | undefined> {
+    await this.initialize();
+    const updatedAt = new Date();
+    
+    const updates: string[] = [];
+    const params: any = { id, updatedAt };
+    
+    if (card.listId !== undefined) {
+      updates.push('list_id = :listId');
+      params.listId = card.listId;
+    }
+    if (card.boardId !== undefined) {
+      updates.push('board_id = :boardId');
+      params.boardId = card.boardId;
+    }
+    if (card.title !== undefined) {
+      updates.push('title = :title');
+      params.title = card.title;
+    }
+    if (card.description !== undefined) {
+      updates.push('description = :description');
+      params.description = card.description;
+    }
+    if (card.dueDate !== undefined) {
+      updates.push('due_date = :dueDate');
+      params.dueDate = card.dueDate;
+    }
+    if (card.isCompleted !== undefined) {
+      updates.push('is_completed = :isCompleted');
+      params.isCompleted = card.isCompleted ? 1 : 0;
+    }
+    if (card.position !== undefined) {
+      updates.push('position = :position');
+      params.position = card.position;
+    }
+    
+    if (updates.length === 0) return this.getCard(id);
+    
+    updates.push('updated_at = :updatedAt');
+    
+    await executeQuery(
+      `UPDATE cards SET ${updates.join(', ')} WHERE id = :id`,
+      params
+    );
+    
+    return this.getCard(id);
+  }
+
+  async deleteCard(id: string): Promise<boolean> {
+    await this.initialize();
+    const result = await executeQuery('DELETE FROM cards WHERE id = :id', { id });
+    return Boolean(result.rowsAffected && result.rowsAffected > 0);
+  }
+
+  // Checklist methods
+  async getChecklistsByCardId(cardId: string): Promise<Checklist[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM checklists WHERE card_id = :cardId ORDER BY position ASC',
+      { cardId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      cardId: row.CARD_ID,
+      title: row.TITLE,
+      isChecked: Boolean(row.IS_CHECKED),
+      position: row.POSITION,
+      createdAt: row.CREATED_AT
+    }));
+  }
+
+  async createChecklist(checklist: InsertChecklist): Promise<Checklist> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    
+    await executeQuery(
+      `INSERT INTO checklists (id, card_id, title, is_checked, position, created_at)
+       VALUES (:id, :cardId, :title, :isChecked, :position, :createdAt)`,
+      {
+        id,
+        cardId: checklist.cardId,
+        title: checklist.title,
+        isChecked: checklist.isChecked ? 1 : 0,
+        position: checklist.position || 0,
+        createdAt
+      }
+    );
+    
+    return {
+      id,
+      cardId: checklist.cardId,
+      title: checklist.title,
+      isChecked: checklist.isChecked || false,
+      position: checklist.position || 0,
+      createdAt
+    };
+  }
+
+  async updateChecklist(id: string, checklist: Partial<InsertChecklist>): Promise<Checklist | undefined> {
+    await this.initialize();
+    
+    const updates: string[] = [];
+    const params: any = { id };
+    
+    if (checklist.title !== undefined) {
+      updates.push('title = :title');
+      params.title = checklist.title;
+    }
+    if (checklist.isChecked !== undefined) {
+      updates.push('is_checked = :isChecked');
+      params.isChecked = checklist.isChecked ? 1 : 0;
+    }
+    if (checklist.position !== undefined) {
+      updates.push('position = :position');
+      params.position = checklist.position;
+    }
+    
+    if (updates.length === 0) {
+      const result = await executeQuery('SELECT * FROM checklists WHERE id = :id', { id });
+      if (!result.rows || result.rows.length === 0) return undefined;
+      const row: any = result.rows[0];
+      return {
+        id: row.ID,
+        cardId: row.CARD_ID,
+        title: row.TITLE,
+        isChecked: Boolean(row.IS_CHECKED),
+        position: row.POSITION,
+        createdAt: row.CREATED_AT
+      };
+    }
+    
+    await executeQuery(
+      `UPDATE checklists SET ${updates.join(', ')} WHERE id = :id`,
+      params
+    );
+    
+    const result = await executeQuery('SELECT * FROM checklists WHERE id = :id', { id });
+    if (!result.rows || result.rows.length === 0) return undefined;
+    
+    const row: any = result.rows[0];
+    return {
+      id: row.ID,
+      cardId: row.CARD_ID,
+      title: row.TITLE,
+      isChecked: Boolean(row.IS_CHECKED),
+      position: row.POSITION,
+      createdAt: row.CREATED_AT
+    };
+  }
+
+  async deleteChecklist(id: string): Promise<boolean> {
+    await this.initialize();
+    const result = await executeQuery('DELETE FROM checklists WHERE id = :id', { id });
+    return Boolean(result.rowsAffected && result.rowsAffected > 0);
+  }
+
+  // Label methods
+  async getLabelsByUserId(userId: string): Promise<Label[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM labels WHERE user_id = :userId OR user_id = \'SYSTEM\' ORDER BY created_at ASC',
+      { userId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      color: row.COLOR,
+      createdAt: row.CREATED_AT
+    }));
+  }
+
+  async createLabel(label: InsertLabel): Promise<Label> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+    
+    await executeQuery(
+      `INSERT INTO labels (id, user_id, name, color, created_at)
+       VALUES (:id, :userId, :name, :color, :createdAt)`,
+      {
+        id,
+        userId: label.userId,
+        name: label.name,
+        color: label.color,
+        createdAt
+      }
+    );
+    
+    return {
+      id,
+      userId: label.userId,
+      name: label.name,
+      color: label.color,
+      createdAt
+    };
+  }
+
+  async updateLabel(id: string, label: Partial<InsertLabel>): Promise<Label | undefined> {
+    await this.initialize();
+    
+    const updates: string[] = [];
+    const params: any = { id };
+    
+    if (label.name !== undefined) {
+      updates.push('name = :name');
+      params.name = label.name;
+    }
+    if (label.color !== undefined) {
+      updates.push('color = :color');
+      params.color = label.color;
+    }
+    
+    if (updates.length === 0) {
+      const result = await executeQuery('SELECT * FROM labels WHERE id = :id', { id });
+      if (!result.rows || result.rows.length === 0) return undefined;
+      const row: any = result.rows[0];
+      return {
+        id: row.ID,
+        userId: row.USER_ID,
+        name: row.NAME,
+        color: row.COLOR,
+        createdAt: row.CREATED_AT
+      };
+    }
+    
+    await executeQuery(
+      `UPDATE labels SET ${updates.join(', ')} WHERE id = :id`,
+      params
+    );
+    
+    const result = await executeQuery('SELECT * FROM labels WHERE id = :id', { id });
+    if (!result.rows || result.rows.length === 0) return undefined;
+    
+    const row: any = result.rows[0];
+    return {
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      color: row.COLOR,
+      createdAt: row.CREATED_AT
+    };
+  }
+
+  async deleteLabel(id: string): Promise<boolean> {
+    await this.initialize();
+    const result = await executeQuery('DELETE FROM labels WHERE id = :id', { id });
+    return Boolean(result.rowsAffected && result.rowsAffected > 0);
+  }
+
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> {
+    await this.initialize();
+    await executeQuery(
+      'INSERT INTO card_labels (card_id, label_id) VALUES (:cardId, :labelId)',
+      { cardId, labelId }
+    );
+  }
+
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {
+    await this.initialize();
+    await executeQuery(
+      'DELETE FROM card_labels WHERE card_id = :cardId AND label_id = :labelId',
+      { cardId, labelId }
+    );
+  }
+
+  async getCardLabels(cardId: string): Promise<Label[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      `SELECT l.* FROM labels l
+       INNER JOIN card_labels cl ON l.id = cl.label_id
+       WHERE cl.card_id = :cardId
+       ORDER BY l.created_at ASC`,
+      { cardId }
+    );
+    
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      color: row.COLOR,
+      createdAt: row.CREATED_AT
+    }));
   }
   
   

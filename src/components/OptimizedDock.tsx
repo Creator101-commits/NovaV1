@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Wrench,
   CheckCircle,
+  ListTodo,
 } from 'lucide-react';
 
 interface DockItem {
@@ -72,6 +73,12 @@ const dockItems: DockItem[] = [
     label: 'Habits',
     path: '/habits',
     icon: CheckCircle,
+  },
+  {
+    id: 'todos',
+    label: 'Todos',
+    path: '/todos',
+    icon: ListTodo,
   },
   {
     id: 'ai-chat',
