@@ -54,6 +54,7 @@ import {
   LazyProfile,
   LazyHabits,
   LazyTodos,
+  LazyToDoList,
   LazySettings,
 } from "@/components/LazyComponents";
 
@@ -295,11 +296,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-      <Route path="/todos">
+      <Route path="/todo-list">
         <ProtectedRoute fallback={<Landing />}>
           <AppLayout>
-            <Suspense fallback={<PageLoading message="Loading Todos..." />}>
-              <LazyTodos />
+            <Suspense fallback={<PageLoading message="Loading To-Do Board..." />}>
+              <LazyToDoList />
             </Suspense>
           </AppLayout>
         </ProtectedRoute>

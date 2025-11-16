@@ -27,6 +27,7 @@ import {
   Wrench,
   CheckCircle,
   ListTodo,
+  Trello,
 } from 'lucide-react';
 
 interface DockItem {
@@ -75,10 +76,10 @@ const dockItems: DockItem[] = [
     icon: CheckCircle,
   },
   {
-    id: 'todos',
-    label: 'Todos',
-    path: '/todos',
-    icon: ListTodo,
+    id: 'todo-list',
+    label: 'To-Do Board',
+    path: '/todo-list',
+    icon: Trello,
   },
   {
     id: 'ai-chat',

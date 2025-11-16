@@ -29,19 +29,18 @@ CREATE TABLE todo_lists (
 -- Cards table (tasks)
 CREATE TABLE cards (
     id VARCHAR2(36) PRIMARY KEY,
-    list_id VARCHAR2(36),
-    board_id VARCHAR2(36),
     user_id VARCHAR2(255) NOT NULL,
+    list_id VARCHAR2(36),
     title VARCHAR2(200) NOT NULL,
     description CLOB,
+    position NUMBER DEFAULT 0,
     due_date TIMESTAMP,
     is_completed NUMBER(1) DEFAULT 0,
-    position NUMBER DEFAULT 0,
+    is_archived NUMBER(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_cards_list FOREIGN KEY (list_id) REFERENCES todo_lists(id) ON DELETE CASCADE,
-    CONSTRAINT fk_cards_board FOREIGN KEY (board_id) REFERENCES boards(id) ON DELETE CASCADE,
-    CONSTRAINT fk_cards_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_cards_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cards_list FOREIGN KEY (list_id) REFERENCES todo_lists(id) ON DELETE SET NULL
 );
 
 -- Checklists table (subtasks)
@@ -92,7 +91,6 @@ CREATE INDEX idx_boards_position ON boards(position);
 CREATE INDEX idx_lists_board ON todo_lists(board_id);
 CREATE INDEX idx_lists_position ON todo_lists(position);
 CREATE INDEX idx_cards_list ON cards(list_id);
-CREATE INDEX idx_cards_board ON cards(board_id);
 CREATE INDEX idx_cards_user ON cards(user_id);
 CREATE INDEX idx_cards_position ON cards(position);
 CREATE INDEX idx_checklists_card ON checklists(card_id);

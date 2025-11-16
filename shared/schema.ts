@@ -175,14 +175,14 @@ export const todoLists = pgTable("todo_lists", {
 
 export const cards = pgTable("cards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  listId: varchar("list_id").references(() => todoLists.id, { onDelete: "cascade" }),
-  boardId: varchar("board_id").references(() => boards.id, { onDelete: "cascade" }),
   userId: varchar("user_id").references(() => users.id).notNull(),
+  listId: varchar("list_id").references(() => todoLists.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   description: text("description"),
+  position: integer("position").default(0),
   dueDate: timestamp("due_date"),
   isCompleted: boolean("is_completed").default(false),
-  position: integer("position").default(0),
+  isArchived: boolean("is_archived").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

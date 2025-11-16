@@ -1886,14 +1886,14 @@ export class OracleStorage {
     
     return (result.rows || []).map((row: any) => ({
       id: row.ID,
-      listId: row.LIST_ID,
-      boardId: row.BOARD_ID,
       userId: row.USER_ID,
+      listId: row.LIST_ID,
       title: row.TITLE,
       description: row.DESCRIPTION,
+      position: row.POSITION,
       dueDate: row.DUE_DATE,
       isCompleted: Boolean(row.IS_COMPLETED),
-      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
       createdAt: row.CREATED_AT,
       updatedAt: row.UPDATED_AT
     }));
@@ -1908,14 +1908,14 @@ export class OracleStorage {
     
     return (result.rows || []).map((row: any) => ({
       id: row.ID,
-      listId: row.LIST_ID,
-      boardId: row.BOARD_ID,
       userId: row.USER_ID,
+      listId: row.LIST_ID,
       title: row.TITLE,
       description: row.DESCRIPTION,
+      position: row.POSITION,
       dueDate: row.DUE_DATE,
       isCompleted: Boolean(row.IS_COMPLETED),
-      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
       createdAt: row.CREATED_AT,
       updatedAt: row.UPDATED_AT
     }));
@@ -1930,14 +1930,14 @@ export class OracleStorage {
     
     return (result.rows || []).map((row: any) => ({
       id: row.ID,
-      listId: row.LIST_ID,
-      boardId: row.BOARD_ID,
       userId: row.USER_ID,
+      listId: row.LIST_ID,
       title: row.TITLE,
       description: row.DESCRIPTION,
+      position: row.POSITION,
       dueDate: row.DUE_DATE,
       isCompleted: Boolean(row.IS_COMPLETED),
-      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
       createdAt: row.CREATED_AT,
       updatedAt: row.UPDATED_AT
     }));
@@ -1952,14 +1952,14 @@ export class OracleStorage {
     const row: any = result.rows[0];
     return {
       id: row.ID,
-      listId: row.LIST_ID,
-      boardId: row.BOARD_ID,
       userId: row.USER_ID,
+      listId: row.LIST_ID,
       title: row.TITLE,
       description: row.DESCRIPTION,
+      position: row.POSITION,
       dueDate: row.DUE_DATE,
       isCompleted: Boolean(row.IS_COMPLETED),
-      position: row.POSITION,
+      isArchived: Boolean(row.IS_ARCHIVED),
       createdAt: row.CREATED_AT,
       updatedAt: row.UPDATED_AT
     };
@@ -1972,18 +1972,18 @@ export class OracleStorage {
     const updatedAt = new Date();
     
     await executeQuery(
-      `INSERT INTO cards (id, list_id, board_id, user_id, title, description, due_date, is_completed, position, created_at, updated_at)
-       VALUES (:id, :listId, :boardId, :userId, :title, :description, :dueDate, :isCompleted, :position, :createdAt, :updatedAt)`,
+      `INSERT INTO cards (id, user_id, list_id, title, description, position, due_date, is_completed, is_archived, created_at, updated_at)
+       VALUES (:id, :userId, :listId, :title, :description, :position, :dueDate, :isCompleted, :isArchived, :createdAt, :updatedAt)`,
       {
         id,
-        listId: card.listId || null,
-        boardId: card.boardId || null,
         userId: card.userId,
+        listId: card.listId || null,
         title: card.title,
         description: card.description || null,
+        position: card.position || 0,
         dueDate: card.dueDate || null,
         isCompleted: card.isCompleted ? 1 : 0,
-        position: card.position || 0,
+        isArchived: card.isArchived ? 1 : 0,
         createdAt,
         updatedAt
       }
@@ -1991,14 +1991,14 @@ export class OracleStorage {
     
     return {
       id,
-      listId: card.listId || null,
-      boardId: card.boardId || null,
       userId: card.userId,
+      listId: card.listId || null,
       title: card.title,
       description: card.description || null,
+      position: card.position || 0,
       dueDate: card.dueDate || null,
       isCompleted: card.isCompleted || false,
-      position: card.position || 0,
+      isArchived: card.isArchived || false,
       createdAt,
       updatedAt
     };
@@ -2014,10 +2014,6 @@ export class OracleStorage {
     if (card.listId !== undefined) {
       updates.push('list_id = :listId');
       params.listId = card.listId;
-    }
-    if (card.boardId !== undefined) {
-      updates.push('board_id = :boardId');
-      params.boardId = card.boardId;
     }
     if (card.title !== undefined) {
       updates.push('title = :title');

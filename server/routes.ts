@@ -1080,8 +1080,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/cards/:id/move", async (req, res) => {
     try {
-      const { listId, boardId, position } = req.body;
-      const updated = await optimizedStorage.updateCard(req.params.id, { listId, boardId, position });
+      const { listId, position } = req.body;
+      const updated = await optimizedStorage.updateCard(req.params.id, { listId, position });
       if (!updated) {
         return res.status(404).json({ message: "Card not found" });
       }
