@@ -48,6 +48,8 @@ import {
   StickyNote,
   Wand2,
   Loader2,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 
 export const Flashcards = () => {
@@ -87,6 +89,7 @@ export const Flashcards = () => {
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [studyDeckId, setStudyDeckId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("manage");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Get filtered flashcards based on study deck
   const filteredFlashcards = studyDeckId 
@@ -562,13 +565,6 @@ Return only the JSON array, no other text.`;
     nextCard();
   };
 
-  const getAccuracyRate = (card: Flashcard) => {
-    if (!card.reviewCount || card.reviewCount === 0) return 0;
-    // Since we don't track correct/incorrect separately, we'll use a simple heuristic
-    // This could be improved by adding correctCount/incorrectCount to the database schema
-    return 75; // Default accuracy rate
-  };
-
   const getDifficultyColor = (difficulty: string | null) => {
     switch (difficulty) {
       case "easy":
@@ -595,14 +591,6 @@ Return only the JSON array, no other text.`;
       isSubdeck,
       parentName: parentDeck?.name
     };
-  };
-
-  const overallStats = {
-    totalCards: filteredFlashcards.length,
-    totalReviews: filteredFlashcards.reduce((sum, card) => sum + (card.reviewCount || 0), 0),
-    averageAccuracy: filteredFlashcards.length > 0 
-      ? Math.round(filteredFlashcards.reduce((sum, card) => sum + getAccuracyRate(card), 0) / filteredFlashcards.length)
-      : 0,
   };
 
   if (hasError) {
@@ -736,7 +724,6 @@ Return only the JSON array, no other text.`;
             <TabsTrigger value="study">Study</TabsTrigger>
             <TabsTrigger value="manage">Manage Cards</TabsTrigger>
             <TabsTrigger value="ai">AI Flashcards</TabsTrigger>
-            <TabsTrigger value="stats">Statistics</TabsTrigger>
           </TabsList>
           
           <div className="flex items-center space-x-2">
@@ -832,7 +819,18 @@ Return only the JSON array, no other text.`;
         </div>
 
         <TabsContent value="study">
-          <div className="max-w-4xl mx-auto">
+          <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'max-w-4xl mx-auto'}`}>
+            {isFullscreen && (
+              <div className="absolute top-4 right-4 z-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsFullscreen(false)}
+                >
+                  <Minimize className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             {filteredFlashcards.length === 0 ? (
               <Card className="min-h-96">
                 <CardContent className="p-8 h-full flex flex-col items-center justify-center text-center">
@@ -878,7 +876,7 @@ Return only the JSON array, no other text.`;
                     </div>
                   </div>
                 )}
-                <Card className="min-h-96">
+                <Card className={`${isFullscreen ? 'h-screen' : 'min-h-96'}`}>
                   <CardContent className="p-8 h-full flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-2">
@@ -898,8 +896,19 @@ Return only the JSON array, no other text.`;
                           );
                         })()}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Card {currentCardIndex + 1} of {filteredFlashcards.length}
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          Card {currentCardIndex + 1} of {filteredFlashcards.length}
+                        </div>
+                        {!isFullscreen && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setIsFullscreen(true)}
+                          >
+                            <Maximize className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -1251,56 +1260,6 @@ Return only the JSON array, no other text.`;
                 </CardContent>
               </Card>
             )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="stats">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Overall Performance</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Total Cards</span>
-                    <span className="font-semibold">{overallStats.totalCards}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Reviews</span>
-                    <span className="font-semibold">{overallStats.totalReviews}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Average Accuracy</span>
-                    <span className="font-semibold">{overallStats.averageAccuracy}%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Difficulty Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {["easy", "medium", "hard"].map(difficulty => {
-                    const count = flashcards.filter(card => card.difficulty === difficulty).length;
-                    const percentage = flashcards.length > 0 ? (count / flashcards.length) * 100 : 0;
-                    
-                    return (
-                      <div key={difficulty} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="capitalize">{difficulty}</span>
-                          <span>{count} cards</span>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
       </Tabs>

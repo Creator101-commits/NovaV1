@@ -38,14 +38,14 @@ const DEFAULT_CUSTOMIZATION: ColorCustomization = {
 export const BACKGROUND_THEMES = {
   black: {
     name: "Dark",
-    background: "#000000",
+    background: "#191919",
     foreground: "#ffffff",
-    muted: "#0a0a0a",
+    muted: "#222222",
     mutedForeground: "#ffffff",
-    border: "#1a1a1a",
-    card: "#0a0a0a",
+    border: "#2a2a2a",
+    card: "#191919",
     cardForeground: "#ffffff",
-    popover: "#0a0a0a",
+    popover: "#191919",
     popoverForeground: "#ffffff",
   },
   white: {
@@ -122,14 +122,14 @@ export const BACKGROUND_THEMES = {
   },
   gray: {
     name: "Steel Gray",
-    background: "#000000",
+    background: "#191919",
     foreground: "#ffffff",
-    muted: "#111111",
+    muted: "#222222",
     mutedForeground: "#ffffff",
     border: "#333333",
-    card: "#111111",
+    card: "#222222",
     cardForeground: "#ffffff",
-    popover: "#111111",
+    popover: "#222222",
     popoverForeground: "#ffffff",
   },
 };

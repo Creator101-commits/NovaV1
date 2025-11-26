@@ -14,7 +14,6 @@ export const Sidebar: React.FC = () => {
     boards,
     activeBoard,
     setActiveBoard,
-    inboxCards,
     updateBoard
   } = useBoardContext();
   
@@ -33,11 +32,6 @@ export const Sidebar: React.FC = () => {
       b.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [boards, searchQuery]);
-
-  // Recent boards (last 5 accessed, could be enhanced with real tracking)
-  const recentBoards = useMemo(() => {
-    return boards.slice(0, 5);
-  }, [boards]);
 
   const handleBoardClick = (board: Board) => {
     setActiveBoard(board);
@@ -64,9 +58,6 @@ export const Sidebar: React.FC = () => {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex-1" />
-        <Badge variant="secondary" className="rotate-90">
-          {inboxCards.length}
-        </Badge>
       </motion.div>
     );
   }
@@ -100,26 +91,6 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <ScrollArea className="flex-1">
-        {/* Recent Boards */}
-        {recentBoards.length > 0 && (
-          <div className="p-4 border-b border-border">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">
-              Recent
-            </h3>
-            <div className="space-y-1">
-              {recentBoards.map((board) => (
-                <BoardItem
-                  key={board.id}
-                  board={board}
-                  isActive={activeBoard?.id === board.id}
-                  onClick={() => handleBoardClick(board)}
-                  onToggleFavorite={(e) => handleToggleFavorite(e, board)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* All Boards */}
         <div className="p-4">
           <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -146,25 +117,6 @@ export const Sidebar: React.FC = () => {
             <Plus className="h-4 w-4 mr-2" />
             Create New Board
           </Button>
-        </div>
-
-        {/* Inbox */}
-        <div className="p-4 border-t border-border">
-          <button
-            className="w-full flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors"
-            onClick={() => {
-              // Navigate to inbox view
-              setActiveBoard(null);
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="font-medium">Inbox</span>
-            </div>
-            {inboxCards.length > 0 && (
-              <Badge variant="secondary">{inboxCards.length}</Badge>
-            )}
-          </button>
         </div>
       </ScrollArea>
 

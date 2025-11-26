@@ -7,7 +7,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   scroll-behavior: auto; /* Let Lenis handle smooth scrolling */
-  background: #000000;
+  background: #191919;
   
   /* Hardware acceleration for buttery smooth scrolling */
   transform: translate3d(0, 0, 0);
@@ -27,7 +27,7 @@
 .scroll-stack-inner {
   position: relative;
   width: 100%;
-  background: #000000;
+  background: #191919;
 }
 
 /* Individual cards - Enhanced for Apple-like feel */
@@ -37,7 +37,7 @@
   max-width: 1200px;              /* Prevent cards from being too wide */
   margin: 0 auto;
   padding: 3rem 2.5rem;           
-  background: #000000;            
+  background: #191919;            
   color: #ffffff;
   border-radius: 1.25rem;          /* Apple-like corner radius */
   border: 1px solid rgba(255, 255, 255, 0.1);     /* Subtle border */
@@ -133,7 +133,7 @@
 .scroll-stack-end {
   height: 100vh;
   width: 100%;
-  background: #000000;
+  background: #191919;
 }
 
 /* Responsive adjustments */

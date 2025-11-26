@@ -4,6 +4,7 @@ import { useCalendar } from '@/contexts/CalendarContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SimpleTodoList } from '@/components/SimpleTodoList';
 import { 
   CalendarWidget,
   AssignmentsWidget,
@@ -307,9 +308,10 @@ export default function Dashboard() {
           </div>
 
           {/* Calendar */}
-          <div className="w-full">
-            <CalendarComponent />
-          </div>
+          <CalendarComponent />
+
+          {/* Quick Tasks */}
+          <SimpleTodoList />
         </div>
       </div>
     </div>

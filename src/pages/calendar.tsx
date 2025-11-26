@@ -21,26 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   ChevronLeft,
   ChevronRight,
   Plus,
   Calendar as CalendarIcon,
   Clock,
   MapPin,
-  Users,
-  Brain,
-  Zap,
-  Download,
-  Upload,
-  Link,
   RefreshCw
 } from "lucide-react";
 import { 
@@ -59,7 +45,6 @@ import {
 import { useCalendar, CalendarEvent } from "@/contexts/CalendarContext";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useSmartScheduling } from "@/hooks/useSmartScheduling";
-import { useCalendarIntegration } from "@/hooks/useCalendarIntegration";
 import { useGoogleCalendarSync } from "@/hooks/useGoogleCalendarSync";
 import { useGoogleClassroom } from "@/hooks/useGoogleClassroom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,7 +55,6 @@ export default function Calendar() {
   const { events, addEvent, getEventsForDate } = useCalendar();
   const { addActivity } = useActivity();
   const { generateOptimalSchedule, saveScheduleToCalendar } = useSmartScheduling();
-  const { connectGoogleCalendar, connectOutlookCalendar, getStoredIntegrations } = useCalendarIntegration();
   const {
     events: googleEvents,
     calendars: googleCalendars,
@@ -300,85 +284,6 @@ export default function Calendar() {
           <RefreshCw className={`h-3 w-3 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
           {isSyncing ? 'Syncing...' : 'Sync'}
         </Button>
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Link className="h-4 w-4 mr-2" />
-                Integrations
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Calendar Sync</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              
-              {/* Google Calendar Status */}
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    if (isGoogleConnected) {
-                      // If already connected, just sync data
-                      await syncCalendarData();
-                      toast({
-                        title: "Calendar Synced",
-                        description: `Found ${googleEvents.length} events from ${googleCalendars.length} calendars`,
-                      });
-                    } else {
-                      // Try to connect
-                      await connectGoogleCalendar();
-                    }
-                  } catch (error) {
-                    toast({
-                      title: "Sync Failed",
-                      description: "Could not sync Google Calendar. Please try signing in with Google first.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span>Google Calendar</span>
-                  <div className="flex items-center gap-2">
-                    {isGoogleConnected && (
-                      <Badge variant="secondary" className="text-xs">
-                        {googleEvents.length} events
-                      </Badge>
-                    )}
-                    <div className={`w-2 h-2 rounded-full ${
-                      isGoogleConnected ? 'bg-green-500' : 'bg-gray-400'
-                    }`} />
-                  </div>
-                </div>
-              </DropdownMenuItem>
-              
-              {/* Last Sync Info */}
-              {isGoogleConnected && lastSync && (
-                <DropdownMenuItem disabled>
-                  <span className="text-xs text-muted-foreground">
-                    Last sync: {format(lastSync, "MMM d, h:mm a")}
-                  </span>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await connectOutlookCalendar();
-                    toast({
-                      title: "Outlook Calendar Connected",
-                      description: "Successfully connected to Outlook Calendar!",
-                    });
-                  } catch (error) {
-                    toast({
-                      title: "Connection Failed",
-                      description: "Could not connect to Outlook Calendar.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                Outlook Calendar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
           <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gradient-bg">
@@ -386,53 +291,57 @@ export default function Calendar() {
                 Add Event
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Add New Event</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-6 pt-4">
                 <div>
-                  <Label htmlFor="title">Event Title</Label>
+                  <Label htmlFor="title" className="text-sm font-medium">Event Title</Label>
                   <Input
                     id="title"
                     placeholder="Enter event title"
                     value={newEvent.title}
                     onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                    className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description" className="text-sm font-medium">Description (Optional)</Label>
                   <Textarea
                     id="description"
                     placeholder="Enter event description"
                     value={newEvent.description}
                     onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                    className="mt-2 min-h-[80px]"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="startTime">Start Date & Time</Label>
+                    <Label htmlFor="startTime" className="text-sm font-medium">Start Date & Time</Label>
                     <DateTimePicker
                       date={newEvent.startTime}
                       onDateChange={(date) => setNewEvent({ ...newEvent, startTime: date })}
                       placeholder="Pick start date & time"
+                      className="mt-2"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="endTime">End Date & Time</Label>
+                    <Label htmlFor="endTime" className="text-sm font-medium">End Date & Time</Label>
                     <DateTimePicker
                       date={newEvent.endTime}
                       onDateChange={(date) => setNewEvent({ ...newEvent, endTime: date })}
                       placeholder="Pick end date & time"
                       disabled={!newEvent.startTime}
+                      className="mt-2"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="type">Event Type</Label>
+                    <Label htmlFor="type" className="text-sm font-medium">Event Type</Label>
                     <Select value={newEvent.type} onValueChange={(value: any) => setNewEvent({ ...newEvent, type: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -444,16 +353,17 @@ export default function Calendar() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="location">Location (Optional)</Label>
+                    <Label htmlFor="location" className="text-sm font-medium">Location (Optional)</Label>
                     <Input
                       id="location"
                       placeholder="Event location"
                       value={newEvent.location}
                       onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                      className="mt-2"
                     />
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-3 pt-4">
                   <Button variant="outline" onClick={() => setIsEventDialogOpen(false)}>
                     Cancel
                   </Button>

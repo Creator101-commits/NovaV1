@@ -5,7 +5,10 @@ import path from 'path';
 let oracleClientAvailable = false;
 try {
   const walletLocation = process.env.TNS_ADMIN || path.resolve(process.cwd(), 'server', 'oracle_wallet');
+  const libDir = process.env.OCI_LIB_DIR || process.env.DYLD_LIBRARY_PATH?.split(':')[0];
+  
   oracledb.initOracleClient({
+    libDir: libDir,
     configDir: walletLocation
   });
   oracleClientAvailable = true;

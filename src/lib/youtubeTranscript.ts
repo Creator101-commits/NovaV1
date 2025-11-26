@@ -1,5 +1,4 @@
 // src/lib/youtubeTranscript.ts
-import { YoutubeTranscript } from "youtube-transcript";
 
 function extractYouTubeId(input: string): string {
   // Supports full URLs, shorts, youtu.be links, and direct IDs
@@ -34,29 +33,56 @@ function extractYouTubeId(input: string): string {
   return input;
 }
 
-export async function getYouTubeTranscriptSafe(urlOrId: string): Promise<string> {
-  const id = extractYouTubeId(urlOrId);
+export async function getYouTubeTranscriptSafe(urlOrId: string, userId?: string): Promise<string> {
+  const videoId = extractYouTubeId(urlOrId);
+  console.log('🎬 Extracting transcript for video ID:', videoId);
+  
+  // Get userId from parameter or try localStorage as fallback
+  const authUserId = userId || (() => {
+    try {
+      const user = localStorage.getItem('user');
+      if (user) {
+        const parsed = JSON.parse(user);
+        return parsed.uid || '';
+      }
+    } catch {
+      // Ignore
+    }
+    return '';
+  })();
+
+  if (!authUserId) {
+    console.error('❌ No user ID available');
+    throw new Error('User authentication required');
+  }
+  
+  console.log('✅ User ID:', authUserId);
+  console.log('📡 Calling API:', '/api/youtube/transcript');
+  
   try {
-    const segments = await YoutubeTranscript.fetchTranscript(id);
-    // segments: [{ text: string; offset: number; duration: number }]
-    const text = segments.map((s: any) => s.text.trim()).join(" ").replace(/\s+/g, " ").trim();
-    if (!text) {
-      throw new Error("Empty transcript.");
+    const response = await fetch('/api/youtube/transcript', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': authUserId,
+      },
+      body: JSON.stringify({ videoId }),
+    });
+
+    console.log('📨 Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to fetch transcript' }));
+      console.error('❌ API error:', error);
+      throw new Error(error.message || 'Failed to fetch transcript');
     }
-    return text;
+
+    const data = await response.json();
+    console.log('✅ Transcript received:', data.length, 'characters');
+    return data.transcript;
   } catch (err: any) {
-    // Provide detailed error messages for different scenarios
-    if (err?.message?.includes("disabled")) {
-      throw new Error("This video has transcripts/captions disabled by the creator. Please try a different video or use the text input method instead.");
-    } else if (err?.message?.includes("not available")) {
-      throw new Error("No transcript is available for this video. This could be because the video doesn't have captions or they're in a language not supported by the transcript service.");
-    } else if (err?.message?.includes("private") || err?.message?.includes("unavailable")) {
-      throw new Error("This video is private, unlisted, or has been removed. Please check the URL and try again.");
-    } else if (err?.message?.includes("restricted")) {
-      throw new Error("This video has geographic or age restrictions that prevent transcript access.");
-    } else {
-      const reason = err?.message || "Unknown error";
-      throw new Error(`Unable to fetch transcript: ${reason}. You can try using the text input method instead or check if the video has captions enabled.`);
-    }
+    console.error('💥 YouTube transcript fetch error:', err);
+    // Re-throw with user-friendly message
+    throw new Error(err.message || 'Unable to fetch transcript. Please check the video URL and try again.');
   }
 }

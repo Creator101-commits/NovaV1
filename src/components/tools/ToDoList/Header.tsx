@@ -53,7 +53,7 @@ export const Header: React.FC = () => {
       <div className="h-16 border-b border-border flex items-center justify-center px-6">
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            Nova &gt; To-Do List &gt; Inbox
+            Select a board to get started
           </div>
         </div>
       </div>
@@ -62,20 +62,15 @@ export const Header: React.FC = () => {
 
   return (
     <div className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm">
-      {/* Left: Board name and breadcrumb */}
+      {/* Left: Board name */}
       <div className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <button
-            onClick={() => openBoardDialog()}
-            className="text-xl font-semibold hover:text-primary transition-colors flex items-center gap-2"
-          >
-            {activeBoard.title}
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          <div className="text-xs text-muted-foreground">
-            Nova &gt; To-Do List &gt; {activeBoard.title}
-          </div>
-        </div>
+        <button
+          onClick={() => openBoardDialog()}
+          className="text-xl font-semibold hover:text-primary transition-colors flex items-center gap-2"
+        >
+          {activeBoard.title}
+          <ChevronDown className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Right: Actions */}

@@ -14,6 +14,7 @@ import {
   insertJournalEntrySchema,
   insertPomodoroSessionSchema, 
   insertAiSummarySchema,
+  insertHabitSchema,
   insertNoteSchema,
   insertBoardSchema,
   insertTodoListSchema,
@@ -22,6 +23,28 @@ import {
   insertLabelSchema,
   insertCardLabelSchema
 } from "@shared/schema";
+
+// Helper to create default lists for a new board
+async function createDefaultListsForBoard(boardId: string) {
+  const defaultTitles = ["Urgent", "Today", "This Week", "Later"];
+  console.log(`🔧 Creating ${defaultTitles.length} default lists for board ${boardId}`);
+
+  for (let index = 0; index < defaultTitles.length; index++) {
+    const title = defaultTitles[index];
+    console.log(`  → Creating list "${title}" at position ${index}`);
+
+    const listData = insertTodoListSchema.parse({
+      boardId,
+      title,
+      position: index,
+      isArchived: false,
+    });
+
+    const created = await optimizedStorage.createList(listData as any);
+    console.log(`  ✓ Created list "${title}" with ID: ${created.id}`);
+  }
+  console.log(`✅ Finished creating default lists for board ${boardId}`);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract user ID from request
@@ -638,6 +661,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Habit routes
+  app.get("/api/habits", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const habits = await optimizedStorage.getHabitsByUserId(userId);
+      res.json(habits);
+    } catch (error) {
+      console.error('Error fetching habits:', error);
+      res.status(500).json({ message: "Failed to fetch habits" });
+    }
+  });
+
+  app.post("/api/habits", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const habitData = insertHabitSchema.parse({ ...req.body, userId });
+      const habit = await optimizedStorage.createHabit(habitData);
+      res.status(201).json(habit);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid habit data", errors: error.errors });
+      }
+      console.error('Error creating habit:', error);
+      res.status(500).json({ message: "Failed to create habit" });
+    }
+  });
+
+  app.put("/api/habits/:id", async (req, res) => {
+    try {
+      const habitData = insertHabitSchema.partial().parse(req.body);
+      const habit = await optimizedStorage.updateHabit(req.params.id, habitData);
+      if (!habit) {
+        return res.status(404).json({ message: "Habit not found" });
+      }
+      res.json(habit);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid habit data", errors: error.errors });
+      }
+      console.error('Error updating habit:', error);
+      res.status(500).json({ message: "Failed to update habit" });
+    }
+  });
+
+  app.delete("/api/habits/:id", async (req, res) => {
+    try {
+      const deleted = await optimizedStorage.deleteHabit(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Habit not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      res.status(500).json({ message: "Failed to delete habit" });
+    }
+  });
+
   // AI summary routes
   app.get("/api/users/:userId/ai-summaries", async (req, res) => {
     try {
@@ -772,20 +852,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // YouTube transcript route
-  app.post("/api/youtube-transcript", async (req, res) => {
+  app.post("/api/youtube/transcript", async (req, res) => {
     try {
-      const { videoId } = req.body;
-      if (!videoId) {
-        return res.status(400).json({ message: "Video ID is required" });
+      console.log('📺 YouTube transcript request received');
+      const userId = req.header('x-user-id');
+      if (!userId) {
+        console.log('❌ No user ID provided');
+        return res.status(401).json({ message: 'User authentication required' });
       }
 
-      // In a real implementation, you would use a YouTube transcript API
-      // For now, return a placeholder response
-      const transcript = `This is a placeholder transcript for video ${videoId}. In a real implementation, this would fetch the actual transcript using a service like youtube-transcript-api or similar.`;
+      const schema = z.object({
+        videoId: z.string().min(1, "Video ID is required"),
+        url: z.string().optional(),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        console.log('❌ Validation failed:', parsed.error.errors);
+        return res.status(400).json({ 
+          message: 'Invalid input',
+          errors: parsed.error.errors 
+        });
+      }
+
+      const { videoId } = parsed.data;
+      console.log(`🎬 Fetching transcript for video: ${videoId}`);
+
+      // Dynamically import youtube-transcript
+      const { YoutubeTranscript } = await import('youtube-transcript');
       
-      res.json({ transcript });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch YouTube transcript" });
+      const segments = await YoutubeTranscript.fetchTranscript(videoId);
+      const fullText = segments.map((s: any) => s.text.trim()).join(' ').replace(/\s+/g, ' ').trim();
+
+      if (!fullText) {
+        console.log('❌ Empty transcript received');
+        return res.status(404).json({ 
+          message: 'No transcript found for this video. Video may not have captions enabled.' 
+        });
+      }
+
+      console.log(`✅ Transcript fetched successfully: ${fullText.length} characters`);
+      res.json({ 
+        videoId,
+        transcript: fullText,
+        length: fullText.length 
+      });
+    } catch (error: any) {
+      console.error('❌ YouTube transcript error:', error.message || error);
+      
+      // Provide user-friendly error messages
+      let message = 'Failed to fetch YouTube transcript';
+      
+      if (error?.message?.includes('disabled')) {
+        message = 'This video has transcripts/captions disabled by the creator.';
+      } else if (error?.message?.includes('not available')) {
+        message = 'No transcript is available for this video.';
+      } else if (error?.message?.includes('private') || error?.message?.includes('unavailable')) {
+        message = 'This video is private, unlisted, or has been removed.';
+      } else if (error?.message?.includes('restricted')) {
+        message = 'This video has geographic or age restrictions.';
+      } else {
+        message = error?.message || message;
+      }
+      
+      res.status(500).json({ message });
     }
   });
 
@@ -928,6 +1058,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const boardData = insertBoardSchema.parse({ ...req.body, userId });
       const newBoard = await optimizedStorage.createBoard(boardData);
+      console.log(`📋 Board created: ${newBoard.id}, now creating default lists...`);
+
+      try {
+        await createDefaultListsForBoard(newBoard.id);
+      } catch (listError) {
+        console.error("❌ Error creating default lists for board", newBoard.id, listError);
+      }
+
       res.status(201).json(newBoard);
     } catch (error: any) {
       console.error('Error creating board:', error);

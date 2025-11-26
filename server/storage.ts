@@ -1,5 +1,5 @@
-import { 
-  type User, 
+import {
+  type User,
   type InsertUser,
   type Class,
   type InsertClass,
@@ -19,6 +19,8 @@ import {
   type InsertPomodoroSession,
   type AiSummary,
   type InsertAiSummary,
+  type Habit,
+  type InsertHabit,
   type Note,
   type InsertNote,
   type Board,
@@ -41,6 +43,7 @@ import {
   journalEntries,
   pomodoroSessions,
   aiSummaries,
+  habits,
   notes,
   boards,
   todoLists,
@@ -69,56 +72,62 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
-  
+
   // Class methods
   getClassesByUserId(userId: string): Promise<Class[]>;
   createClass(classData: InsertClass): Promise<Class>;
   deleteClass(id: string): Promise<boolean>;
-  
+
   // Assignment methods
   getAssignmentsByUserId(userId: string): Promise<Assignment[]>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   updateAssignment(id: string, assignment: Partial<InsertAssignment>): Promise<Assignment | undefined>;
   deleteAssignment(id: string): Promise<boolean>;
-  
+
   // Flashcard methods
   getFlashcardsByUserId(userId: string): Promise<Flashcard[]>;
   createFlashcard(flashcard: InsertFlashcard): Promise<Flashcard>;
   updateFlashcard(id: string, flashcard: Partial<InsertFlashcard>): Promise<Flashcard | undefined>;
   deleteFlashcard(id: string): Promise<boolean>;
-  
+
   // Flashcard Deck methods
   getDecksByUserId(userId: string): Promise<FlashcardDeck[]>;
   createDeck(deck: InsertFlashcardDeck): Promise<FlashcardDeck>;
   updateDeck(id: string, deck: Partial<InsertFlashcardDeck>): Promise<FlashcardDeck | undefined>;
   deleteDeck(id: string): Promise<boolean>;
   getFlashcardsByDeck(deckId: string): Promise<Flashcard[]>;
-  
+
   // Flashcard Review methods
   recordReview(review: InsertFlashcardReview): Promise<FlashcardReview>;
   getDailyStats(userId: string, days?: number): Promise<any[]>;
   getDeckStats(userId: string): Promise<any[]>;
   getRetentionCurve(userId: string, deckId?: string): Promise<any[]>;
-  
+
   // Mood entry methods
   getMoodEntriesByUserId(userId: string): Promise<MoodEntry[]>;
   createMoodEntry(entry: InsertMoodEntry): Promise<MoodEntry>;
-  
+
   // Journal entry methods
   getJournalEntriesByUserId(userId: string): Promise<JournalEntry[]>;
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
   updateJournalEntry(id: string, entry: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined>;
   deleteJournalEntry(id: string): Promise<boolean>;
-  
+
   // Pomodoro session methods
   getPomodoroSessionsByUserId(userId: string): Promise<PomodoroSession[]>;
   createPomodoroSession(session: InsertPomodoroSession): Promise<PomodoroSession>;
-  
+
+  // Habit methods
+  getHabitsByUserId(userId: string): Promise<Habit[]>;
+  createHabit(habit: InsertHabit): Promise<Habit>;
+  updateHabit(id: string, habit: Partial<InsertHabit>): Promise<Habit | undefined>;
+  deleteHabit(id: string): Promise<boolean>;
+
   // AI summary methods
   getAiSummariesByUserId(userId: string): Promise<AiSummary[]>;
   createAiSummary(summary: InsertAiSummary): Promise<AiSummary>;
   deleteAiSummary(id: string): Promise<boolean>;
-  
+
 
   // Notes methods
   getNotesByUserId(userId: string): Promise<Note[]>;
@@ -126,20 +135,20 @@ export interface IStorage {
   createNote(note: InsertNote): Promise<Note>;
   updateNote(id: string, note: Partial<InsertNote>): Promise<Note | undefined>;
   deleteNote(id: string): Promise<boolean>;
-  
+
   // Todo Board methods
   getBoardsByUserId(userId: string): Promise<Board[]>;
   getBoard(id: string): Promise<Board | undefined>;
   createBoard(board: InsertBoard): Promise<Board>;
   updateBoard(id: string, board: Partial<InsertBoard>): Promise<Board | undefined>;
   deleteBoard(id: string): Promise<boolean>;
-  
+
   // Todo List methods
   getListsByBoardId(boardId: string): Promise<TodoList[]>;
   createList(list: InsertTodoList): Promise<TodoList>;
   updateList(id: string, list: Partial<InsertTodoList>): Promise<TodoList | undefined>;
   deleteList(id: string): Promise<boolean>;
-  
+
   // Card methods
   getCardsByUserId(userId: string): Promise<Card[]>;
   getCardsByListId(listId: string): Promise<Card[]>;
@@ -148,13 +157,13 @@ export interface IStorage {
   createCard(card: InsertCard): Promise<Card>;
   updateCard(id: string, card: Partial<InsertCard>): Promise<Card | undefined>;
   deleteCard(id: string): Promise<boolean>;
-  
+
   // Checklist methods
   getChecklistsByCardId(cardId: string): Promise<Checklist[]>;
   createChecklist(checklist: InsertChecklist): Promise<Checklist>;
   updateChecklist(id: string, checklist: Partial<InsertChecklist>): Promise<Checklist | undefined>;
   deleteChecklist(id: string): Promise<boolean>;
-  
+
   // Label methods
   getLabelsByUserId(userId: string): Promise<Label[]>;
   createLabel(label: InsertLabel): Promise<Label>;
@@ -163,7 +172,7 @@ export interface IStorage {
   addLabelToCard(cardId: string, labelId: string): Promise<void>;
   removeLabelFromCard(cardId: string, labelId: string): Promise<void>;
   getCardLabels(cardId: string): Promise<Label[]>;
-  
+
   // Analytics methods
   getUserAnalytics(userId: string): Promise<any>;
 }
@@ -204,8 +213,8 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
+    const user: User = {
+      ...insertUser,
       id,
       firstName: insertUser.firstName ?? null,
       lastName: insertUser.lastName ?? null,
@@ -225,10 +234,10 @@ export class MemStorage implements IStorage {
     const user = this.users.get(id);
     if (!user) return undefined;
 
-    const updatedUser: User = { 
-      ...user, 
-      ...userData, 
-      updatedAt: new Date() 
+    const updatedUser: User = {
+      ...user,
+      ...userData,
+      updatedAt: new Date()
     };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -241,9 +250,9 @@ export class MemStorage implements IStorage {
 
   async createClass(classData: InsertClass): Promise<Class> {
     const id = randomUUID();
-    const newClass: Class = { 
-      ...classData, 
-      id, 
+    const newClass: Class = {
+      ...classData,
+      id,
       section: classData.section ?? null,
       color: classData.color ?? null,
       googleClassroomId: classData.googleClassroomId ?? null,
@@ -252,7 +261,7 @@ export class MemStorage implements IStorage {
       teacherEmail: classData.teacherEmail ?? null,
       source: classData.source ?? null,
       syncStatus: classData.syncStatus ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.classes.set(id, newClass);
     return newClass;
@@ -269,9 +278,9 @@ export class MemStorage implements IStorage {
 
   async createAssignment(assignmentData: InsertAssignment): Promise<Assignment> {
     const id = randomUUID();
-    const assignment: Assignment = { 
-      ...assignmentData, 
-      id, 
+    const assignment: Assignment = {
+      ...assignmentData,
+      id,
       googleClassroomId: assignmentData.googleClassroomId ?? null,
       googleCalendarId: assignmentData.googleCalendarId ?? null,
       description: assignmentData.description ?? null,
@@ -283,7 +292,7 @@ export class MemStorage implements IStorage {
       completedAt: assignmentData.completedAt ?? null,
       source: assignmentData.source ?? null,
       syncStatus: assignmentData.syncStatus ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.assignments.set(id, assignment);
     return assignment;
@@ -293,9 +302,9 @@ export class MemStorage implements IStorage {
     const assignment = this.assignments.get(id);
     if (!assignment) return undefined;
 
-    const updatedAssignment: Assignment = { 
-      ...assignment, 
-      ...assignmentData 
+    const updatedAssignment: Assignment = {
+      ...assignment,
+      ...assignmentData
     };
     this.assignments.set(id, updatedAssignment);
     return updatedAssignment;
@@ -313,9 +322,9 @@ export class MemStorage implements IStorage {
   async createFlashcard(flashcardData: InsertFlashcard): Promise<Flashcard> {
     const id = randomUUID();
     const now = new Date();
-    const flashcard: Flashcard = { 
-      ...flashcardData, 
-      id, 
+    const flashcard: Flashcard = {
+      ...flashcardData,
+      id,
       classId: flashcardData.classId ?? null,
       deckId: flashcardData.deckId ?? null,
       cardType: flashcardData.cardType ?? 'basic',
@@ -340,8 +349,8 @@ export class MemStorage implements IStorage {
     const flashcard = this.flashcards.get(id);
     if (!flashcard) return undefined;
 
-    const updatedFlashcard: Flashcard = { 
-      ...flashcard, 
+    const updatedFlashcard: Flashcard = {
+      ...flashcard,
       ...flashcardData,
       updatedAt: new Date()
     };
@@ -360,12 +369,12 @@ export class MemStorage implements IStorage {
 
   async createMoodEntry(entryData: InsertMoodEntry): Promise<MoodEntry> {
     const id = randomUUID();
-    const entry: MoodEntry = { 
-      ...entryData, 
-      id, 
+    const entry: MoodEntry = {
+      ...entryData,
+      id,
       notes: entryData.notes ?? null,
       date: entryData.date ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.moodEntries.set(id, entry);
     return entry;
@@ -378,11 +387,11 @@ export class MemStorage implements IStorage {
 
   async createJournalEntry(entryData: InsertJournalEntry): Promise<JournalEntry> {
     const id = randomUUID();
-    const entry: JournalEntry = { 
-      ...entryData, 
-      id, 
+    const entry: JournalEntry = {
+      ...entryData,
+      id,
       date: entryData.date ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.journalEntries.set(id, entry);
     return entry;
@@ -392,9 +401,9 @@ export class MemStorage implements IStorage {
     const entry = this.journalEntries.get(id);
     if (!entry) return undefined;
 
-    const updatedEntry: JournalEntry = { 
-      ...entry, 
-      ...entryData 
+    const updatedEntry: JournalEntry = {
+      ...entry,
+      ...entryData
     };
     this.journalEntries.set(id, updatedEntry);
     return updatedEntry;
@@ -411,8 +420,8 @@ export class MemStorage implements IStorage {
 
   async createPomodoroSession(sessionData: InsertPomodoroSession): Promise<PomodoroSession> {
     const id = randomUUID();
-    const session: PomodoroSession = { 
-      ...sessionData, 
+    const session: PomodoroSession = {
+      ...sessionData,
       id,
       type: sessionData.type ?? null,
       completedAt: sessionData.completedAt ?? null
@@ -428,13 +437,13 @@ export class MemStorage implements IStorage {
 
   async createAiSummary(summaryData: InsertAiSummary): Promise<AiSummary> {
     const id = randomUUID();
-    const summary: AiSummary = { 
-      ...summaryData, 
-      id, 
+    const summary: AiSummary = {
+      ...summaryData,
+      id,
       summaryType: summaryData.summaryType ?? null,
       originalContent: summaryData.originalContent ?? null,
       fileType: summaryData.fileType ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.aiSummaries.set(id, summary);
     return summary;
@@ -456,7 +465,7 @@ export class MemStorage implements IStorage {
 
   async createNote(noteData: InsertNote): Promise<Note> {
     const id = randomUUID();
-    const note: Note = { 
+    const note: Note = {
       id,
       userId: noteData.userId,
       classId: noteData.classId || null,
@@ -477,8 +486,8 @@ export class MemStorage implements IStorage {
     const note = this.notes.get(id);
     if (!note) return undefined;
 
-    const updatedNote: Note = { 
-      ...note, 
+    const updatedNote: Note = {
+      ...note,
       ...noteData,
       classId: noteData.classId !== undefined ? (noteData.classId || null) : note.classId,
       category: noteData.category !== undefined ? (noteData.category || null) : note.category,
@@ -504,8 +513,8 @@ export class MemStorage implements IStorage {
 
     const completedAssignments = assignments.filter(a => a.status === "completed");
     const totalPomodoroMinutes = pomodoroSessions.reduce((sum, session) => sum + session.duration, 0);
-    const avgMood = moodEntries.length > 0 
-      ? moodEntries.reduce((sum, entry) => sum + entry.mood, 0) / moodEntries.length 
+    const avgMood = moodEntries.length > 0
+      ? moodEntries.reduce((sum, entry) => sum + entry.mood, 0) / moodEntries.length
       : 0;
 
     return {
@@ -583,8 +592,8 @@ export class MemStorage implements IStorage {
   async createLabel(label: any): Promise<any> { throw new Error('Todo boards not available in MemStorage'); }
   async updateLabel(id: string, label: any): Promise<any | undefined> { return undefined; }
   async deleteLabel(id: string): Promise<boolean> { return false; }
-  async addLabelToCard(cardId: string, labelId: string): Promise<void> {}
-  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {}
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> { }
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> { }
   async getCardLabels(cardId: string): Promise<any[]> { return []; }
 }
 
@@ -767,8 +776,8 @@ export class DatabaseStorage implements IStorage {
 
     const completedAssignments = userAssignments.filter(a => a.status === "completed");
     const totalPomodoroMinutes = userPomodoroSessions.reduce((sum: number, session) => sum + session.duration, 0);
-    const avgMood = userMoodEntries.length > 0 
-      ? userMoodEntries.reduce((sum: number, entry) => sum + entry.mood, 0) / userMoodEntries.length 
+    const avgMood = userMoodEntries.length > 0
+      ? userMoodEntries.reduce((sum: number, entry) => sum + entry.mood, 0) / userMoodEntries.length
       : 0;
 
     return {
@@ -846,8 +855,8 @@ export class DatabaseStorage implements IStorage {
   async createLabel(label: any): Promise<any> { throw new Error('Todo boards not available in DatabaseStorage'); }
   async updateLabel(id: string, label: any): Promise<any | undefined> { return undefined; }
   async deleteLabel(id: string): Promise<boolean> { return false; }
-  async addLabelToCard(cardId: string, labelId: string): Promise<void> {}
-  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {}
+  async addLabelToCard(cardId: string, labelId: string): Promise<void> { }
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> { }
   async getCardLabels(cardId: string): Promise<any[]> { return []; }
 }
 

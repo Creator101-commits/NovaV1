@@ -21,6 +21,8 @@ import type {
   InsertPomodoroSession,
   AiSummary,
   InsertAiSummary,
+  Habit,
+  InsertHabit,
   Note,
   InsertNote,
   Board,
@@ -1562,6 +1564,143 @@ export class OracleStorage {
       type: session.type || 'work',
       completedAt
     };
+  }
+  
+  // Habit methods
+  async getHabitsByUserId(userId: string): Promise<Habit[]> {
+    await this.initialize();
+    const result = await executeQuery(
+      'SELECT * FROM habits WHERE user_id = :userId ORDER BY created_at DESC',
+      { userId }
+    );
+
+    return (result.rows || []).map((row: any) => ({
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      description: row.DESCRIPTION,
+      category: row.CATEGORY,
+      frequency: row.FREQUENCY,
+      targetCount: row.TARGET_COUNT,
+      color: row.COLOR,
+      icon: row.ICON,
+      streak: row.STREAK,
+      completions: row.COMPLETIONS,
+      createdAt: row.CREATED_AT,
+      isActive: row.IS_ACTIVE === 1 || row.IS_ACTIVE === true
+    }));
+  }
+
+  async createHabit(habit: InsertHabit): Promise<Habit> {
+    await this.initialize();
+    const id = randomUUID();
+    const createdAt = new Date();
+
+    await executeQuery(
+      `INSERT INTO habits (id, user_id, name, description, category, frequency, target_count, color, icon, streak, completions, created_at, is_active)
+       VALUES (:id, :userId, :name, :description, :category, :frequency, :targetCount, :color, :icon, :streak, :completions, :createdAt, :isActive)`,
+      {
+        id,
+        userId: habit.userId,
+        name: habit.name,
+        description: habit.description || null,
+        category: habit.category || null,
+        frequency: habit.frequency || 'daily',
+        targetCount: habit.targetCount || 1,
+        color: habit.color || null,
+        icon: habit.icon || null,
+        streak: habit.streak || 0,
+        completions: habit.completions ? JSON.stringify(habit.completions) : '{}',
+        createdAt,
+        isActive: habit.isActive === false ? 0 : 1,
+      }
+    );
+
+    return {
+      id,
+      userId: habit.userId,
+      name: habit.name,
+      description: habit.description || null,
+      category: habit.category || null,
+      frequency: habit.frequency || 'daily',
+      targetCount: habit.targetCount || 1,
+      color: habit.color || null,
+      icon: habit.icon || null,
+      streak: habit.streak || 0,
+      completions: habit.completions || {},
+      createdAt,
+      isActive: habit.isActive !== false,
+    };
+  }
+
+  async updateHabit(id: string, habit: Partial<InsertHabit>): Promise<Habit | undefined> {
+    await this.initialize();
+
+    const setParts: string[] = [];
+    const params: any = { id };
+
+    if (habit.name !== undefined) { setParts.push('name = :name'); params.name = habit.name; }
+    if (habit.description !== undefined) { setParts.push('description = :description'); params.description = habit.description; }
+    if (habit.category !== undefined) { setParts.push('category = :category'); params.category = habit.category; }
+    if (habit.frequency !== undefined) { setParts.push('frequency = :frequency'); params.frequency = habit.frequency; }
+    if (habit.targetCount !== undefined) { setParts.push('target_count = :targetCount'); params.targetCount = habit.targetCount; }
+    if (habit.color !== undefined) { setParts.push('color = :color'); params.color = habit.color; }
+    if (habit.icon !== undefined) { setParts.push('icon = :icon'); params.icon = habit.icon; }
+    if (habit.streak !== undefined) { setParts.push('streak = :streak'); params.streak = habit.streak; }
+    if (habit.completions !== undefined) { setParts.push('completions = :completions'); params.completions = JSON.stringify(habit.completions); }
+    if (habit.isActive !== undefined) { setParts.push('is_active = :isActive'); params.isActive = habit.isActive ? 1 : 0; }
+
+    if (setParts.length === 0) {
+      const existing = await executeQuery('SELECT * FROM habits WHERE id = :id', { id });
+      if (!existing.rows || existing.rows.length === 0) return undefined;
+      const row: any = existing.rows[0];
+      return {
+        id: row.ID,
+        userId: row.USER_ID,
+        name: row.NAME,
+        description: row.DESCRIPTION,
+        category: row.CATEGORY,
+        frequency: row.FREQUENCY,
+        targetCount: row.TARGET_COUNT,
+        color: row.COLOR,
+        icon: row.ICON,
+        streak: row.STREAK,
+        completions: row.COMPRETIONS,
+        createdAt: row.CREATED_AT,
+        isActive: row.IS_ACTIVE === 1 || row.IS_ACTIVE === true,
+      };
+    }
+
+    await executeQuery(
+      `UPDATE habits SET ${setParts.join(', ')} WHERE id = :id`,
+      params
+    );
+
+    const result = await executeQuery('SELECT * FROM habits WHERE id = :id', { id });
+    if (!result.rows || result.rows.length === 0) return undefined;
+    const row: any = result.rows[0];
+
+    return {
+      id: row.ID,
+      userId: row.USER_ID,
+      name: row.NAME,
+      description: row.DESCRIPTION,
+      category: row.category,
+      frequency: row.FREQUENCY,
+      targetCount: row.TARGET_COUNT,
+      color: row.COLOR,
+      icon: row.ICON,
+      streak: row.STREAK,
+      completions: row.COMPLETIONS,
+      createdAt: row.CREATED_AT,
+      isActive: row.IS_ACTIVE === 1 || row.IS_ACTIVE === true,
+    };
+  }
+
+  async deleteHabit(id: string): Promise<boolean> {
+    await this.initialize();
+    const result = await executeQuery('DELETE FROM habits WHERE id = :id', { id });
+    return Boolean(result.rowsAffected && result.rowsAffected > 0);
   }
   
   // AI Summary methods

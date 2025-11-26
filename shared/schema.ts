@@ -136,6 +136,22 @@ export const aiSummaries = pgTable("ai_summaries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const habits = pgTable("habits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"),
+  frequency: text("frequency").default("daily"),
+  targetCount: integer("target_count").default(1),
+  color: text("color"),
+  icon: text("icon"),
+  streak: integer("streak").default(0),
+  completions: jsonb("completions").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+});
+
 
 export const notes = pgTable("notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -230,6 +246,7 @@ export const insertMoodEntrySchema = createInsertSchema(moodEntries).omit({ id: 
 export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({ id: true, createdAt: true });
 export const insertPomodoroSessionSchema = createInsertSchema(pomodoroSessions).omit({ id: true });
 export const insertAiSummarySchema = createInsertSchema(aiSummaries).omit({ id: true, createdAt: true });
+export const insertHabitSchema = createInsertSchema(habits).omit({ id: true, createdAt: true });
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertBoardSchema = createInsertSchema(boards).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTodoListSchema = createInsertSchema(todoLists).omit({ id: true, createdAt: true });
@@ -260,6 +277,8 @@ export type PomodoroSession = typeof pomodoroSessions.$inferSelect;
 export type InsertPomodoroSession = z.infer<typeof insertPomodoroSessionSchema>;
 export type AiSummary = typeof aiSummaries.$inferSelect;
 export type InsertAiSummary = z.infer<typeof insertAiSummarySchema>;
+export type Habit = typeof habits.$inferSelect;
+export type InsertHabit = z.infer<typeof insertHabitSchema>;
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 export type Board = typeof boards.$inferSelect;

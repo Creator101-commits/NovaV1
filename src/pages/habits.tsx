@@ -93,23 +93,47 @@ export default function HabitTracker() {
     icon: HABIT_ICONS[0]
   });
 
-  // Load habits from localStorage
+  // Load habits from backend
   useEffect(() => {
-    const stored = localStorage.getItem(`habits_${user?.uid}`);
-    if (stored) {
+    const load = async () => {
+      if (!user) return;
       try {
-        setHabits(JSON.parse(stored));
-      } catch (error) {
-        console.error('Error loading habits:', error);
-      }
-    }
-  }, [user]);
+        const res = await fetch("/api/habits", {
+          headers: {
+            "x-user-id": user.uid,
+          },
+        });
+        if (!res.ok) throw new Error("Failed to load habits");
+        const data = await res.json();
 
-  // Save habits to localStorage
-  const saveHabits = (updatedHabits: Habit[]) => {
-    setHabits(updatedHabits);
-    localStorage.setItem(`habits_${user?.uid}`, JSON.stringify(updatedHabits));
-  };
+        const normalized: Habit[] = data.map((h: any) => ({
+          id: h.id,
+          name: h.name,
+          description: h.description || "",
+          category: h.category || "Study",
+          frequency: (h.frequency || "daily") as Habit["frequency"],
+          targetCount: h.targetCount || 1,
+          color: h.color || HABIT_COLORS[0],
+          icon: h.icon || HABIT_ICONS[0],
+          streak: h.streak || 0,
+          completions: h.completions || {},
+          createdAt: h.createdAt || new Date().toISOString(),
+          isActive: h.isActive !== false,
+        }));
+
+        setHabits(normalized);
+      } catch (error) {
+        console.error("Error loading habits:", error);
+        toast({
+          title: "Error",
+          description: "Could not load habits from server.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    load();
+  }, [user, toast]);
 
   const createHabit = () => {
     if (!newHabit.name.trim()) {
@@ -121,16 +145,40 @@ export default function HabitTracker() {
       return;
     }
 
-    const habit: Habit = {
-      id: Date.now().toString(),
-      ...newHabit,
-      streak: 0,
-      completions: {},
-      createdAt: new Date().toISOString(),
-      isActive: true
+    const create = async () => {
+      if (!user) return;
+      try {
+        const res = await fetch("/api/habits", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.uid,
+          },
+          body: JSON.stringify({
+            name: newHabit.name,
+            description: newHabit.description || null,
+            category: newHabit.category,
+            frequency: newHabit.frequency,
+            targetCount: newHabit.targetCount,
+            color: newHabit.color,
+            icon: newHabit.icon,
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to create habit");
+        const created: Habit = await res.json();
+        setHabits((prev) => [...prev, created]);
+      } catch (error) {
+        console.error("Error creating habit:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create habit.",
+          variant: "destructive",
+        });
+        return;
+      }
     };
 
-    saveHabits([...habits, habit]);
+    void create();
     setNewHabit({
       name: '',
       description: '',
@@ -144,7 +192,7 @@ export default function HabitTracker() {
 
     toast({
       title: "Habit Created",
-      description: `"${habit.name}" has been added to your habits!`
+      description: "Your new habit has been added to your habits!"
     });
   };
 
@@ -168,28 +216,62 @@ export default function HabitTracker() {
           }
         }
 
-        return {
+        const updatedHabit: Habit = {
           ...habit,
           completions,
           streak: newStreak
         };
+
+        // Persist to backend (fire and forget UI-wise)
+        if (user) {
+          fetch(`/api/habits/${habitId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-user-id": user.uid,
+            },
+            body: JSON.stringify({
+              completions,
+              streak: newStreak,
+            }),
+          }).catch((err) => {
+            console.error("Failed to update habit:", err);
+          });
+        }
+
+        return updatedHabit;
       }
       return habit;
     });
-
-    saveHabits(updatedHabits);
+    setHabits(updatedHabits);
   };
 
   const deleteHabit = (habitId: string) => {
-    const habitToRemove = habits.find(h => h.id === habitId);
-    const updatedHabits = habits.filter(habit => habit.id !== habitId);
-    saveHabits(updatedHabits);
-    setHabitToDelete(null);
+    const performDelete = async () => {
+      const habitToRemove = habits.find(h => h.id === habitId);
+      setHabits(habits.filter(habit => habit.id !== habitId));
+      setHabitToDelete(null);
 
-    toast({
-      title: "Habit Deleted",
-      description: `"${habitToRemove?.name}" has been removed from your habits.`
-    });
+      if (user) {
+        try {
+          await fetch(`/api/habits/${habitId}`, {
+            method: "DELETE",
+            headers: {
+              "x-user-id": user.uid,
+            },
+          });
+        } catch (error) {
+          console.error("Failed to delete habit:", error);
+        }
+      }
+
+      toast({
+        title: "Habit Deleted",
+        description: `"${habitToRemove?.name}" has been removed from your habits.`
+      });
+    };
+
+    void performDelete();
   };
 
   const getHabitProgress = (habit: Habit, date: string) => {

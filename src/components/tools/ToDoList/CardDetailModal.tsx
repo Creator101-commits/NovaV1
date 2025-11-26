@@ -1,28 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar as CalendarIcon, Tag, CheckSquare, AlignLeft, Clock } from 'lucide-react';
+import { X, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useBoardContext } from '@/contexts/BoardContext';
 import { useUIContext } from '@/contexts/UIContext';
 import { format } from 'date-fns';
-import type { Card as CardType, Checklist, Label as LabelType } from '@shared/schema';
 
 export const CardDetailModal: React.FC = () => {
   const {
     updateCard,
-    deleteCard,
-    labels,
-    createLabel,
-    addLabelToCard,
-    removeLabelFromCard
+    deleteCard
   } = useBoardContext();
 
   const {
@@ -33,10 +25,7 @@ export const CardDetailModal: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState<Date | undefined>();
   const [isCompleted, setIsCompleted] = useState(false);
-  const [cardLabels, setCardLabels] = useState<string[]>([]);
-  const [checklists, setChecklists] = useState<Checklist[]>([]);
 
   // Auto-save debounce
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -45,11 +34,7 @@ export const CardDetailModal: React.FC = () => {
     if (selectedCard) {
       setTitle(selectedCard.title);
       setDescription(selectedCard.description || '');
-      setDueDate(selectedCard.dueDate ? new Date(selectedCard.dueDate) : undefined);
       setIsCompleted(selectedCard.isCompleted || false);
-      // TODO: Load card labels and checklists from API
-      setCardLabels([]);
-      setChecklists([]);
     }
   }, [selectedCard]);
 
@@ -59,7 +44,6 @@ export const CardDetailModal: React.FC = () => {
     await updateCard(selectedCard.id, {
       title,
       description,
-      dueDate: dueDate || null,
       isCompleted
     });
   };
@@ -89,16 +73,18 @@ export const CardDetailModal: React.FC = () => {
     }
   };
 
-  const handleAddLabel = async (labelId: string) => {
-    if (!selectedCard) return;
-    await addLabelToCard(selectedCard.id, labelId);
-    setCardLabels(prev => [...prev, labelId]);
-  };
-
-  const handleRemoveLabel = async (labelId: string) => {
-    if (!selectedCard) return;
-    await removeLabelFromCard(selectedCard.id, labelId);
-    setCardLabels(prev => prev.filter(id => id !== labelId));
+  const handleClose = async () => {
+    // Clear any pending save timeout
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      setSaveTimeout(null);
+    }
+    
+    // Save any pending changes before closing
+    await handleSave();
+    
+    // Close the modal
+    closeCardModal();
   };
 
   if (!selectedCard) return null;
@@ -137,9 +123,17 @@ export const CardDetailModal: React.FC = () => {
                   <div className="flex items-center gap-2 mt-2">
                     <Checkbox
                       checked={isCompleted}
-                      onCheckedChange={(checked) => {
-                        setIsCompleted(checked as boolean);
-                        handleSave();
+                      onCheckedChange={async (checked) => {
+                        const newCompleted = checked as boolean;
+                        setIsCompleted(newCompleted);
+                        // Save immediately with the new value
+                        if (selectedCard) {
+                          await updateCard(selectedCard.id, {
+                            title,
+                            description,
+                            isCompleted: newCompleted
+                          });
+                        }
                       }}
                     />
                     <span className="text-sm text-muted-foreground">
@@ -176,130 +170,6 @@ export const CardDetailModal: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Due Date */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      Due Date
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={`w-full justify-start text-left font-normal ${
-                            !dueDate && 'text-muted-foreground'
-                          }`}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dueDate ? format(dueDate, 'PPP') : 'Pick a date'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={dueDate}
-                          onSelect={(date) => {
-                            setDueDate(date);
-                            handleSave();
-                          }}
-                          initialFocus
-                        />
-                        {dueDate && (
-                          <div className="p-3 border-t border-border">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => {
-                                setDueDate(undefined);
-                                handleSave();
-                              }}
-                            >
-                              Clear date
-                            </Button>
-                          </div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
-                    
-                    {dueDate && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          {getDueDateText(dueDate)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Labels */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <Tag className="h-4 w-4" />
-                      Labels
-                    </Label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {cardLabels.map((labelId) => {
-                        const label = labels.find(l => l.id === labelId);
-                        if (!label) return null;
-                        return (
-                          <Badge
-                            key={labelId}
-                            style={{ backgroundColor: label.color }}
-                            className="cursor-pointer"
-                            onClick={() => handleRemoveLabel(labelId)}
-                          >
-                            {label.name}
-                            <X className="h-3 w-3 ml-1" />
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Tag className="h-4 w-4 mr-2" />
-                          Add label
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80" align="start">
-                        <div className="space-y-2">
-                          <h4 className="font-medium">Select label</h4>
-                          <div className="space-y-1">
-                            {labels.map((label) => (
-                              <button
-                                key={label.id}
-                                onClick={() => handleAddLabel(label.id)}
-                                className="w-full flex items-center gap-2 p-2 rounded hover:bg-accent"
-                                disabled={cardLabels.includes(label.id)}
-                              >
-                                <div
-                                  className="w-4 h-4 rounded"
-                                  style={{ backgroundColor: label.color }}
-                                />
-                                <span className="flex-1 text-left">{label.name}</span>
-                                {cardLabels.includes(label.id) && (
-                                  <CheckSquare className="h-4 w-4 text-primary" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Checklists - Placeholder for Phase 2 */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <CheckSquare className="h-4 w-4" />
-                      Checklist
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Checklist feature coming soon
-                    </p>
-                  </div>
-
                   {/* Metadata */}
                   <div className="pt-4 border-t border-border">
                     <p className="text-xs text-muted-foreground">
@@ -322,7 +192,7 @@ export const CardDetailModal: React.FC = () => {
                 >
                   Delete Card
                 </Button>
-                <Button onClick={closeCardModal}>
+                <Button onClick={handleClose}>
                   Done
                 </Button>
               </div>
@@ -333,14 +203,3 @@ export const CardDetailModal: React.FC = () => {
     </AnimatePresence>
   );
 };
-
-function getDueDateText(date: Date): string {
-  const now = new Date();
-  const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (diffDays < 0) return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'}`;
-  if (diffDays === 0) return 'Due today';
-  if (diffDays === 1) return 'Due tomorrow';
-  if (diffDays <= 7) return `Due in ${diffDays} days`;
-  return `Due in ${Math.ceil(diffDays / 7)} week${Math.ceil(diffDays / 7) === 1 ? '' : 's'}`;
-}

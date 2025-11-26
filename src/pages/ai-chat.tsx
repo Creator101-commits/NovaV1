@@ -537,12 +537,21 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
       return;
     }
 
+    if (!user?.uid) {
+      toast({
+        title: "Error",
+        description: "Please sign in to use this feature",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     addMessage("user", `Summarize YouTube video (${summaryType}): ${youtubeUrl}`);
 
     try {
-      // First get the transcript
-      const transcript = await getYouTubeTranscriptSafe(youtubeUrl);
+      // Fetch transcript from backend with user authentication
+      const transcript = await getYouTubeTranscriptSafe(youtubeUrl, user.uid);
       
       // Guard against very long transcripts
       const MAX_CHARS = 15000; // adjust to your model limits

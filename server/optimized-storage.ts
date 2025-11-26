@@ -2,8 +2,8 @@
  * Optimized storage implementation with connection pooling and query optimization
  */
 
-import { 
-  type User, 
+import {
+  type User,
   type InsertUser,
   type Class,
   type InsertClass,
@@ -23,6 +23,8 @@ import {
   type InsertPomodoroSession,
   type AiSummary,
   type InsertAiSummary,
+  type Habit,
+  type InsertHabit,
   type Note,
   type InsertNote,
   type Board,
@@ -223,11 +225,15 @@ export class OptimizedStorage {
     return `flashcards:${userId}`;
   }
 
+  private getHabitsCacheKey(userId: string): string {
+    return `habits:${userId}`;
+  }
+
   // Optimized user methods
   async getUser(id: string): Promise<User | undefined> {
     const cacheKey = this.getUserCacheKey(id);
     const cached = this.queryCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
@@ -236,29 +242,29 @@ export class OptimizedStorage {
     if (user) {
       this.queryCache.set(cacheKey, user, 10 * 60 * 1000); // 10 minutes
     }
-    
+
     return user;
   }
 
   async createUser(user: InsertUser): Promise<User> {
     const newUser = await this.baseStorage.createUser(user);
-    
+
     // Cache the new user
     const cacheKey = this.getUserCacheKey(newUser.id);
     this.queryCache.set(cacheKey, newUser, 10 * 60 * 1000);
-    
+
     return newUser;
   }
 
   async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
     const updatedUser = await this.baseStorage.updateUser(id, userData);
-    
+
     if (updatedUser) {
       // Update cache
       const cacheKey = this.getUserCacheKey(id);
       this.queryCache.set(cacheKey, updatedUser, 10 * 60 * 1000);
     }
-    
+
     return updatedUser;
   }
 
@@ -266,36 +272,36 @@ export class OptimizedStorage {
   async getClassesByUserId(userId: string): Promise<Class[]> {
     const cacheKey = this.getClassesCacheKey(userId);
     const cached = this.queryCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const classes = await this.baseStorage.getClassesByUserId(userId);
     this.queryCache.set(cacheKey, classes, 5 * 60 * 1000); // 5 minutes
-    
+
     return classes;
   }
 
   async createClass(classData: InsertClass): Promise<Class> {
     const newClass = await this.baseStorage.createClass(classData);
-    
+
     // Invalidate cache
     const cacheKey = this.getClassesCacheKey(classData.userId);
     this.queryCache.delete(cacheKey);
-    
+
     return newClass;
   }
 
   async updateClass(id: string, classData: Partial<InsertClass>): Promise<Class | undefined> {
     const updatedClass = await this.baseStorage.updateClass(id, classData);
-    
+
     if (updatedClass) {
       // Invalidate cache
       const cacheKey = this.getClassesCacheKey(updatedClass.userId);
       this.queryCache.delete(cacheKey);
     }
-    
+
     return updatedClass;
   }
 
@@ -303,36 +309,36 @@ export class OptimizedStorage {
   async getAssignmentsByUserId(userId: string): Promise<Assignment[]> {
     const cacheKey = this.getAssignmentsCacheKey(userId);
     const cached = this.queryCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const assignments = await this.baseStorage.getAssignmentsByUserId(userId);
     this.queryCache.set(cacheKey, assignments, 3 * 60 * 1000); // 3 minutes
-    
+
     return assignments;
   }
 
   async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
     const newAssignment = await this.baseStorage.createAssignment(assignment);
-    
+
     // Invalidate cache
     const cacheKey = this.getAssignmentsCacheKey(assignment.userId);
     this.queryCache.delete(cacheKey);
-    
+
     return newAssignment;
   }
 
   async updateAssignment(id: string, assignmentData: Partial<InsertAssignment>): Promise<Assignment | undefined> {
     const updatedAssignment = await this.baseStorage.updateAssignment(id, assignmentData);
-    
+
     if (updatedAssignment) {
       // Invalidate cache
       const cacheKey = this.getAssignmentsCacheKey(updatedAssignment.userId);
       this.queryCache.delete(cacheKey);
     }
-    
+
     return updatedAssignment;
   }
 
@@ -340,36 +346,36 @@ export class OptimizedStorage {
   async getNotesByUserId(userId: string): Promise<Note[]> {
     const cacheKey = this.getNotesCacheKey(userId);
     const cached = this.queryCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const notes = await this.baseStorage.getNotesByUserId(userId);
     this.queryCache.set(cacheKey, notes, 2 * 60 * 1000); // 2 minutes
-    
+
     return notes;
   }
 
   async createNote(note: InsertNote): Promise<Note> {
     const newNote = await this.baseStorage.createNote(note);
-    
+
     // Invalidate cache
     const cacheKey = this.getNotesCacheKey(note.userId);
     this.queryCache.delete(cacheKey);
-    
+
     return newNote;
   }
 
   async updateNote(id: string, noteData: Partial<InsertNote>): Promise<Note | undefined> {
     const updatedNote = await this.baseStorage.updateNote(id, noteData);
-    
+
     if (updatedNote) {
       // Invalidate cache
       const cacheKey = this.getNotesCacheKey(updatedNote.userId);
       this.queryCache.delete(cacheKey);
     }
-    
+
     return updatedNote;
   }
 
@@ -377,25 +383,64 @@ export class OptimizedStorage {
   async getFlashcardsByUserId(userId: string): Promise<Flashcard[]> {
     const cacheKey = this.getFlashcardsCacheKey(userId);
     const cached = this.queryCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const flashcards = await this.baseStorage.getFlashcardsByUserId(userId);
     this.queryCache.set(cacheKey, flashcards, 5 * 60 * 1000); // 5 minutes
-    
+
     return flashcards;
   }
 
   async createFlashcard(flashcard: InsertFlashcard): Promise<Flashcard> {
     const newFlashcard = await this.baseStorage.createFlashcard(flashcard);
-    
+
     // Invalidate cache
     const cacheKey = this.getFlashcardsCacheKey(flashcard.userId);
     this.queryCache.delete(cacheKey);
-    
+
     return newFlashcard;
+  }
+
+  // Optimized habit methods
+  async getHabitsByUserId(userId: string): Promise<Habit[]> {
+    const cacheKey = this.getHabitsCacheKey(userId);
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const habits = await (this.baseStorage as any).getHabitsByUserId(userId);
+    this.queryCache.set(cacheKey, habits, 2 * 60 * 1000);
+    return habits;
+  }
+
+  async createHabit(habit: InsertHabit): Promise<Habit> {
+    const created = await (this.baseStorage as any).createHabit(habit);
+    const cacheKey = this.getHabitsCacheKey(habit.userId);
+    this.queryCache.delete(cacheKey);
+    return created;
+  }
+
+  async updateHabit(id: string, habit: Partial<InsertHabit>): Promise<Habit | undefined> {
+    const updated = await (this.baseStorage as any).updateHabit(id, habit);
+    if (updated) {
+      const cacheKey = this.getHabitsCacheKey(updated.userId);
+      this.queryCache.delete(cacheKey);
+    }
+    return updated;
+  }
+
+  async deleteHabit(id: string): Promise<boolean> {
+    const existing = await (this.baseStorage as any).getHabit?.(id);
+    const success = await (this.baseStorage as any).deleteHabit(id);
+    if (success && existing) {
+      const cacheKey = this.getHabitsCacheKey(existing.userId);
+      this.queryCache.delete(cacheKey);
+    }
+    return success;
   }
 
   // Batch operations for multiple items
@@ -406,14 +451,14 @@ export class OptimizedStorage {
         const results = await Promise.all(
           assignments.map(assignment => this.baseStorage.createAssignment(assignment))
         );
-        
+
         // Invalidate caches for all affected users
         const userIds = [...new Set(assignments.map(a => a.userId))];
         userIds.forEach(userId => {
           const cacheKey = this.getAssignmentsCacheKey(userId);
           this.queryCache.delete(cacheKey);
         });
-        
+
         return results;
       },
       100 // 100ms delay for batching
@@ -427,14 +472,14 @@ export class OptimizedStorage {
         const results = await Promise.all(
           notes.map(note => this.baseStorage.createNote(note))
         );
-        
+
         // Invalidate caches for all affected users
         const userIds = [...new Set(notes.map(n => n.userId))];
         userIds.forEach(userId => {
           const cacheKey = this.getNotesCacheKey(userId);
           this.queryCache.delete(cacheKey);
         });
-        
+
         return results;
       },
       100 // 100ms delay for batching
@@ -445,14 +490,14 @@ export class OptimizedStorage {
   async getUserAnalytics(userId: string): Promise<any> {
     const cacheKey = `analytics:${userId}`;
     const cached = this.queryCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const analytics = await this.baseStorage.getUserAnalytics(userId);
     this.queryCache.set(cacheKey, analytics, 15 * 60 * 1000); // 15 minutes
-    
+
     return analytics;
   }
 
@@ -485,13 +530,13 @@ export class OptimizedStorage {
 
   async updateFlashcard(id: string, flashcardData: Partial<InsertFlashcard>): Promise<Flashcard | undefined> {
     const updatedFlashcard = await this.baseStorage.updateFlashcard(id, flashcardData);
-    
+
     if (updatedFlashcard) {
       // Invalidate cache
       const cacheKey = this.getFlashcardsCacheKey(updatedFlashcard.userId);
       this.queryCache.delete(cacheKey);
     }
-    
+
     return updatedFlashcard;
   }
 
@@ -603,19 +648,19 @@ export class OptimizedStorage {
   async createUserWithId(id: string, userData: InsertUser): Promise<User> {
     if (this.baseStorage.createUserWithId) {
       const newUser = await this.baseStorage.createUserWithId(id, userData);
-      
+
       // Cache the new user
       const cacheKey = this.getUserCacheKey(id);
       this.queryCache.set(cacheKey, newUser, 10 * 60 * 1000);
-      
+
       return newUser;
     }
-    
+
     return this.createUser(userData);
   }
 
   // ========== TODO BOARD METHODS ==========
-  
+
   // Board methods
   async getBoardsByUserId(userId: string): Promise<any[]> {
     const cacheKey = `boards:user:${userId}`;
@@ -639,34 +684,34 @@ export class OptimizedStorage {
 
   async createBoard(board: any): Promise<any> {
     const newBoard = await this.baseStorage.createBoard(board);
-    
+
     // Invalidate user's boards cache
     this.queryCache.delete(`boards:user:${board.userId}`);
-    
+
     return newBoard;
   }
 
   async updateBoard(id: string, board: any): Promise<any | undefined> {
     const updated = await this.baseStorage.updateBoard(id, board);
-    
+
     if (updated) {
       // Invalidate caches
       this.queryCache.delete(`board:${id}`);
       this.queryCache.delete(`boards:user:${updated.userId}`);
     }
-    
+
     return updated;
   }
 
   async deleteBoard(id: string): Promise<boolean> {
     const board = await this.baseStorage.getBoard(id);
     const success = await this.baseStorage.deleteBoard(id);
-    
+
     if (success && board) {
       this.queryCache.delete(`board:${id}`);
       this.queryCache.delete(`boards:user:${board.userId}`);
     }
-    
+
     return success;
   }
 
@@ -682,29 +727,31 @@ export class OptimizedStorage {
   }
 
   async createList(list: any): Promise<any> {
+    console.log(`  💾 optimizedStorage.createList called for board ${list.boardId}: "${list.title}"`);
     const newList = await this.baseStorage.createList(list);
-    
+    console.log(`  💾 optimizedStorage.createList returned ID: ${newList.id}`);
+
     // Invalidate board's lists cache
     this.queryCache.delete(`lists:board:${list.boardId}`);
-    
+
     return newList;
   }
 
   async updateList(id: string, list: any): Promise<any | undefined> {
     const existing = await this.baseStorage.getListsByBoardId(list.boardId || '');
     const updated = await this.baseStorage.updateList(id, list);
-    
+
     if (updated) {
       this.queryCache.delete(`lists:board:${updated.boardId}`);
     }
-    
+
     return updated;
   }
 
   async deleteList(id: string): Promise<boolean> {
     // Note: We'd need to fetch the list first to get boardId for cache invalidation
     const success = await this.baseStorage.deleteList(id);
-    
+
     if (success) {
       // Clear all list caches (inefficient but safe)
       const keys = Array.from((this.queryCache as any).cache.keys()) as string[];
@@ -714,7 +761,7 @@ export class OptimizedStorage {
         }
       });
     }
-    
+
     return success;
   }
 
@@ -749,20 +796,20 @@ export class OptimizedStorage {
 
   async createCard(card: any): Promise<any> {
     const newCard = await this.baseStorage.createCard(card);
-    
+
     // Invalidate caches
     if (card.listId) {
       this.queryCache.delete(`cards:list:${card.listId}`);
     } else {
       this.queryCache.delete(`cards:inbox:${card.userId}`);
     }
-    
+
     return newCard;
   }
 
   async updateCard(id: string, card: any): Promise<any | undefined> {
     const updated = await this.baseStorage.updateCard(id, card);
-    
+
     if (updated) {
       // Invalidate relevant caches
       if (updated.listId) {
@@ -773,13 +820,13 @@ export class OptimizedStorage {
       }
       this.queryCache.delete(`cards:inbox:${updated.userId}`);
     }
-    
+
     return updated;
   }
 
   async deleteCard(id: string): Promise<boolean> {
     const success = await this.baseStorage.deleteCard(id);
-    
+
     if (success) {
       // Clear all card caches
       const keys = Array.from((this.queryCache as any).cache.keys()) as string[];
@@ -789,7 +836,7 @@ export class OptimizedStorage {
         }
       });
     }
-    
+
     return success;
   }
 
@@ -829,17 +876,17 @@ export class OptimizedStorage {
 
   async updateLabel(id: string, label: any): Promise<any | undefined> {
     const updated = await this.baseStorage.updateLabel(id, label);
-    
+
     if (updated) {
       this.queryCache.delete(`labels:user:${updated.userId}`);
     }
-    
+
     return updated;
   }
 
   async deleteLabel(id: string): Promise<boolean> {
     const success = await this.baseStorage.deleteLabel(id);
-    
+
     if (success) {
       const keys = Array.from((this.queryCache as any).cache.keys()) as string[];
       keys.forEach(key => {
@@ -848,7 +895,7 @@ export class OptimizedStorage {
         }
       });
     }
-    
+
     return success;
   }
 

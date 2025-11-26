@@ -6,7 +6,7 @@ import { memoryCache } from './cache';
  * Features: Caching, request deduplication, and performance optimization
  */
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://localhost:5001';
 
 // Wait for auth to be ready
 const waitForAuth = (): Promise<string | null> => {
