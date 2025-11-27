@@ -6,15 +6,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Space Grotesk', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        'space-grotesk': ['Space Grotesk', 'sans-serif'],
+        sans: ['Lato', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        'lato': ['Lato', 'sans-serif'],
       },
       fontWeight: {
-        'light': '300',
+        'light': '400',
         'normal': '400',
-        'medium': '500',
-        'semibold': '600',
-        'bold': '700',
+        'medium': '400',
+        'semibold': '400',
+        'bold': '400',
       },
       borderRadius: {
         lg: "var(--radius)",

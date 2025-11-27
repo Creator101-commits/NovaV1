@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -26,7 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -35,16 +33,10 @@ import {
   CheckCircle2, 
   Circle, 
   Flame, 
-  Trophy, 
-  TrendingUp,
-  Calendar as CalendarIcon,
-  Clock,
-  Repeat,
-  Star,
   Trash2,
   MoreVertical
 } from "lucide-react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 interface Habit {
   id: string;
@@ -80,7 +72,6 @@ export default function HabitTracker() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddingHabit, setIsAddingHabit] = useState(false);
-  const [viewMode, setViewMode] = useState<'today' | 'week' | 'calendar'>('today');
   const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   
   const [newHabit, setNewHabit] = useState({
@@ -293,12 +284,6 @@ export default function HabitTracker() {
     return { completed, total, percentage };
   };
 
-  const getWeekDays = () => {
-    const start = startOfWeek(selectedDate);
-    const end = endOfWeek(selectedDate);
-    return eachDayOfInterval({ start, end });
-  };
-
   const stats = getTodayStats();
 
   return (
@@ -466,290 +451,104 @@ export default function HabitTracker() {
         </Card>
       </div>
 
-      <Tabs value={viewMode} onValueChange={(value: any) => setViewMode(value)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="today" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Today
-          </TabsTrigger>
-          <TabsTrigger value="week" className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            Week View
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Progress
-          </TabsTrigger>
-        </TabsList>
+      {/* Today's Habits */}
+      <div className="space-y-4">
+        {habits.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Habits Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first habit to start building consistent routines.
+              </p>
+              <Button onClick={() => setIsAddingHabit(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Habit
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {habits.map(habit => {
+              const today = format(new Date(), 'yyyy-MM-dd');
+              const progress = getHabitProgress(habit, today);
+              const completed = isHabitCompleted(habit, today);
 
-        <TabsContent value="today" className="space-y-4">
-          {habits.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Habits Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first habit to start building consistent routines.
-                </p>
-                <Button onClick={() => setIsAddingHabit(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Habit
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {habits.map(habit => {
-                const today = format(new Date(), 'yyyy-MM-dd');
-                const progress = getHabitProgress(habit, today);
-                const completed = isHabitCompleted(habit, today);
-
-                return (
-                  <Card key={habit.id} className="group hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: habit.color }}
-                          />
-                          <div>
-                            <h3 className="font-medium">{habit.name}</h3>
-                            {habit.description && (
-                              <p className="text-sm text-muted-foreground">{habit.description}</p>
-                            )}
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {habit.category}
-                              </Badge>
-                              {habit.streak > 0 && (
-                                <div className="flex items-center gap-1 text-xs text-orange-600">
-                                  <Flame className="h-3 w-3" />
-                                  {habit.streak} day streak
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <div className="text-right">
-                            <div className="text-sm text-muted-foreground">
-                              {habit.completions[today] || 0} / {habit.targetCount}
-                            </div>
-                            <Progress value={progress} className="w-20 mt-1" />
-                          </div>
-
-                          <Button
-                            variant={completed ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleHabitCompletion(habit.id, today)}
-                            className="flex items-center gap-2"
-                          >
-                            {completed ? (
-                              <CheckCircle2 className="h-4 w-4" />
-                            ) : (
-                              <Circle className="h-4 w-4" />
-                            )}
-                            {completed ? 'Done' : 'Mark'}
-                          </Button>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => setHabitToDelete(habit.id)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Habit
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="week" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">
-              Week of {format(startOfWeek(selectedDate), 'MMM d, yyyy')}
-            </h3>
-          </div>
-
-          <div className="space-y-4">
-            {habits.map(habit => (
-              <Card key={habit.id}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: habit.color }}
-                      />
-                      {habit.name}
-                    </CardTitle>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => setHabitToDelete(habit.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Habit
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-7 gap-2">
-                    {getWeekDays().map(day => {
-                      const dateStr = format(day, 'yyyy-MM-dd');
-                      const completed = isHabitCompleted(habit, dateStr);
-                      const progress = getHabitProgress(habit, dateStr);
-
-                      return (
-                        <div key={dateStr} className="text-center">
-                          <div className="text-xs text-muted-foreground mb-2">
-                            {format(day, 'EEE')}
-                          </div>
-                          <button
-                            onClick={() => toggleHabitCompletion(habit.id, dateStr)}
-                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs transition-colors ${
-                              completed 
-                                ? 'bg-green-500 border-green-500 text-white' 
-                                : 'border-gray-300 hover:border-gray-400'
-                            } ${
-                              isToday(day) ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-                            }`}
-                          >
-                            {format(day, 'd')}
-                          </button>
-                          {progress > 0 && progress < 100 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {Math.round(progress)}%
-                            </div>
+              return (
+                <Card key={habit.id} className="group hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: habit.color }}
+                        />
+                        <div>
+                          <h3 className="font-medium">{habit.name}</h3>
+                          {habit.description && (
+                            <p className="text-sm text-muted-foreground">{habit.description}</p>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="calendar" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Habit Statistics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {habits.map(habit => {
-                      const totalDays = Object.keys(habit.completions).length;
-                      const completedDays = Object.values(habit.completions).filter(count => count >= habit.targetCount).length;
-                      const successRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
-
-                      return (
-                        <div key={habit.id} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: habit.color }}
-                              />
-                              <span className="font-medium">{habit.name}</span>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{successRate}% success rate</span>
-                              <div className="flex items-center gap-1">
-                                <Flame className="h-4 w-4 text-orange-500" />
-                                <span>{habit.streak} days</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {habit.category}
+                            </Badge>
+                            {habit.streak > 0 && (
+                              <div className="flex items-center gap-1 text-xs text-orange-600">
+                                <Flame className="h-3 w-3" />
+                                {habit.streak} day streak
                               </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <MoreVertical className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => setHabitToDelete(habit.id)}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete Habit
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                            )}
                           </div>
-                          <Progress value={successRate} className="h-2" />
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                      </div>
 
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Achievements</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
-                      <Trophy className="h-6 w-6 text-yellow-600" />
-                      <div>
-                        <p className="font-medium text-sm">Consistency Champion</p>
-                        <p className="text-xs text-muted-foreground">7+ day streak</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                      <Star className="h-6 w-6 text-green-600" />
-                      <div>
-                        <p className="font-medium text-sm">Perfect Day</p>
-                        <p className="text-xs text-muted-foreground">All habits completed</p>
-                      </div>
-                    </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="text-right">
+                          <div className="text-sm text-muted-foreground">
+                            {habit.completions[today] || 0} / {habit.targetCount}
+                          </div>
+                          <Progress value={progress} className="w-20 mt-1" />
+                        </div>
 
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <Target className="h-6 w-6 text-blue-600" />
-                      <div>
-                        <p className="font-medium text-sm">Habit Builder</p>
-                        <p className="text-xs text-muted-foreground">Created 5+ habits</p>
+                        <Button
+                          variant={completed ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleHabitCompletion(habit.id, today)}
+                          className="flex items-center gap-2"
+                        >
+                          {completed ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : (
+                            <Circle className="h-4 w-4" />
+                          )}
+                          {completed ? 'Done' : 'Mark'}
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setHabitToDelete(habit.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Habit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={habitToDelete !== null} onOpenChange={() => setHabitToDelete(null)}>

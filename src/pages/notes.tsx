@@ -25,9 +25,7 @@ import {
   Grid3X3,
   List,
   FileText,
-  Clock,
-  History,
-  Eye
+  Clock
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,7 +58,6 @@ export default function NotesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showEditor, setShowEditor] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [currentView, setCurrentView] = useState<"notes" | "history">("notes");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -422,67 +419,21 @@ export default function NotesPage() {
             <Plus className="mr-1 h-3 w-3" />
             New Note
           </Button>
-          {/* Simple Navigation */}
-          <div className="flex gap-2">
-            <Button
-              variant={currentView === "notes" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrentView("notes")}
-              className="text-xs"
-            >
-              Notes
-            </Button>
-            <Button
-              variant={currentView === "history" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrentView("history")}
-              className="text-xs"
-            >
-              History
-            </Button>
-          </div>
         </div>
-        {/* Content Based on Current View */}
-        {currentView === "notes" && (
-          <>
-            {/* Search and Filters */}
+        {/* Notes Content */}
+        <>
+          {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8 p-6 bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search notes, content, or tags..."
+                  placeholder="Search notes, content"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 bg-background/60 border-border/50 text-foreground placeholder:text-muted-foreground h-12 text-base rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all duration-200"
+                  className="pl-12 bg-background border-border text-foreground placeholder:text-muted-foreground h-12 text-base rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all duration-200"
                 />
               </div>
               <div className="flex items-center gap-3">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-44 bg-background/60 border-border/50 text-foreground h-12 rounded-xl">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover/95 backdrop-blur-sm border-border/50">
-                    <SelectItem value="all" className="text-foreground hover:bg-accent/50">All Categories</SelectItem>
-                    {noteCategories.filter((category) => category && category.trim() !== "").map((category) => (
-                      <SelectItem key={category} value={category} className="text-foreground hover:bg-accent/50">
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                  <SelectTrigger className="w-44 bg-background/60 border-border/50 text-foreground h-12 rounded-xl">
-                    <SelectValue placeholder="Class" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover/95 backdrop-blur-sm border-border/50">
-                    <SelectItem value="all" className="text-foreground hover:bg-accent/50">All Classes</SelectItem>
-                    {classes.filter((cls) => cls.id && cls.id.trim() !== "").map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id} className="text-foreground hover:bg-accent/50">
-                        {cls.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <div className="flex items-center bg-muted/50 rounded-xl border border-border/50 p-1">
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
@@ -625,32 +576,6 @@ export default function NotesPage() {
               </div>
             )}
           </>
-        )}
-        {/* History View */}
-        {currentView === "history" && (
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-lg bg-muted/50">
-                <History className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl font-semibold text-foreground">
-                Recent Activity
-              </h2>
-              <div className="flex-1 h-px bg-border/50"></div>
-            </div>
-            <div className="grid gap-6 grid-cols-1 max-w-4xl">
-              {[...notes]
-                .sort((a, b) =>
-                  new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
-                )
-                .slice(0, 10)
-                .map((note) => (
-                  <NoteCard key={note.id} note={note} />
-                ))
-              }
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

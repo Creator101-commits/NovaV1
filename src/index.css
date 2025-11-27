@@ -1,11 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 * {
-  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Lato', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
 }
 
 body {
@@ -47,39 +48,15 @@ body {
   outline-offset: 2px;
 }
 
-/* Space Grotesk font classes */
-.space-grotesk-light {
-  font-family: "Space Grotesk", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 300;
-  font-style: normal;
-}
-
-.space-grotesk-regular {
-  font-family: "Space Grotesk", sans-serif;
+/* Lato font classes - all using regular 400 for readability */
+.lato-light,
+.lato-regular,
+.lato-medium,
+.lato-semibold,
+.lato-bold {
+  font-family: "Lato", sans-serif;
   font-optical-sizing: auto;
   font-weight: 400;
-  font-style: normal;
-}
-
-.space-grotesk-medium {
-  font-family: "Space Grotesk", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 500;
-  font-style: normal;
-}
-
-.space-grotesk-semibold {
-  font-family: "Space Grotesk", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 600;
-  font-style: normal;
-}
-
-.space-grotesk-bold {
-  font-family: "Space Grotesk", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 700;
   font-style: normal;
 }
 
@@ -112,25 +89,27 @@ body {
 }
 
 .dark {
-  --background: hsl(0, 0%, 10%);
-  --foreground: hsl(0, 0%, 100%);
-  --muted: hsl(0, 0%, 15%);
-  --muted-foreground: hsl(0, 0%, 60%);
-  --popover: hsl(0, 0%, 10%);
-  --popover-foreground: hsl(0, 0%, 100%);
-  --card: hsl(0, 0%, 10%);
-  --card-foreground: hsl(0, 0%, 100%);
-  --border: hsl(0, 0%, 22%);
-  --input: hsl(0, 0%, 22%);
-  --primary: hsl(0, 0%, 100%);
-  --primary-foreground: hsl(0, 0%, 10%);
-  --secondary: hsl(0, 0%, 15%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --accent: hsl(0, 0%, 15%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 0%, 100%);
-  --destructive-foreground: hsl(0, 0%, 10%);
-  --ring: hsl(0, 0%, 100%);
+  /* Background: #131314 (rgb(19,19,20)) */
+  --background: 240 3% 8%;
+  /* Main Text: #E0E0E0 (Soft Gray-White, 88% brightness - prevents halation) */
+  --foreground: 0 0% 88%;
+  --muted: 240 3% 12%;
+  --muted-foreground: 0 0% 65%;
+  --popover: 240 3% 8%;
+  --popover-foreground: 0 0% 88%;
+  --card: 240 3% 10%;
+  --card-foreground: 0 0% 88%;
+  --border: 240 3% 20%;
+  --input: 240 3% 20%;
+  --primary: 0 0% 88%;
+  --primary-foreground: 240 3% 8%;
+  --secondary: 240 3% 14%;
+  --secondary-foreground: 0 0% 88%;
+  --accent: 240 3% 14%;
+  --accent-foreground: 0 0% 88%;
+  --destructive: 0 0% 88%;
+  --destructive-foreground: 240 3% 8%;
+  --ring: 0 0% 88%;
   --radius: 0.75rem;
   --chart-1: hsl(220, 70%, 50%);
   --chart-2: hsl(160, 60%, 45%);
