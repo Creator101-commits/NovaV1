@@ -1,269 +1,285 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useEditor, EditorContent, Editor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import Placeholder from "@tiptap/extension-placeholder";
+import { TextStyle } from "@tiptap/extension-text-style";
+import FontFamily from "@tiptap/extension-font-family";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import { useTheme } from "@/contexts/ThemeContext";
+import {
   Save,
   ArrowLeft,
   Bold,
   Italic,
-  Underline,
+  Underline as UnderlineIcon,
+  Code,
   List,
   ListOrdered,
-  Pin,
-  PinOff,
+  Quote,
   Undo,
   Redo,
-  Printer,
   AlignLeft,
   AlignCenter,
   AlignRight,
-  AlignJustify,
-  FileText
+  Heading1,
+  Heading2,
+  Heading3,
+  Trash2,
+  Pin,
+  PinOff,
+  Moon,
+  Sun,
+  Strikethrough,
+  Type,
+  ChevronDown,
 } from "lucide-react";
-import { createEditor, Descendant, Editor, BaseEditor, Transforms, Element as SlateElement, Text } from 'slate';
-import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react';
-import { withHistory, HistoryEditor } from 'slate-history';
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
 import type { Note, InsertNote, Class } from "../../shared/schema";
-
-// Custom types for Slate
-type CustomElement = {
-  type: 'paragraph' | 'heading-one' | 'heading-two' | 'heading-three' | 'bulleted-list' | 'numbered-list' | 'list-item' | 'block-quote';
-  children: Descendant[];
-  align?: 'left' | 'center' | 'right' | 'justify';
-};
-
-type CustomText = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-};
-
-declare module 'slate' {
-  interface CustomTypes {
-    Editor: BaseEditor & ReactEditor;
-    Element: CustomElement;
-    Text: CustomText;
-  }
-}
-
-const noteColors = [
-  { name: "Black", value: "#000000", class: "bg-black text-white" },
-  { name: "Dark Gray", value: "#1a1a1a", class: "bg-gray-900 text-gray-100" },
-  { name: "Dark Blue", value: "#1e293b", class: "bg-slate-800 text-slate-100" },
-  { name: "Dark Green", value: "#14532d", class: "bg-green-900 text-green-100" },
-  { name: "Dark Purple", value: "#581c87", class: "bg-purple-900 text-purple-100" },
-  { name: "Dark Red", value: "#7f1d1d", class: "bg-red-900 text-red-100" },
-];
 
 const noteCategories = [
   "general",
-  "lecture", 
+  "lecture",
   "homework",
   "study",
   "meeting",
   "ideas",
   "research",
-  "project"
+  "project",
 ];
 
-// Slate helper functions
-const isMarkActive = (editor: Editor, format: keyof Omit<CustomText, 'text'>) => {
-  const marks = Editor.marks(editor);
-  return marks ? (marks as any)[format] === true : false;
-};
+// Available fonts for the editor
+const FONTS = [
+  { name: "Default", value: "" },
+  { name: "Inter", value: "Inter" },
+  { name: "Georgia", value: "Georgia" },
+  { name: "Times New Roman", value: "Times New Roman" },
+  { name: "Arial", value: "Arial" },
+  { name: "Verdana", value: "Verdana" },
+  { name: "Courier New", value: "Courier New" },
+  { name: "Comic Sans MS", value: "Comic Sans MS" },
+  { name: "Trebuchet MS", value: "Trebuchet MS" },
+  { name: "Impact", value: "Impact" },
+  { name: "Palatino", value: "Palatino Linotype" },
+];
 
-const isBlockActive = (editor: Editor, format: CustomElement['type']) => {
-  const { selection } = editor;
-  if (!selection) return false;
+// Toolbar Button Component
+interface ToolbarButtonProps {
+  onClick: () => void;
+  isActive?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  title?: string;
+}
 
-  const [match] = Array.from(
-    Editor.nodes(editor, {
-      at: Editor.unhangRange(editor, selection),
-      match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && (n as CustomElement).type === format,
-    })
+function ToolbarButton({
+  onClick,
+  isActive,
+  disabled,
+  children,
+  title,
+}: ToolbarButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`
+        p-2 rounded-lg transition-all duration-150 ease-in-out
+        disabled:opacity-40 disabled:cursor-not-allowed
+        ${
+          isActive
+            ? "bg-primary/15 text-primary dark:bg-primary/20 dark:text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        }
+      `}
+    >
+      {children}
+    </button>
   );
+}
 
-  return !!match;
-};
+// Toolbar Divider
+function ToolbarDivider() {
+  return <div className="w-px h-6 bg-border mx-1" />;
+}
 
-const toggleMark = (editor: Editor, format: keyof Omit<CustomText, 'text'>) => {
-  const isActive = isMarkActive(editor, format);
-  if (isActive) {
-    Editor.removeMark(editor, format);
-  } else {
-    Editor.addMark(editor, format, true);
-  }
-};
+// Editor Toolbar Component
+interface EditorToolbarProps {
+  editor: Editor | null;
+}
 
-const toggleBlock = (editor: Editor, format: CustomElement['type']) => {
-  const isActive = isBlockActive(editor, format);
-  const isList = ['numbered-list', 'bulleted-list'].includes(format);
+function EditorToolbar({ editor }: EditorToolbarProps) {
+  if (!editor) return null;
 
-  Transforms.unwrapNodes(editor, {
-    match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && 
-      ['numbered-list', 'bulleted-list'].includes((n as CustomElement).type),
-    split: true,
-  });
+  return (
+    <div className="flex justify-center w-full p-2 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 overflow-x-auto">
+      <div className="flex flex-wrap items-center gap-0.5">
+      {/* Undo/Redo */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+        title="Undo"
+      >
+        <Undo className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+        title="Redo"
+      >
+        <Redo className="h-4 w-4" />
+      </ToolbarButton>
 
-  const newProperties: Partial<CustomElement> = {
-    type: isActive ? 'paragraph' : isList ? 'list-item' : format,
-  };
+      <ToolbarDivider />
 
-  Transforms.setNodes<SlateElement>(editor, newProperties);
+      {/* Headings */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        isActive={editor.isActive("heading", { level: 1 })}
+        title="Heading 1"
+      >
+        <Heading1 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        isActive={editor.isActive("heading", { level: 2 })}
+        title="Heading 2"
+      >
+        <Heading2 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        isActive={editor.isActive("heading", { level: 3 })}
+        title="Heading 3"
+      >
+        <Heading3 className="h-4 w-4" />
+      </ToolbarButton>
 
-  if (!isActive && isList) {
-    const block: CustomElement = { type: format, children: [] };
-    Transforms.wrapNodes(editor, block);
-  }
-};
+      <ToolbarDivider />
 
-const toggleAlignment = (editor: Editor, alignment: CustomElement['align']) => {
-  const { selection } = editor;
-  if (!selection) return;
+      {/* Font Family Selector */}
+      <div className="relative">
+        <select
+          value={editor.getAttributes("textStyle").fontFamily || ""}
+          onChange={(e) => {
+            if (e.target.value) {
+              editor.chain().focus().setFontFamily(e.target.value).run();
+            } else {
+              editor.chain().focus().unsetFontFamily().run();
+            }
+          }}
+          className="h-8 pl-2 pr-7 text-xs rounded-lg bg-transparent border border-border text-foreground cursor-pointer hover:bg-muted focus:outline-none focus:ring-1 focus:ring-primary appearance-none"
+          title="Font Family"
+        >
+          {FONTS.map((font) => (
+            <option
+              key={font.name}
+              value={font.value}
+              style={{ fontFamily: font.value || "inherit" }}
+            >
+              {font.name}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 pointer-events-none text-muted-foreground" />
+      </div>
 
-  const [match] = Array.from(
-    Editor.nodes(editor, {
-      at: Editor.unhangRange(editor, selection),
-      match: n => !Editor.isEditor(n) && SlateElement.isElement(n),
-    })
+      <ToolbarDivider />
+
+      {/* Text Formatting */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        isActive={editor.isActive("bold")}
+        title="Bold"
+      >
+        <Bold className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        isActive={editor.isActive("italic")}
+        title="Italic"
+      >
+        <Italic className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        isActive={editor.isActive("underline")}
+        title="Underline"
+      >
+        <UnderlineIcon className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        isActive={editor.isActive("code")}
+        title="Inline Code"
+      >
+        <Code className="h-4 w-4" />
+      </ToolbarButton>
+
+      <ToolbarDivider />
+
+      {/* Lists */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        isActive={editor.isActive("bulletList")}
+        title="Bullet List"
+      >
+        <List className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        isActive={editor.isActive("orderedList")}
+        title="Numbered List"
+      >
+        <ListOrdered className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        isActive={editor.isActive("blockquote")}
+        title="Blockquote"
+      >
+        <Quote className="h-4 w-4" />
+      </ToolbarButton>
+
+      <ToolbarDivider />
+
+      {/* Alignment */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        isActive={editor.isActive({ textAlign: "left" })}
+        title="Align Left"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        isActive={editor.isActive({ textAlign: "center" })}
+        title="Align Center"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        isActive={editor.isActive({ textAlign: "right" })}
+        title="Align Right"
+      >
+        <AlignRight className="h-4 w-4" />
+      </ToolbarButton>
+      </div>
+    </div>
   );
-
-  if (match) {
-    const [node] = match;
-    const currentAlign = (node as CustomElement).align;
-    const newAlign = currentAlign === alignment ? undefined : alignment;
-    
-    Transforms.setNodes<SlateElement>(editor, { align: newAlign });
-  }
-};
-
-const isAlignmentActive = (editor: Editor, alignment: CustomElement['align']) => {
-  const { selection } = editor;
-  if (!selection) return false;
-
-  const [match] = Array.from(
-    Editor.nodes(editor, {
-      at: Editor.unhangRange(editor, selection),
-      match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && (n as CustomElement).align === alignment,
-    })
-  );
-
-  return !!match;
-};
-
-const undo = (editor: Editor) => {
-  // Use Slate's built-in undo functionality
-  (editor as any).undo();
-};
-
-const redo = (editor: Editor) => {
-  // Use Slate's built-in redo functionality
-  (editor as any).redo();
-};
-
-const canUndo = (editor: Editor) => {
-  return (editor as any).history?.undos?.length > 0;
-};
-
-const canRedo = (editor: Editor) => {
-  return (editor as any).history?.redos?.length > 0;
-};
-
-// Serialize Slate value to HTML
-const serializeToHtml = (nodes: Descendant[]): string => {
-  return nodes.map(n => {
-    if (Text.isText(n)) {
-      let text = n.text;
-      if ((n as CustomText).bold) text = `<strong>${text}</strong>`;
-      if ((n as CustomText).italic) text = `<em>${text}</em>`;
-      if ((n as CustomText).underline) text = `<u>${text}</u>`;
-      return text;
-    }
-
-    const element = n as CustomElement;
-    const children = serializeToHtml(element.children);
-    const alignStyle = element.align ? ` style="text-align: ${element.align}"` : '';
-    
-    switch (element.type) {
-      case 'heading-one':
-        return `<h1${alignStyle}>${children}</h1>`;
-      case 'heading-two':
-        return `<h2${alignStyle}>${children}</h2>`;
-      case 'heading-three':
-        return `<h3${alignStyle}>${children}</h3>`;
-      case 'block-quote':
-        return `<blockquote${alignStyle}>${children}</blockquote>`;
-      case 'bulleted-list':
-        return `<ul${alignStyle}>${children}</ul>`;
-      case 'numbered-list':
-        return `<ol${alignStyle}>${children}</ol>`;
-      case 'list-item':
-        return `<li${alignStyle}>${children}</li>`;
-      default:
-        return `<p${alignStyle}>${children}</p>`;
-    }
-  }).join('');
-};
-
-// Deserialize HTML to Slate value
-const deserializeFromHtml = (html: string): Descendant[] => {
-  if (!html) return [{ type: 'paragraph', children: [{ text: '' } as CustomText] } as CustomElement];
-  
-  const sanitizedHtml = DOMPurify.sanitize(html);
-  const doc = new DOMParser().parseFromString(sanitizedHtml, 'text/html');
-  
-  const deserializeElement = (el: Node): Descendant[] => {
-    if (el.nodeType === Node.TEXT_NODE) {
-      return [{ text: el.textContent || '' } as CustomText];
-    }
-
-    if (el.nodeType !== Node.ELEMENT_NODE) {
-      return [];
-    }
-
-    const element = el as Element;
-    const children = Array.from(element.childNodes).flatMap(deserializeElement);
-
-    switch (element.nodeName.toLowerCase()) {
-      case 'h1':
-        return [{ type: 'heading-one', children } as CustomElement];
-      case 'h2':
-        return [{ type: 'heading-two', children } as CustomElement];
-      case 'h3':
-        return [{ type: 'heading-three', children } as CustomElement];
-      case 'blockquote':
-        return [{ type: 'block-quote', children } as CustomElement];
-      case 'ul':
-        return [{ type: 'bulleted-list', children } as CustomElement];
-      case 'ol':
-        return [{ type: 'numbered-list', children } as CustomElement];
-      case 'li':
-        return [{ type: 'list-item', children } as CustomElement];
-      case 'strong':
-        return children.map(child => Text.isText(child) ? { ...child, bold: true } as CustomText : child);
-      case 'em':
-        return children.map(child => Text.isText(child) ? { ...child, italic: true } as CustomText : child);
-      case 'u':
-        return children.map(child => Text.isText(child) ? { ...child, underline: true } as CustomText : child);
-      default:
-        return children.length > 0 ? [{ type: 'paragraph', children } as CustomElement] : [{ type: 'paragraph', children: [{ text: '' } as CustomText] } as CustomElement];
-    }
-  };
-
-  const result = Array.from(doc.body.childNodes).flatMap(deserializeElement);
-  return result.length > 0 ? result : [{ type: 'paragraph', children: [{ text: '' } as CustomText] } as CustomElement];
-};
+}
 
 interface NoteEditorProps {
   note?: Note;
@@ -272,78 +288,115 @@ interface NoteEditorProps {
   classes: Class[];
 }
 
-export default function NoteEditor({ note, onSave, onClose, classes }: NoteEditorProps) {
+export default function NoteEditor({
+  note,
+  onSave,
+  onClose,
+  classes,
+}: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title || "");
   const [category, setCategory] = useState(note?.category || "general");
   const [classId, setClassId] = useState(note?.classId ? note.classId : "none");
-  const [color, setColor] = useState(note?.color || "#000000");
   const [isPinned, setIsPinned] = useState(note?.isPinned || false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [zoom, setZoom] = useState("100%");
-  const [fontFamily, setFontFamily] = useState("Arial");
-  const [fontSize, setFontSize] = useState(11);
-  const tags = note?.tags || [];
-  
-  const { toast } = useToast();
 
-  // Initialize Slate editor
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
-  const [value, setValue] = useState<Descendant[]>(() => 
-    deserializeFromHtml(note?.content || '')
-  );
+  const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
+
+  // Initialize Tiptap editor with error handling
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
+      Underline,
+      TextStyle,
+      FontFamily.configure({
+        types: ["textStyle"],
+      }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
+      Placeholder.configure({
+        placeholder: "Start writing your note...",
+      }),
+    ],
+    content: note?.content || "<p></p>",
+    editorProps: {
+      attributes: {
+        class:
+          "max-w-none focus:outline-none min-h-[300px] text-foreground",
+      },
+    },
+  });
+
+  // Track content changes for auto-save
+  const [contentChanged, setContentChanged] = useState(false);
+
+  // Set up editor update listener
+  useEffect(() => {
+    if (!editor) return;
+    
+    const handleUpdate = () => {
+      setContentChanged(true);
+    };
+    
+    editor.on('update', handleUpdate);
+    
+    return () => {
+      editor.off('update', handleUpdate);
+    };
+  }, [editor]);
 
   // Auto-save functionality
   useEffect(() => {
-    // Don't auto-save if there's no meaningful content or if this is a new note
-    const hasContent = title.trim() || value.some(n => {
-      if (Text.isText(n)) {
-        return n.text.trim();
-      }
-      return (n as CustomElement).children.some(c => Text.isText(c) && c.text.trim());
-    });
+    if (!editor || !note?.id) return;
+    if (!contentChanged && !title) return;
 
-    // Don't auto-save for new notes (without an ID) or if there's no content
-    if (!hasContent || !note?.id) return;
-    
+    const hasContent = title.trim() || editor.getText().trim();
+
+    if (!hasContent) return;
+
     const autoSaveTimer = setTimeout(() => {
       handleAutoSave();
-    }, 3000); // Auto-save every 3 seconds for continuous saving
+      setContentChanged(false);
+    }, 3000);
 
     return () => clearTimeout(autoSaveTimer);
-  }, [title, value, category, classId, color, isPinned, note?.id]);
+  }, [title, contentChanged, note?.id]);
 
   const handleAutoSave = async () => {
-    // Only auto-save existing notes, not new ones
-    if (!note?.id) return;
-    
-    const htmlContent = serializeToHtml(value);
+    if (!note?.id || !editor) return;
+
+    const htmlContent = editor.getHTML();
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
-    
-    // Only auto-save if there's meaningful content
-    if (!title.trim() && !sanitizedContent.replace(/<[^>]*>/g, '').trim()) return;
-    
+
+    if (!title.trim() && !sanitizedContent.replace(/<[^>]*>/g, "").trim())
+      return;
+
     try {
-      // Don't set isSaving to true for auto-save to avoid UI disruption
       await onSave({
         title: title || "Untitled Note",
         content: sanitizedContent,
         category,
         classId: classId === "none" ? undefined : classId,
-        color,
         isPinned,
       });
       setLastSaved(new Date());
     } catch (error) {
       console.error("Auto-save failed:", error);
-      // Silently fail for auto-save to avoid disrupting user experience
     }
   };
 
   const handleManualSave = async () => {
-    const htmlContent = serializeToHtml(value);
+    if (!editor) return;
+
+    const htmlContent = editor.getHTML();
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
-    
+
     try {
       setIsSaving(true);
       await onSave({
@@ -351,12 +404,11 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
         content: sanitizedContent,
         category,
         classId: classId === "none" ? undefined : classId,
-        color,
         isPinned,
       });
       setLastSaved(new Date());
       toast({
-        title: "Success",
+        title: "Saved",
         description: "Note saved successfully",
       });
     } catch (error) {
@@ -370,565 +422,161 @@ export default function NoteEditor({ note, onSave, onClose, classes }: NoteEdito
     }
   };
 
-  // Helper function to clean markdown symbols from text
-  const cleanMarkdownSymbols = (text: string): string => {
-    return text
-      .replace(/\*\*(.+?)\*\*/g, '$1')  // Remove bold **text**
-      .replace(/\*(.+?)\*/g, '$1')      // Remove italic *text*
-      .replace(/_(.+?)_/g, '$1')        // Remove italic _text_
-      .replace(/`(.+?)`/g, '$1')        // Remove inline code `text`
-      .replace(/~~(.+?)~~/g, '$1')      // Remove strikethrough ~~text~~
-      .trim();
-  };
+  const handleClearNote = useCallback(() => {
+    if (!editor) return;
 
-  const convertTextToSlate = (text: string): Descendant[] => {
-    const lines = text.split('\n').filter(line => line.trim());
-    const nodes: Descendant[] = [];
-
-    lines.forEach((line) => {
-      const trimmed = line.trim();
-      
-      // Check if line looks like a heading
-      if (trimmed.startsWith('# ')) {
-        const cleanText = cleanMarkdownSymbols(trimmed.replace('# ', ''));
-        nodes.push({
-          type: 'heading-one',
-          children: [{ text: cleanText }]
-        } as CustomElement);
-      } else if (trimmed.startsWith('## ')) {
-        const cleanText = cleanMarkdownSymbols(trimmed.replace('## ', ''));
-        nodes.push({
-          type: 'heading-two',
-          children: [{ text: cleanText }]
-        } as CustomElement);
-      } else if (trimmed.startsWith('### ')) {
-        const cleanText = cleanMarkdownSymbols(trimmed.replace('### ', ''));
-        nodes.push({
-          type: 'heading-three',
-          children: [{ text: cleanText }]
-        } as CustomElement);
-      } else if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
-        const cleanText = cleanMarkdownSymbols(trimmed.replace(/^[-•]\s*/, ''));
-        nodes.push({
-          type: 'list-item',
-          children: [{ text: cleanText }]
-        } as CustomElement);
-      } else {
-        const cleanText = cleanMarkdownSymbols(trimmed);
-        nodes.push({
-          type: 'paragraph',
-          children: [{ text: cleanText }]
-        } as CustomElement);
-      }
-    });
-
-    return nodes.length > 0 ? nodes : [{ type: 'paragraph', children: [{ text: '' }] } as CustomElement];
-  };
-
-  const acceptChanges = (newContent: Descendant[]) => {
-    // Clean the content before setting it
-    const cleanedContent = newContent.map(node => {
-      if ('children' in node && Array.isArray(node.children)) {
-        return {
-          ...node,
-          children: node.children.map((child: any) => {
-            if ('text' in child) {
-              return {
-                ...child,
-                text: child.text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/_/g, '').replace(/`/g, '')
-              };
-            }
-            return child;
-          })
-        };
-      }
-      return node;
-    });
-    
-    setValue(cleanedContent as Descendant[]);
+    setTitle("");
+    editor.commands.clearContent();
     toast({
-      title: "Changes accepted",
-      description: "Your note has been updated",
+      title: "Cleared",
+      description: "Note content has been cleared",
     });
-  };
+  }, [editor, toast]);
 
-  const rejectChanges = () => {
-    toast({
-      title: "Changes rejected",
-      description: "Original content preserved",
-    });
-  };
-
-  // Previously: helper utilities for AI-assisted content insertion and copy-to-clipboard
-  // These have been removed as part of deprecating the AI writing assistant.
-
-  const renderElement = useCallback((props: RenderElementProps) => {
-    const { attributes, children, element } = props;
-    const alignClass = element.align ? `text-${element.align}` : '';
-
-    switch (element.type) {
-      case 'heading-one':
-        return (
-          <h1 {...attributes} className={`text-4xl font-bold mt-8 mb-4 text-black ${alignClass}`}>
-            {children}
-          </h1>
-        );
-      case 'heading-two':
-        return (
-          <h2 {...attributes} className={`text-3xl font-bold mt-6 mb-3 text-black ${alignClass}`}>
-            {children}
-          </h2>
-        );
-      case 'heading-three':
-        return (
-          <h3 {...attributes} className={`text-2xl font-bold mt-4 mb-2 text-black ${alignClass}`}>
-            {children}
-          </h3>
-        );
-      case 'block-quote':
-        return (
-          <blockquote {...attributes} className={`border-l-4 border-border pl-6 italic my-4 text-gray-600 ${alignClass}`}>
-            {children}
-          </blockquote>
-        );
-      case 'bulleted-list':
-        return (
-          <ul {...attributes} className={`list-disc ml-6 my-4 space-y-1 text-black ${alignClass}`}>
-            {children}
-          </ul>
-        );
-      case 'numbered-list':
-        return (
-          <ol {...attributes} className={`list-decimal ml-6 my-4 space-y-1 text-black ${alignClass}`}>
-            {children}
-          </ol>
-        );
-      case 'list-item':
-        return (
-          <li {...attributes} className={`text-black ${alignClass}`}>
-            {children}
-          </li>
-        );
-      default:
-        return (
-          <p {...attributes} className={`mb-4 text-black leading-relaxed ${alignClass}`}>
-            {children}
-          </p>
-        );
-    }
-  }, []);
-
-  const renderLeaf = useCallback((props: RenderLeafProps) => {
-    let { attributes, children, leaf } = props;
-
-    if (leaf.bold) {
-      children = <strong>{children}</strong>;
-    }
-
-    if (leaf.italic) {
-      children = <em>{children}</em>;
-    }
-
-    if (leaf.underline) {
-      children = <u>{children}</u>;
-    }
-
-    return <span {...attributes}>{children}</span>;
-  }, []);
-
-  const getColorClass = (colorValue: string) => {
-    const colorObj = noteColors.find(c => c.value === colorValue);
-    return colorObj ? colorObj.class : "bg-black text-white";
-  };
-
-  const isEmpty = value.length === 1 && 
-    SlateElement.isElement(value[0]) && 
-    (value[0] as CustomElement).type === 'paragraph' && 
-    (value[0] as CustomElement).children.length === 1 && 
-    Text.isText((value[0] as CustomElement).children[0]) && 
-    ((value[0] as CustomElement).children[0] as CustomText).text === '';
+  // Show loading state while editor initializes
+  if (!editor) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">Loading editor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      {/* Google Docs-style Header */}
-      <div className="border-b border-border bg-background shadow-sm flex-shrink-0">
-        {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-4 py-2 h-12">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClose}
-              className="text-muted-foreground p-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-foreground">
-                {title || "Untitled document"}
-              </span>
-            </div>
-            
-
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button 
-              onClick={handleManualSave} 
-              disabled={isSaving}
-              className="bg-blue-600 text-white px-4 py-1 h-8 text-sm"
-            >
-              <Save className="h-4 w-4 mr-1" />
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Notes</span>
+            <span>/</span>
+            <span className="text-foreground font-medium truncate max-w-[200px]">
+              {title || "Untitled"}
+            </span>
           </div>
         </div>
 
-      </div>
-
-      {/* Google Docs-style Toolbar */}
-      <div className="border-b border-border bg-background p-2 flex-shrink-0">
-        <div className="flex items-center space-x-1 flex-wrap">
-          {/* Left Section - Undo/Redo/Print */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => undo(editor)}
-              disabled={!canUndo(editor)}
-            >
-              <Undo className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => redo(editor)}
-              disabled={!canRedo(editor)}
-            >
-              <Redo className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0"
-              onClick={() => window.print()}
-            >
-              <Printer className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Zoom and Text Style */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Select value={zoom} onValueChange={setZoom}>
-              <SelectTrigger className="w-16 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="50%">50%</SelectItem>
-                <SelectItem value="75%">75%</SelectItem>
-                <SelectItem value="100%">100%</SelectItem>
-                <SelectItem value="125%">125%</SelectItem>
-                <SelectItem value="150%">150%</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select defaultValue="Normal text" onValueChange={(value) => {
-              switch(value) {
-                case "Heading 1":
-                  toggleBlock(editor, 'heading-one');
-                  break;
-                case "Heading 2":
-                  toggleBlock(editor, 'heading-two');
-                  break;
-                case "Heading 3":
-                  toggleBlock(editor, 'heading-three');
-                  break;
-                default:
-                  toggleBlock(editor, 'paragraph');
-              }
-            }}>
-              <SelectTrigger className="w-32 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Normal text">Normal text</SelectItem>
-                <SelectItem value="Heading 1">Heading 1</SelectItem>
-                <SelectItem value="Heading 2">Heading 2</SelectItem>
-                <SelectItem value="Heading 3">Heading 3</SelectItem>
-                <SelectItem value="Subtitle">Subtitle</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Font Selection */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Select value={fontFamily} onValueChange={setFontFamily}>
-              <SelectTrigger className="w-24 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                <SelectItem value="Calibri">Calibri</SelectItem>
-                <SelectItem value="Georgia">Georgia</SelectItem>
-                <SelectItem value="Verdana">Verdana</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <div className="flex items-center space-x-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 w-6 p-0 text-xs"
-                onClick={() => setFontSize(Math.max(8, fontSize - 1))}
-              >
-                -
-              </Button>
-              <span className="text-xs px-2">{fontSize}</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 w-6 p-0 text-xs"
-                onClick={() => setFontSize(Math.min(72, fontSize + 1))}
-              >
-                +
-              </Button>
-            </div>
-          </div>
-
-          {/* Text Formatting */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Button
-              variant={isMarkActive(editor, 'bold') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleMark(editor, 'bold');
-              }}
-              className={`h-8 w-8 p-0 ${isMarkActive(editor, 'bold') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <Bold className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isMarkActive(editor, 'italic') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleMark(editor, 'italic');
-              }}
-              className={`h-8 w-8 p-0 ${isMarkActive(editor, 'italic') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <Italic className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isMarkActive(editor, 'underline') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleMark(editor, 'underline');
-              }}
-              className={`h-8 w-8 p-0 ${isMarkActive(editor, 'underline') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <Underline className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Alignment */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Button
-              variant={isAlignmentActive(editor, 'left') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleAlignment(editor, 'left');
-              }}
-              className={`h-8 w-8 p-0 ${isAlignmentActive(editor, 'left') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <AlignLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isAlignmentActive(editor, 'center') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleAlignment(editor, 'center');
-              }}
-              className={`h-8 w-8 p-0 ${isAlignmentActive(editor, 'center') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <AlignCenter className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isAlignmentActive(editor, 'right') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleAlignment(editor, 'right');
-              }}
-              className={`h-8 w-8 p-0 ${isAlignmentActive(editor, 'right') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <AlignRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isAlignmentActive(editor, 'justify') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleAlignment(editor, 'justify');
-              }}
-              className={`h-8 w-8 p-0 ${isAlignmentActive(editor, 'justify') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <AlignJustify className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Lists and Indentation */}
-          <div className="flex items-center space-x-1 border-r border-border pr-2">
-            <Button
-              variant={isBlockActive(editor, 'bulleted-list') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleBlock(editor, 'bulleted-list');
-              }}
-              className={`h-8 w-8 p-0 ${isBlockActive(editor, 'bulleted-list') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isBlockActive(editor, 'numbered-list') ? "default" : "ghost"}
-              size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                toggleBlock(editor, 'numbered-list');
-              }}
-              className={`h-8 w-8 p-0 ${isBlockActive(editor, 'numbered-list') ? "bg-blue-100 text-blue-600" : ""}`}
-            >
-              <ListOrdered className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Editor */}
-      <div className="flex-1 overflow-y-auto bg-background">
-        <div className="flex relative">
-          {/* Vertical Ruler */}
-          <div className="w-8 bg-muted/20 border-r border-border flex flex-col items-center py-4 text-xs text-muted-foreground">
-            <span className="transform -rotate-90 whitespace-nowrap">1</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">2</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">3</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">4</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">5</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">6</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">7</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">8</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">9</span>
-            <span className="transform -rotate-90 whitespace-nowrap mt-8">10</span>
-          </div>
-
-          {/* Document Area */}
-          <div className="flex-1 bg-white shadow-inner transition-all duration-300">
-            <div className="max-w-4xl mx-auto p-12 min-h-[800px]">
-              {/* Title */}
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Untitled document"
-                className="text-4xl font-normal border-none bg-transparent text-black placeholder:text-gray-400 p-0 mb-8 focus-visible:ring-0 shadow-none transition-all duration-200"
-                style={{ fontSize: "2.5rem", lineHeight: "1.2", color: "#000000" }}
-              />
-
-              {/* Slate Editor */}
-              <Slate
-                editor={editor}
-                initialValue={value}
-                onValueChange={(newValue) => setValue(newValue)}
-              >
-                <Editable
-                  renderElement={renderElement}
-                  renderLeaf={renderLeaf}
-                  placeholder="Start writing your document..."
-                  className="min-h-[600px] text-base leading-relaxed focus:outline-none text-black max-w-none"
-                  style={{
-                    fontFamily: fontFamily,
-                    fontSize: `${fontSize}px`,
-                    lineHeight: "1.5",
-                    transform: `scale(${parseInt(zoom) / 100})`,
-                    transformOrigin: "top left",
-                    color: "#000000",
-                  }}
-                />
-              </Slate>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Bar */}
-      <div className="border-t border-border bg-muted/30 px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center space-x-4">
-          <span>Document saved to Drive</span>
-          <span>•</span>
-          <span>Last edit was {lastSaved ? lastSaved.toLocaleTimeString() : 'never'}</span>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsPinned(!isPinned)}
-              className={`h-6 px-2 text-xs ${
-                isPinned 
-                  ? "text-amber-500 bg-amber-500/10" 
-                  : "text-muted-foreground"
-              }`}
-            >
-              {isPinned ? <PinOff className="h-3 w-3 mr-1" /> : <Pin className="h-3 w-3 mr-1" />}
-              {isPinned ? 'Unpin' : 'Pin'}
-            </Button>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-24 h-6 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {noteCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat} className="text-xs">
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={classId} onValueChange={setClassId}>
-              <SelectTrigger className="w-24 h-6 text-xs">
-                <SelectValue placeholder="Class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none" className="text-xs">No class</SelectItem>
-                {classes.filter((cls) => cls.id && cls.id.trim() !== "").map((cls) => (
-                  <SelectItem key={cls.id} value={cls.id} className="text-xs">
-                    {cls.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {isSaving && (
-              <span className="text-blue-600 flex items-center">
-                <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse mr-1"></div>
-                Saving...
-              </span>
+        <div className="flex items-center gap-2">
+          {/* Pin Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsPinned(!isPinned)}
+            className={isPinned ? "text-amber-500" : "text-muted-foreground"}
+            title={isPinned ? "Unpin note" : "Pin note"}
+          >
+            {isPinned ? (
+              <PinOff className="h-4 w-4" />
+            ) : (
+              <Pin className="h-4 w-4" />
             )}
+          </Button>
+
+          {/* Clear Note */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClearNote}
+            className="text-muted-foreground hover:text-destructive"
+            title="Clear note"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+
+          {/* Save Button */}
+          <Button onClick={handleManualSave} disabled={isSaving} className="gap-2">
+            <Save className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {isSaving ? "Saving..." : "Save"}
+            </span>
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Content Area - Full Screen */}
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {/* Toolbar - Sticky at top */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border">
+          <EditorToolbar editor={editor} />
+        </div>
+
+        {/* Full Width Editor */}
+        <div className="flex-1 px-6 sm:px-12 lg:px-20 py-8">
+          {/* Title Input */}
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Untitled"
+            className="text-3xl sm:text-4xl font-bold border-none bg-transparent p-0 mb-8 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/40 max-w-4xl"
+          />
+
+          {/* Tiptap Editor - Full Height */}
+          <div className="max-w-4xl min-h-[calc(100vh-300px)]">
+            <EditorContent editor={editor} className="min-h-full" />
+          </div>
+        </div>
+
+        {/* Footer with Metadata */}
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border px-6 sm:px-12 lg:px-20 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground max-w-4xl">
+            <div className="flex items-center gap-4">
+              {/* Category Select */}
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-[130px] h-8 text-xs bg-card border-border">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {noteCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat} className="text-xs">
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Class Select */}
+              <Select value={classId} onValueChange={setClassId}>
+                <SelectTrigger className="w-[130px] h-8 text-xs bg-card border-border">
+                  <SelectValue placeholder="Class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" className="text-xs">
+                    No class
+                  </SelectItem>
+                  {classes
+                    .filter((cls) => cls.id && cls.id.trim() !== "")
+                    .map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id} className="text-xs">
+                        {cls.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Last Saved */}
+            <div className="flex items-center gap-2">
+              {isSaving && (
+                <span className="flex items-center gap-1.5 text-primary">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  Saving...
+                </span>
+              )}
+              {lastSaved && !isSaving && (
+                <span>Last saved {lastSaved.toLocaleTimeString()}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

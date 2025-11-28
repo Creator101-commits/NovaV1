@@ -93,11 +93,6 @@ const STARTER_PROMPTS = [
     prompt: "I need deep research insights on this topic. Can you provide comprehensive analysis and findings?"
   },
   {
-    icon: <StickyNote className="h-5 w-5" />,
-    title: "generate image",
-    prompt: "Can you help me generate images or visual content for my project?"
-  },
-  {
     icon: <Brain className="h-5 w-5" />,
     title: "solve",
     prompt: "I need help solving a problem. Can you work through this step by step with me?"
@@ -119,6 +114,7 @@ export default function AiChat() {
   const [showNoteSelector, setShowNoteSelector] = useState(false);
   const [uploadedDocument, setUploadedDocument] = useState<UploadedDocument | null>(null);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null); // Track file processing status
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -404,6 +400,7 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
     }
 
     setIsLoading(true);
+    setProcessingStatus("Generating summary...");
     addMessage("user", `Summarize this text (${summaryType}): ${inputText.substring(0, 100)}...`);
 
     try {
@@ -455,6 +452,7 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
       });
     } finally {
       setIsLoading(false);
+      setProcessingStatus(null);
     }
   };
 
@@ -469,6 +467,7 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
     }
 
     setIsLoading(true);
+    setProcessingStatus("Generating note summary...");
     const stripHtmlTags = (html: string) => html.replace(/<[^>]+>/g, "");
     const cleanContent = stripHtmlTags(selectedNote.content);
     
@@ -524,6 +523,7 @@ Structure your responses with clear headings, proper spacing, and logical flow. 
       });
     } finally {
       setIsLoading(false);
+      setProcessingStatus(null);
     }
   };
 
@@ -652,7 +652,6 @@ ${msg}
     }
 
     setIsUploadingDoc(true);
-    addMessage("user", `📎 Uploading document: ${file.name}`);
 
     try {
       const formData = new FormData();
@@ -682,24 +681,6 @@ ${msg}
 
       setUploadedDocument(doc);
 
-      addMessage(
-        "assistant",
-        `✅ **Document Uploaded Successfully!**
-
-📄 **${file.name}**
-
-I'm now processing your document. This may take a moment depending on the size. Once complete, you can:
-
-- Ask me questions about the document
-- Request summaries of specific sections
-- Generate study materials (flashcards, notes, assignments)
-- Discuss key concepts and ideas
-
-**Processing Status:** ${data.phase}
-
-Feel free to start asking questions while I process the document!`
-      );
-
       // Poll for document processing status
       pollDocumentStatus(data.jobId);
 
@@ -711,7 +692,7 @@ Feel free to start asking questions while I process the document!`
       console.error("Document upload error:", error);
       addMessage(
         "assistant",
-        "❌ Sorry, I encountered an error while uploading the document. Please try again."
+        "Sorry, I encountered an error while uploading the document. Please try again."
       );
       toast({
         title: "Upload Failed",
@@ -742,19 +723,6 @@ Feel free to start asking questions while I process the document!`
           
           setUploadedDocument(prev => {
             if (prev && prev.jobId === jobId) {
-              addMessage(
-                "assistant",
-                `🎉 **Document Processing Complete!**
-
-Your document has been fully processed and I've extracted all the text content and structure.
-
-You can now ask me anything about this document. Try questions like:
-- "Summarize the main points"
-- "What are the key takeaways?"
-- "Explain [specific concept] from the document"
-- "What is this document about?"`
-              );
-              
               return { 
                 ...prev, 
                 status: "ready", 
@@ -801,7 +769,8 @@ You can now ask me anything about this document. Try questions like:
     }
 
     setIsLoading(true);
-    addMessage("user", `📄 Summarize file (${summaryType}): ${file.name}`);
+    setProcessingStatus("Uploading document...");
+    addMessage("user", `Summarize file (${summaryType}): ${file.name}`);
 
     try {
       let content = "";
@@ -809,12 +778,12 @@ You can now ask me anything about this document. Try questions like:
       
       if (file.type === "text/plain") {
         // Handle text files directly
+        setProcessingStatus("Reading text file...");
         content = await file.text();
         fileType = "text";
       } else {
         // Handle PDF, PPTX, XLSX using document processing service
-        addMessage("assistant", "📤 Uploading document for processing...");
-        
+        setProcessingStatus("Uploading document...");
         const formData = new FormData();
         formData.append("file", file);
 
@@ -833,7 +802,7 @@ You can now ask me anything about this document. Try questions like:
         const uploadData = await uploadResponse.json();
         const jobId = uploadData.jobId;
 
-        addMessage("assistant", "⚙️ Processing document...");
+        setProcessingStatus("Processing document...");
 
         // Poll for document content
         let documentReady = false;
@@ -843,6 +812,7 @@ You can now ask me anything about this document. Try questions like:
         while (!documentReady && attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
           attempts++;
+          setProcessingStatus(`Extracting content... (${Math.round((attempts / maxAttempts) * 100)}%)`);
 
           try {
             const contentResponse = await fetch(`/api/document-intel/sessions/${jobId}/content`, {
@@ -873,9 +843,9 @@ You can now ask me anything about this document. Try questions like:
         if (!documentReady) {
           throw new Error("Document processing timeout. Please try again.");
         }
-
-        addMessage("assistant", "✅ Document processed! Generating summary...");
       }
+
+      setProcessingStatus("Generating summary...");
 
       // Generate summary using Groq
       const response = await groqAPI.summarizeContent({
@@ -907,7 +877,7 @@ You can now ask me anything about this document. Try questions like:
       });
     } catch (error) {
       console.error("File summarization error:", error);
-      addMessage("assistant", "❌ Sorry, I encountered an error while processing the file. Please try again.");
+      addMessage("assistant", "Sorry, I encountered an error while processing the file. Please try again.");
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to process file. Please try again.",
@@ -915,6 +885,7 @@ You can now ask me anything about this document. Try questions like:
       });
     } finally {
       setIsLoading(false);
+      setProcessingStatus(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -1013,13 +984,6 @@ You can now ask me anything about this document. Try questions like:
               <FileText className="h-4 w-4 mr-2" />
               Summarize
             </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => setActiveTab("history")}
-              className="hover:bg-muted focus:bg-muted cursor-pointer"
-            >
-              <History className="h-4 w-4 mr-2" />
-              History
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -1028,21 +992,30 @@ You can now ask me anything about this document. Try questions like:
 
         {activeTab === "chat" && (
           <div className="h-full flex flex-col relative">
+            {/* Hidden file input - always available */}
+            <input
+              ref={documentInputRef}
+              type="file"
+              accept=".pdf,.pptx,.xlsx"
+              onChange={handleDocumentUpload}
+              style={{ position: 'absolute', top: 0, left: 0, opacity: 0, pointerEvents: 'none' }}
+            />
+            
             {messages.filter(msg => !msg.summaryType).length === 0 ? (
               /* Landing Page - Perfectly Centered Design */
               <div 
                 key="landing" 
-                className="absolute inset-0 flex flex-col items-center justify-center w-full px-6 animate-in fade-in duration-500 ease-out"
+                className="absolute inset-0 flex flex-col items-center justify-center w-full px-6"
               >
                 {/* Personalized Greeting */}
-                <div className="text-center mb-6 animate-in fade-in slide-in-from-top-4 duration-700 delay-100">
+                <div className="text-center mb-6">
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                     {getGreeting()}, {getUserName()}
                   </h1>
                 </div>
 
                 {/* v0-Style Input Box - CENTERED FOCAL POINT */}
-                <div className="w-full max-w-4xl mb-6 animate-in fade-in zoom-in-95 duration-700 delay-200">
+                <div className="w-full max-w-4xl mb-6">
                   <div className="relative bg-card rounded-xl border border-border shadow-lg">
                     <div className="overflow-y-auto">
                       <Textarea
@@ -1075,13 +1048,6 @@ You can now ask me anything about this document. Try questions like:
 
                     <div className="flex items-center justify-between p-3 border-t border-border">
                       <div className="flex items-center gap-2">
-                        <input
-                          ref={documentInputRef}
-                          type="file"
-                          accept=".pdf,.pptx,.xlsx"
-                          onChange={handleDocumentUpload}
-                          className="hidden"
-                        />
                         <button
                           type="button"
                           onClick={() => documentInputRef.current?.click()}
@@ -1099,24 +1065,38 @@ You can now ask me anything about this document. Try questions like:
                           </span>
                         </button>
                         {uploadedDocument && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg border border-primary/20">
-                            <FileText className="w-3 h-3 text-primary" />
-                            <span className="text-xs text-primary truncate max-w-[100px]">
+                          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors ${
+                            uploadedDocument.status === "ready" 
+                              ? "bg-green-500/10 border-green-500/20" 
+                              : uploadedDocument.status === "error"
+                              ? "bg-destructive/10 border-destructive/20"
+                              : "bg-primary/10 border-primary/20"
+                          }`}>
+                            {uploadedDocument.status === "processing" || uploadedDocument.status === "uploading" ? (
+                              <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                            ) : uploadedDocument.status === "ready" ? (
+                              <FileCheck className="w-3 h-3 text-green-500" />
+                            ) : (
+                              <FileText className="w-3 h-3 text-destructive" />
+                            )}
+                            <span className={`text-xs truncate max-w-[100px] ${
+                              uploadedDocument.status === "ready" 
+                                ? "text-green-600 dark:text-green-400" 
+                                : uploadedDocument.status === "error"
+                                ? "text-destructive"
+                                : "text-primary"
+                            }`}>
                               {uploadedDocument.fileName}
                             </span>
-                            {uploadedDocument.status === "processing" && (
-                              <Loader2 className="w-3 h-3 text-primary animate-spin ml-1" />
+                            {(uploadedDocument.status === "processing" || uploadedDocument.status === "uploading") && (
+                              <span className="text-xs text-muted-foreground">
+                                {uploadedDocument.status === "uploading" ? "Uploading..." : "Processing..."}
+                              </span>
                             )}
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border">
-                          <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                          </svg>
-                          <span className="text-xs text-foreground font-medium whitespace-nowrap">DeepSeek V3</span>
-                        </div>
                         <button
                           type="button"
                           onClick={handleChatMessage}
@@ -1141,7 +1121,7 @@ You can now ask me anything about this document. Try questions like:
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   {STARTER_PROMPTS.map((prompt, index) => (
                     <button
                       key={index}
@@ -1159,18 +1139,17 @@ You can now ask me anything about this document. Try questions like:
               /* Chat Interface - Smooth Transition from Center */
               <div 
                 key="chat" 
-                className="absolute inset-0 flex flex-col bg-background animate-in fade-in duration-500 ease-out"
+                className="absolute inset-0 flex flex-col bg-background"
               >
                 {/* Chat Messages Area - Fills remaining space above input */}
-                <div className="flex-1 p-4 md:p-6 overflow-y-auto scroll-smooth animate-in fade-in slide-in-from-top-2 duration-600 delay-100">
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto scroll-smooth">
                   <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
                     {messages
                       .filter(msg => !msg.summaryType)
                       .map((message, index) => (
                         <div
                           key={message.id}
-                          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"} my-2 animate-in fade-in slide-in-from-bottom-2 duration-500`}
-                          style={{ animationDelay: `${index * 50}ms` }}
+                          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"} my-2`}
                         >
                           <div className={`flex ${message.type === "user" ? "flex-row-reverse" : "flex-row"} items-start gap-3 max-w-[85%] group`}>
                             {/* Avatar */}
@@ -1216,7 +1195,7 @@ You can now ask me anything about this document. Try questions like:
                     
                     {/* Loading Indicator */}
                     {isLoading && (
-                      <div className="flex justify-start my-2 animate-in fade-in slide-in-from-left duration-300">
+                      <div className="flex justify-start my-2">
                         <div className="flex items-start gap-3">
                           <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                             <Bot className="h-4 w-4 text-foreground" />
@@ -1238,8 +1217,8 @@ You can now ask me anything about this document. Try questions like:
                   </div>
                 </div>
                 
-                {/* Chat Input Area - Sticky Bottom with Smooth Entry */}
-                <div className="sticky bottom-0 flex-shrink-0 p-4 md:p-6 border-t border-border bg-background/95 backdrop-blur-md animate-in slide-in-from-bottom-4 duration-600 delay-200">
+                {/* Chat Input Area - Sticky Bottom */}
+                <div className="sticky bottom-0 flex-shrink-0 p-4 md:p-6 border-t border-border bg-background/95 backdrop-blur-md z-20">
                   <div className="max-w-4xl mx-auto">
                     <div className="relative bg-card rounded-xl border border-border shadow-lg transition-all duration-300 hover:shadow-xl">
                       <div className="overflow-y-auto">
@@ -1275,9 +1254,18 @@ You can now ask me anything about this document. Try questions like:
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => documentInputRef.current?.click()}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Upload button clicked, ref:', documentInputRef.current);
+                              if (documentInputRef.current) {
+                                documentInputRef.current.click();
+                              } else {
+                                console.error('documentInputRef is null!');
+                              }
+                            }}
                             disabled={isUploadingDoc}
-                            className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                            className="group p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 cursor-pointer"
                             title="Upload PDF, PPTX, or XLSX"
                           >
                             {isUploadingDoc ? (
@@ -1290,24 +1278,38 @@ You can now ask me anything about this document. Try questions like:
                             </span>
                           </button>
                           {uploadedDocument && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg border border-primary/20">
-                              <FileText className="w-3 h-3 text-primary" />
-                              <span className="text-xs text-primary truncate max-w-[100px]">
+                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors ${
+                              uploadedDocument.status === "ready" 
+                                ? "bg-green-500/10 border-green-500/20" 
+                                : uploadedDocument.status === "error"
+                                ? "bg-destructive/10 border-destructive/20"
+                                : "bg-primary/10 border-primary/20"
+                            }`}>
+                              {uploadedDocument.status === "processing" || uploadedDocument.status === "uploading" ? (
+                                <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                              ) : uploadedDocument.status === "ready" ? (
+                                <FileCheck className="w-3 h-3 text-green-500" />
+                              ) : (
+                                <FileText className="w-3 h-3 text-destructive" />
+                              )}
+                              <span className={`text-xs truncate max-w-[100px] ${
+                                uploadedDocument.status === "ready" 
+                                  ? "text-green-600 dark:text-green-400" 
+                                  : uploadedDocument.status === "error"
+                                  ? "text-destructive"
+                                  : "text-primary"
+                              }`}>
                                 {uploadedDocument.fileName}
                               </span>
-                              {uploadedDocument.status === "processing" && (
-                                <Loader2 className="w-3 h-3 text-primary animate-spin ml-1" />
+                              {(uploadedDocument.status === "processing" || uploadedDocument.status === "uploading") && (
+                                <span className="text-xs text-muted-foreground">
+                                  {uploadedDocument.status === "uploading" ? "Uploading..." : "Processing..."}
+                                </span>
                               )}
                             </div>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center space-x-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border">
-                            <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                            </svg>
-                            <span className="text-xs text-foreground font-medium whitespace-nowrap">DeepSeek V3</span>
-                          </div>
                           <button
                             type="button"
                             onClick={isLoading ? stopResponse : handleChatMessage}
@@ -1383,7 +1385,7 @@ You can now ask me anything about this document. Try questions like:
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-none">
                 <CardHeader>
                   <CardTitle>Input Methods</CardTitle>
                 </CardHeader>
@@ -1406,8 +1408,6 @@ You can now ask me anything about this document. Try questions like:
                       Summarize Text
                     </Button>
                   </div>
-
-                  <Separator />
 
                   {/* Notes Selection */}
                   <div>
@@ -1508,32 +1508,6 @@ You can now ask me anything about this document. Try questions like:
                     </div>
                   </div>
 
-                  <Separator />
-
-                  {/* YouTube URL */}
-                  <div>
-                    <Label>YouTube URL</Label>
-                    <Input
-                      placeholder="https://youtube.com/watch?v=..."
-                      value={youtubeUrl}
-                      onChange={(e) => setYoutubeUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                       <strong>Tip:</strong> Educational videos, tutorials, and news content typically have working captions. Music videos and older content often have disabled transcripts.
-                    </p>
-                    <Button
-                      onClick={handleYoutubeSummarize}
-                      disabled={isLoading || !youtubeUrl.trim()}
-                      className="w-full mt-2"
-                      variant="outline"
-                    >
-                      {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Youtube className="h-4 w-4 mr-2" />}
-                      Summarize Video
-                    </Button>
-                  </div>
-
-                  <Separator />
-
                   {/* File Upload */}
                   <div>
                     <Label>File Upload</Label>
@@ -1620,11 +1594,26 @@ You can now ask me anything about this document. Try questions like:
                           ))
                       )}
                       {isLoading && (
-                        <div className="flex justify-start">
-                          <div className="bg-muted p-4 rounded-lg">
-                            <div className="flex items-center space-x-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-sm">AI is processing...</span>
+                        <div className="flex justify-center py-8">
+                          <div className="bg-card border border-border rounded-xl p-6 shadow-lg max-w-sm w-full">
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="relative">
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-background animate-pulse"></div>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-medium text-foreground">
+                                  {processingStatus || "Processing..."}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  This may take a moment
+                                </p>
+                              </div>
+                              <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-primary h-full rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                              </div>
                             </div>
                           </div>
                         </div>

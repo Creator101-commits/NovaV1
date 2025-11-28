@@ -18,7 +18,6 @@ import {
   Brain,
   BarChart3,
   Target,
-  User,
   Settings,
   Menu,
   X,
@@ -90,13 +89,6 @@ const navigationItems: NavItem[] = [
     path: '/habits',
     icon: Target,
     description: 'Build study habits',
-  },
-  {
-    id: 'profile',
-    label: 'Profile',
-    path: '/profile',
-    icon: User,
-    description: 'Manage your profile',
   },
   {
     id: 'settings',

@@ -36,7 +36,7 @@ import {
   Trash2,
   MoreVertical
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isToday, parseISO } from "date-fns";
 
 interface Habit {
   id: string;

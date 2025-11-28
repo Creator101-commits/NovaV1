@@ -189,6 +189,7 @@ export class MemStorage implements IStorage {
   private pomodoroSessions: Map<string, PomodoroSession>;
   private aiSummaries: Map<string, AiSummary>;
   private notes: Map<string, Note>;
+  private habits: Map<string, Habit>;
 
   constructor() {
     this.users = new Map();
@@ -200,6 +201,7 @@ export class MemStorage implements IStorage {
     this.pomodoroSessions = new Map();
     this.aiSummaries = new Map();
     this.notes = new Map();
+    this.habits = new Map();
   }
 
   // User methods
@@ -453,6 +455,47 @@ export class MemStorage implements IStorage {
     return this.aiSummaries.delete(id);
   }
 
+  // Habit methods
+  async getHabitsByUserId(userId: string): Promise<Habit[]> {
+    return Array.from(this.habits.values()).filter(habit => habit.userId === userId);
+  }
+
+  async createHabit(habitData: InsertHabit): Promise<Habit> {
+    const id = randomUUID();
+    const habit: Habit = {
+      id,
+      userId: habitData.userId,
+      name: habitData.name,
+      description: habitData.description ?? null,
+      category: habitData.category ?? null,
+      frequency: habitData.frequency ?? 'daily',
+      targetCount: habitData.targetCount ?? 1,
+      color: habitData.color ?? null,
+      icon: habitData.icon ?? null,
+      streak: habitData.streak ?? 0,
+      completions: habitData.completions ?? {},
+      createdAt: new Date(),
+      isActive: habitData.isActive ?? true
+    };
+    this.habits.set(id, habit);
+    return habit;
+  }
+
+  async updateHabit(id: string, habitData: Partial<InsertHabit>): Promise<Habit | undefined> {
+    const habit = this.habits.get(id);
+    if (!habit) return undefined;
+
+    const updatedHabit: Habit = {
+      ...habit,
+      ...habitData
+    };
+    this.habits.set(id, updatedHabit);
+    return updatedHabit;
+  }
+
+  async deleteHabit(id: string): Promise<boolean> {
+    return this.habits.delete(id);
+  }
 
   // Notes methods
   async getNotesByUserId(userId: string): Promise<Note[]> {
@@ -738,6 +781,25 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
+  // Habit methods
+  async getHabitsByUserId(userId: string): Promise<Habit[]> {
+    return await db.select().from(habits).where(eq(habits.userId, userId));
+  }
+
+  async createHabit(habit: InsertHabit): Promise<Habit> {
+    const result = await db.insert(habits).values(habit).returning();
+    return result[0];
+  }
+
+  async updateHabit(id: string, habitData: Partial<InsertHabit>): Promise<Habit | undefined> {
+    const result = await db.update(habits).set(habitData).where(eq(habits.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteHabit(id: string): Promise<boolean> {
+    const result = await db.delete(habits).where(eq(habits.id, id));
+    return result.length > 0;
+  }
 
   // Notes methods
   async getNotesByUserId(userId: string): Promise<Note[]> {

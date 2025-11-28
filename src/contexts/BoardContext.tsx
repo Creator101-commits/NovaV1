@@ -29,6 +29,7 @@ interface BoardContextType {
   
   // Card actions
   createCard: (listId: string, title: string) => Promise<void>;
+  createInboxCard: (title: string) => Promise<void>;
   updateCard: (id: string, updates: Partial<Card>) => Promise<void>;
   deleteCard: (id: string) => Promise<void>;
   moveCard: (cardId: string, newListId: string | null, newPosition: number) => Promise<void>;
@@ -370,6 +371,35 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user?.uid, cards, getAuthHeaders, toast]);
 
+  // Create inbox card (no listId)
+  const createInboxCard = useCallback(async (title: string) => {
+    try {
+      const position = inboxCards.length;
+      
+      const response = await fetch('/api/cards', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ 
+          userId: user?.uid,
+          listId: null, 
+          title, 
+          position 
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to create inbox card');
+      
+      const newCard = await response.json();
+      setInboxCards(prev => [...prev, newCard]);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create inbox card',
+        variant: 'destructive'
+      });
+    }
+  }, [user?.uid, inboxCards.length, getAuthHeaders, toast]);
+
   // Update card
   const updateCard = useCallback(async (id: string, updates: Partial<Card>) => {
     try {
@@ -574,6 +604,7 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateList,
     deleteList,
     createCard,
+    createInboxCard,
     updateCard,
     deleteCard,
     moveCard,

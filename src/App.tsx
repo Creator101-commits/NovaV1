@@ -51,7 +51,6 @@ import {
   LazyLearn,
   LazyAiChat,
   LazyAnalytics,
-  LazyProfile,
   LazyHabits,
   LazyTodos,
   LazyToDoList,
@@ -128,9 +127,6 @@ function AppNavigation() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => setLocation("/profile")} className="text-sm">
-                    Profile
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setLocation("/settings")} className="text-sm">
                     Settings
                   </DropdownMenuItem>
@@ -301,16 +297,6 @@ function Router() {
           <AppLayout>
             <Suspense fallback={<PageLoading message="Loading To-Do Board..." />}>
               <LazyToDoList />
-            </Suspense>
-          </AppLayout>
-        </ProtectedRoute>
-      </Route>
-      
-      <Route path="/profile">
-        <ProtectedRoute fallback={<Landing />}>
-          <AppLayout>
-            <Suspense fallback={<PageLoading message="Loading Profile..." />}>
-              <LazyProfile />
             </Suspense>
           </AppLayout>
         </ProtectedRoute>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,13 +117,16 @@ function CalendarComponent() {
                         currentDate.getFullYear() === today.getFullYear();
 
   return (
-    <Card className="bg-card border-border">
+    <Card 
+      className="bg-card border-border cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => window.location.href = '/calendar'}
+    >
       <CardHeader className="pb-3 bg-card">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h3>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -167,15 +171,15 @@ function CalendarComponent() {
               return (
                 <div
                   key={day}
-                  className={`h-8 flex items-center justify-center rounded cursor-pointer transition-colors bg-card text-foreground ${
+                  className={`h-8 flex items-center justify-center rounded cursor-pointer transition-colors ${
                     isToday 
-                      ? 'bg-foreground text-background font-medium' 
-                      : 'hover:bg-muted/50'
+                      ? 'bg-foreground text-background font-semibold' 
+                      : 'bg-card text-foreground hover:bg-muted/50'
                   }`}
                 >
                   <span className="text-sm">{day}</span>
                   {dayEvents.length > 0 && (
-                    <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-foreground/60" />
+                    <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-foreground" />
                   )}
                 </div>
               );

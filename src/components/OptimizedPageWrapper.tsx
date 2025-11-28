@@ -333,18 +333,6 @@ export function AnalyticsPageWrapper({ children, ...props }: Omit<OptimizedPageW
   );
 }
 
-export function ProfilePageWrapper({ children, ...props }: Omit<OptimizedPageWrapperProps, 'title'>) {
-  return (
-    <OptimizedPageWrapper
-      title="Profile"
-      description="Manage your profile and preferences"
-      {...props}
-    >
-      {children}
-    </OptimizedPageWrapper>
-  );
-}
-
 export function SettingsPageWrapper({ children, ...props }: Omit<OptimizedPageWrapperProps, 'title'>) {
   return (
     <OptimizedPageWrapper

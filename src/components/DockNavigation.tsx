@@ -3,7 +3,6 @@ import { Dock, DockIcon } from "@/components/ui/dock";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Calendar,
   BookOpen,
   GraduationCap,
   StickyNote,
@@ -19,7 +18,6 @@ const navigationItems = [
   { href: "/notes", label: "Notes", icon: StickyNote },
   { href: "/assignments", label: "Assignments", icon: BookOpen },
   { href: "/classes", label: "Classes", icon: GraduationCap },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/habits", label: "Habits", icon: CheckCircle },
   { href: "/ai-chat", label: "AI Chatbot", icon: Bot },
   { href: "/learn", label: "Learn", icon: Wrench },

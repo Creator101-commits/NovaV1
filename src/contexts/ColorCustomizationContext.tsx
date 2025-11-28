@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 // Color theme types
-export type BackgroundTheme = "black" | "white" | "blue" | "green" | "purple" | "orange" | "pink" | "gray";
+export type BackgroundTheme = "dark" | "light";
 
 export interface ColorCustomization {
   backgroundTheme: BackgroundTheme;
-  customBackgroundColor?: string;
 }
 
 interface ColorCustomizationContextType {
@@ -31,14 +30,12 @@ interface ColorCustomizationProviderProps {
 
 // Default color customization
 const DEFAULT_CUSTOMIZATION: ColorCustomization = {
-  backgroundTheme: "black",
+  backgroundTheme: "dark",
 };
 
-// Color palette definitions - improved contrast and neutral cards
-// Dark themes use #131314 background and #E0E0E0 text (soft gray-white, 88% brightness)
-// to prevent halation and reduce eye strain
+// Color palette definitions - only light and dark themes
 export const BACKGROUND_THEMES = {
-  black: {
+  dark: {
     name: "Dark",
     background: "#131314",
     foreground: "#E0E0E0",
@@ -50,7 +47,7 @@ export const BACKGROUND_THEMES = {
     popover: "#131314",
     popoverForeground: "#E0E0E0",
   },
-  white: {
+  light: {
     name: "Light",
     background: "#ffffff",
     foreground: "#0a0a0a",
@@ -62,80 +59,26 @@ export const BACKGROUND_THEMES = {
     popover: "#ffffff",
     popoverForeground: "#0a0a0a",
   },
-  blue: {
-    name: "Ocean Blue",
-    background: "#0f172a",
-    foreground: "#E0E0E0",
-    muted: "#1e293b",
-    mutedForeground: "#A0A0A0",
-    border: "#334155",
-    card: "#1e293b",
-    cardForeground: "#E0E0E0",
-    popover: "#1e293b",
-    popoverForeground: "#E0E0E0",
-  },
-  green: {
-    name: "Forest Green",
-    background: "#0f1b0f",
-    foreground: "#E0E0E0",
-    muted: "#1a2e1a",
-    mutedForeground: "#A0A0A0",
-    border: "#365f32",
-    card: "#1a2e1a",
-    cardForeground: "#E0E0E0",
-    popover: "#1a2e1a",
-    popoverForeground: "#E0E0E0",
-  },
-  purple: {
-    name: "Royal Purple",
-    background: "#1a0d1a",
-    foreground: "#E0E0E0",
-    muted: "#2d1b2d",
-    mutedForeground: "#A0A0A0",
-    border: "#581c87",
-    card: "#2d1b2d",
-    cardForeground: "#E0E0E0",
-    popover: "#2d1b2d",
-    popoverForeground: "#E0E0E0",
-  },
-  orange: {
-    name: "Sunset Orange",
-    background: "#1c0f0a",
-    foreground: "#E0E0E0",
-    muted: "#2d1b0a",
-    mutedForeground: "#A0A0A0",
-    border: "#ea580c",
-    card: "#2d1b0a",
-    cardForeground: "#E0E0E0",
-    popover: "#2d1b0a",
-    popoverForeground: "#E0E0E0",
-  },
-  pink: {
-    name: "Rose Pink",
-    background: "#1a0f14",
-    foreground: "#E0E0E0",
-    muted: "#2d1b21",
-    mutedForeground: "#A0A0A0",
-    border: "#be185d",
-    card: "#2d1b21",
-    cardForeground: "#E0E0E0",
-    popover: "#2d1b21",
-    popoverForeground: "#E0E0E0",
-  },
-  gray: {
-    name: "Steel Gray",
-    background: "#131314",
-    foreground: "#E0E0E0",
-    muted: "#1a1a1b",
-    mutedForeground: "#A0A0A0",
-    border: "#2a2a2b",
-    card: "#1a1a1b",
-    cardForeground: "#E0E0E0",
-    popover: "#1a1a1b",
-    popoverForeground: "#E0E0E0",
-  },
 };
 
+
+// Helper to migrate old theme names to new ones
+const migrateTheme = (theme: string): BackgroundTheme => {
+  // Map old theme names to new ones
+  const themeMap: Record<string, BackgroundTheme> = {
+    'black': 'dark',
+    'white': 'light',
+    'blue': 'dark',
+    'green': 'dark',
+    'purple': 'dark',
+    'orange': 'dark',
+    'pink': 'dark',
+    'gray': 'dark',
+    'dark': 'dark',
+    'light': 'light',
+  };
+  return themeMap[theme] || 'dark';
+};
 
 export const ColorCustomizationProvider = ({ children }: ColorCustomizationProviderProps) => {
   const [customization, setCustomization] = useState<ColorCustomization>(() => {
@@ -143,7 +86,12 @@ export const ColorCustomizationProvider = ({ children }: ColorCustomizationProvi
       const saved = localStorage.getItem("colorCustomization");
       if (saved) {
         try {
-          return { ...DEFAULT_CUSTOMIZATION, ...JSON.parse(saved) };
+          const parsed = JSON.parse(saved);
+          // Migrate old theme names to new ones
+          if (parsed.backgroundTheme) {
+            parsed.backgroundTheme = migrateTheme(parsed.backgroundTheme);
+          }
+          return { ...DEFAULT_CUSTOMIZATION, ...parsed };
         } catch (error) {
           console.warn("Failed to parse saved color customization:", error);
         }
@@ -169,8 +117,11 @@ export const ColorCustomizationProvider = ({ children }: ColorCustomizationProvi
   const applyCustomization = () => {
     const root = document.documentElement;
     
-    // Apply background theme
-    const backgroundTheme = BACKGROUND_THEMES[customization.backgroundTheme];
+    // Apply background theme with fallback to dark
+    const themeKey = customization.backgroundTheme in BACKGROUND_THEMES 
+      ? customization.backgroundTheme 
+      : 'dark';
+    const backgroundTheme = BACKGROUND_THEMES[themeKey];
     
     // Set CSS custom properties for background theme only
     root.style.setProperty("--background", backgroundTheme.background);
@@ -182,11 +133,6 @@ export const ColorCustomizationProvider = ({ children }: ColorCustomizationProvi
     root.style.setProperty("--card-foreground", backgroundTheme.cardForeground);
     root.style.setProperty("--popover", backgroundTheme.popover);
     root.style.setProperty("--popover-foreground", backgroundTheme.popoverForeground);
-    
-    // Apply custom background color if provided
-    if (customization.customBackgroundColor) {
-      root.style.setProperty("--background", customization.customBackgroundColor);
-    }
   };
 
   return (

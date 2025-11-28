@@ -30,6 +30,35 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Sync user to Oracle database
+const syncUserToDatabase = async (user: User, userData: any) => {
+  try {
+    console.log(' Syncing user to Oracle database...', user.uid);
+    const response = await fetch('/api/auth/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': user.uid,
+      },
+      body: JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        accessToken: userData?.googleAccessToken || null,
+      }),
+    });
+    
+    if (!response.ok) {
+      console.warn('Failed to sync user to database:', await response.text());
+    } else {
+      console.log(' User synced to database successfully');
+    }
+  } catch (error) {
+    console.warn('Error syncing user to database:', error);
+  }
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -205,6 +234,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setLoading(false);
           console.log(' User authenticated with cached data');
           
+          // Sync user to Oracle database in background
+          syncUserToDatabase(user, cachedData).catch(console.error);
+          
           // Restore classroom data in background
           if (cachedData?.hasGoogleAccess && cachedData?.googleAccessToken) {
             restoreUserData().catch(console.error);
@@ -217,6 +249,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             if (data) {
               saveUserDataToStorage(user.uid, data);
             }
+            
+            // Sync user to Oracle database
+            await syncUserToDatabase(user, data);
           } catch (error) {
             console.error("Error fetching user data:", error);
           }

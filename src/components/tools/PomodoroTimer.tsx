@@ -54,12 +54,6 @@ const focusSounds: FocusSound[] = [
     description: "Forest ambience"
   },
   {
-    id: "cafe",
-    name: "Café",
-    url: "/sounds/cafe.mp3",
-    description: "Coffee shop atmosphere"
-  },
-  {
     id: "whitenoise",
     name: "White Noise",
     url: "/sounds/whitenoise.mp3",
@@ -184,10 +178,6 @@ export const PomodoroTimer = () => {
       case "forest":
         oscillator.type = "triangle";
         oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
-        break;
-      case "cafe":
-        oscillator.type = "sawtooth";
-        oscillator.frequency.setValueAtTime(100, audioContext.currentTime);
         break;
       case "white-noise":
         oscillator.type = "square";
@@ -610,7 +600,7 @@ export const PomodoroTimer = () => {
                     }
                     setSelectedSound(sound.id);
                   }}
-                  className="text-xs"
+                  className={`text-xs ${sound.id === "whitenoise" ? "col-span-2" : ""}`}
                 >
                   {sound.name}
                 </Button>

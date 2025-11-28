@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Search, Star, Plus, Menu, ChevronRight } from 'lucide-react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { Search, Star, Plus, Menu, ChevronRight, Inbox, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,22 @@ import { useBoardContext } from '@/contexts/BoardContext';
 import { useUIContext } from '@/contexts/UIContext';
 import type { Board } from '@shared/schema';
 
+interface DashboardTodo {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: string;
+}
+
 export const Sidebar: React.FC = () => {
   const {
     boards,
     activeBoard,
     setActiveBoard,
-    updateBoard
+    updateBoard,
+    inboxCards,
+    createCard,
+    createInboxCard,
   } = useBoardContext();
   
   const {
@@ -24,6 +34,63 @@ export const Sidebar: React.FC = () => {
   } = useUIContext();
 
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isInboxExpanded, setIsInboxExpanded] = useState(true);
+  const [dashboardTodos, setDashboardTodos] = useState<DashboardTodo[]>([]);
+  const [newInboxTask, setNewInboxTask] = useState('');
+  const [isAddingTask, setIsAddingTask] = useState(false);
+
+  // Load dashboard quick tasks from localStorage
+  useEffect(() => {
+    const loadDashboardTodos = () => {
+      const savedTodos = localStorage.getItem('dashboard_todos');
+      if (savedTodos) {
+        try {
+          const parsed = JSON.parse(savedTodos);
+          // Only get incomplete tasks
+          const incompleteTodos = parsed.filter((t: DashboardTodo) => !t.completed);
+          setDashboardTodos(incompleteTodos);
+        } catch (error) {
+          console.error('Error loading dashboard todos:', error);
+        }
+      }
+    };
+
+    loadDashboardTodos();
+    
+    // Listen for storage changes (in case dashboard updates)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'dashboard_todos') {
+        loadDashboardTodos();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also poll for changes every few seconds (for same-tab updates)
+    const interval = setInterval(loadDashboardTodos, 3000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Combined inbox items: actual inbox cards + dashboard todos
+  const allInboxItems = useMemo(() => {
+    const fromCards = inboxCards.map(card => ({
+      id: card.id,
+      title: card.title,
+      source: 'board' as const,
+    }));
+    
+    const fromDashboard = dashboardTodos.map(todo => ({
+      id: todo.id,
+      title: todo.title,
+      source: 'dashboard' as const,
+    }));
+    
+    return [...fromDashboard, ...fromCards];
+  }, [inboxCards, dashboardTodos]);
 
   // Filter boards by search
   const filteredBoards = useMemo(() => {
@@ -72,7 +139,7 @@ export const Sidebar: React.FC = () => {
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            📋 To-Do List
+            To-Do List
           </h2>
           <Button
             variant="ghost"
@@ -91,6 +158,114 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <ScrollArea className="flex-1">
+        {/* Inbox Section */}
+        <div className="p-4 border-b border-border">
+          <button
+            onClick={() => setIsInboxExpanded(!isInboxExpanded)}
+            className="flex items-center justify-between w-full text-sm font-medium text-muted-foreground mb-2 hover:text-foreground transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Inbox className="h-4 w-4" />
+              <span>Inbox</span>
+              {allInboxItems.length > 0 && (
+                <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                  {allInboxItems.length}
+                </Badge>
+              )}
+            </div>
+            <ChevronDown className={`h-4 w-4 transition-transform ${isInboxExpanded ? '' : '-rotate-90'}`} />
+          </button>
+          
+          <AnimatePresence>
+            {isInboxExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="space-y-2 overflow-hidden"
+              >
+                {/* Add Task Input */}
+                {isAddingTask ? (
+                  <div className="flex gap-1">
+                    <Input
+                      placeholder="New task..."
+                      value={newInboxTask}
+                      onChange={(e) => setNewInboxTask(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newInboxTask.trim()) {
+                          createInboxCard(newInboxTask.trim());
+                          setNewInboxTask('');
+                          setIsAddingTask(false);
+                        } else if (e.key === 'Escape') {
+                          setNewInboxTask('');
+                          setIsAddingTask(false);
+                        }
+                      }}
+                      autoFocus
+                      className="h-8 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2"
+                      onClick={() => {
+                        if (newInboxTask.trim()) {
+                          createInboxCard(newInboxTask.trim());
+                          setNewInboxTask('');
+                        }
+                        setIsAddingTask(false);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start h-8 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setIsAddingTask(true)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add task to inbox
+                  </Button>
+                )}
+
+                {/* Inbox Items */}
+                {allInboxItems.length === 0 && !isAddingTask ? (
+                  <p className="text-xs text-muted-foreground py-2 px-2">
+                    No items in inbox.
+                  </p>
+                ) : (
+                  allInboxItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-2 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors cursor-grab text-sm"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('application/json', JSON.stringify({
+                          id: item.id,
+                          title: item.title,
+                          source: item.source,
+                        }));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground/50 flex-shrink-0" />
+                      <span className="truncate flex-1">{item.title}</span>
+                      {item.source === 'dashboard' && (
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                          Quick
+                        </Badge>
+                      )}
+                    </div>
+                  ))
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* All Boards */}
         <div className="p-4">
           <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -123,7 +298,7 @@ export const Sidebar: React.FC = () => {
       {/* Footer */}
       <div className="p-4 border-t border-border">
         <p className="text-xs text-muted-foreground text-center">
-          To-Do List is only visible to you
+          Drag inbox items to lists on boards
         </p>
       </div>
     </motion.div>

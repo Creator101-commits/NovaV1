@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useBoardContext } from '@/contexts/BoardContext';
+import { useToast } from '@/hooks/use-toast';
 import { Card as TodoCard } from './Card.tsx';
 import type { TodoList, Card as CardType } from '@shared/schema';
 
@@ -23,16 +24,70 @@ interface ListProps {
 }
 
 export const List: React.FC<ListProps> = ({ list, cards }) => {
-  const { createCard, updateList, deleteList } = useBoardContext();
+  const { createCard, updateList, deleteList, moveCard } = useBoardContext();
+  const { toast } = useToast();
   
   const [isEditing, setIsEditing] = React.useState(false);
   const [title, setTitle] = React.useState(list.title);
   const [isAddingCard, setIsAddingCard] = React.useState(false);
   const [newCardTitle, setNewCardTitle] = React.useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const { setNodeRef } = useDroppable({
     id: list.id,
   });
+
+  // Handle native drag/drop from inbox
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    try {
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+      
+      const item = JSON.parse(data);
+      
+      if (item.source === 'dashboard') {
+        // Create a new card from the dashboard todo
+        await createCard(list.id, item.title);
+        
+        // Remove from dashboard todos
+        const savedTodos = localStorage.getItem('dashboard_todos');
+        if (savedTodos) {
+          const todos = JSON.parse(savedTodos);
+          const filtered = todos.filter((t: any) => t.id !== item.id);
+          localStorage.setItem('dashboard_todos', JSON.stringify(filtered));
+        }
+        
+        toast({
+          title: 'Task Added',
+          description: `"${item.title}" added to ${list.title}`,
+        });
+      } else if (item.source === 'board') {
+        // Move existing inbox card to this list
+        await moveCard(item.id, list.id, cards.length);
+        
+        toast({
+          title: 'Card Moved',
+          description: `"${item.title}" moved to ${list.title}`,
+        });
+      }
+    } catch (error) {
+      console.error('Drop error:', error);
+    }
+  }, [createCard, moveCard, list.id, list.title, cards.length, toast]);
 
   const handleTitleBlur = async () => {
     setIsEditing(false);
@@ -60,7 +115,12 @@ export const List: React.FC<ListProps> = ({ list, cards }) => {
   return (
     <div
       ref={setNodeRef}
-      className="w-80 flex-shrink-0 bg-card rounded-lg shadow-sm flex flex-col max-h-full"
+      className={`w-80 flex-shrink-0 bg-card rounded-lg shadow-sm flex flex-col max-h-full transition-all ${
+        isDragOver ? 'ring-2 ring-primary ring-offset-2' : ''
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {/* List Header */}
       <div className="p-3 border-b border-border">

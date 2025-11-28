@@ -3,44 +3,45 @@ import path from 'path';
 
 // Initialize Oracle Client with wallet location (requires Oracle Instant Client)
 let oracleClientAvailable = false;
-try {
-  const walletLocation = process.env.TNS_ADMIN || path.resolve(process.cwd(), 'server', 'oracle_wallet');
-  const libDir = process.env.OCI_LIB_DIR || process.env.DYLD_LIBRARY_PATH?.split(':')[0];
-  
-  oracledb.initOracleClient({
-    libDir: libDir,
-    configDir: walletLocation
-  });
-  oracleClientAvailable = true;
-  console.log(' Oracle Client initialized successfully');
-} catch (error) {
-  console.log('  Oracle Client initialization:', (error as Error).message);
-  console.log(' Oracle Instant Client not installed. Database features will be limited.');
-  console.log(' To install Oracle Instant Client:');
-  console.log('   1. Download from: https://www.oracle.com/database/technologies/instant-client/winx64-64-downloads.html');
-  console.log('   2. Extract to a folder and add to PATH');
-  console.log('   3. Install Visual Studio Redistributable');
-  oracleClientAvailable = false;
-}
+let oracleClientInitialized = false;
 
-// Connection configuration
-const dbConfig = {
-  user: process.env.ORACLE_USER,
-  password: process.env.ORACLE_PASSWORD,
-  connectString: process.env.ORACLE_CONNECTION_STRING,
-  walletLocation: process.env.TNS_ADMIN || path.resolve(process.cwd(), 'server', 'oracle_wallet'),
-  walletPassword: process.env.ORACLE_WALLET_PASSWORD || "Oracle123456",
-  poolMin: 1,
-  poolMax: 10,
-  poolIncrement: 1,
-  poolTimeout: 300, // seconds
-  stmtCacheSize: 23
-};
+function initializeOracleClient() {
+  if (oracleClientInitialized) return oracleClientAvailable;
+  oracleClientInitialized = true;
+  
+  try {
+    const walletLocation = process.env.TNS_ADMIN || path.resolve(process.cwd(), 'server', 'oracle_wallet');
+    const libDir = process.env.OCI_LIB_DIR || process.env.DYLD_LIBRARY_PATH?.split(':')[0];
+    
+    console.log(' Initializing Oracle Client with libDir:', libDir);
+    console.log(' TNS_ADMIN:', walletLocation);
+    
+    oracledb.initOracleClient({
+      libDir: libDir,
+      configDir: walletLocation
+    });
+    oracleClientAvailable = true;
+    console.log(' Oracle Client initialized successfully');
+  } catch (error) {
+    console.log('  Oracle Client initialization:', (error as Error).message);
+    console.log(' Oracle Instant Client not installed. Database features will be limited.');
+    console.log(' To install Oracle Instant Client:');
+    console.log('   1. Download from: https://www.oracle.com/database/technologies/instant-client/macos-arm64-downloads.html');
+    console.log('   2. Extract to a folder');
+    console.log('   3. Set OCI_LIB_DIR in .env to the folder path');
+    oracleClientAvailable = false;
+  }
+  
+  return oracleClientAvailable;
+}
 
 let pool: oracledb.Pool | null = null;
 
 export async function initializeDatabase() {
   try {
+    // Initialize Oracle client first (deferred to ensure .env is loaded)
+    initializeOracleClient();
+    
     if (!oracleClientAvailable) {
       throw new Error('Oracle Client is not available. Please install Oracle Instant Client to use database features.');
     }
@@ -49,8 +50,22 @@ export async function initializeDatabase() {
       throw new Error('Oracle database environment variables are not set');
     }
 
+    // Build config with current env values (after .env is loaded)
+    const currentDbConfig = {
+      user: process.env.ORACLE_USER,
+      password: process.env.ORACLE_PASSWORD,
+      connectString: process.env.ORACLE_CONNECTION_STRING,
+      walletLocation: process.env.TNS_ADMIN || path.resolve(process.cwd(), 'server', 'oracle_wallet'),
+      walletPassword: process.env.ORACLE_WALLET_PASSWORD || "Oracle123456",
+      poolMin: 1,
+      poolMax: 10,
+      poolIncrement: 1,
+      poolTimeout: 300,
+      stmtCacheSize: 23
+    };
+
     console.log('Initializing Oracle connection pool...');
-    pool = await oracledb.createPool(dbConfig);
+    pool = await oracledb.createPool(currentDbConfig);
     console.log(' Oracle database pool created successfully');
     return pool;
   } catch (error) {

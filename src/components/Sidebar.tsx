@@ -8,7 +8,6 @@ import {
   Wrench,
   Bot,
   BarChart3,
-  User,
   StickyNote,
 } from "lucide-react";
 
@@ -21,7 +20,6 @@ const navigationItems = [
   { href: "/learn", label: "Learn", icon: Wrench },
   { href: "/ai-chat", label: "AI Chatbot", icon: Bot },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export const Sidebar = () => {

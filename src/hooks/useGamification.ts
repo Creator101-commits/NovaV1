@@ -128,7 +128,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: 'perfectionist',
     title: 'Perfectionist',
     description: 'Complete all habits and assignments for 3 consecutive days',
-    icon: '⭐',
+    icon: 'star',
     category: 'streaks',
     xpReward: 1500,
     target: 3,

@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { useColorCustomization, BACKGROUND_THEMES } from '@/contexts/ColorCustomizationContext';
-import { ThemeColorPicker, ColorPicker } from '@/components/ui/color-picker';
-import { Palette, RotateCcw, Eye, Download, Upload } from 'lucide-react';
+import { Eye, Moon, Sun } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const ColorCustomizationSettings = () => {
@@ -18,58 +14,12 @@ export const ColorCustomizationSettings = () => {
     updateCustomization({ backgroundTheme: theme as any });
   };
 
-  const handleCustomBackgroundChange = (color: string) => {
-    updateCustomization({ customBackgroundColor: color });
-  };
-
   const handleReset = () => {
     resetToDefault();
     toast({
-      title: "Colors Reset",
-      description: "Your color customization has been reset to default.",
+      title: "Theme Reset",
+      description: "Your theme has been reset to default.",
     });
-  };
-
-  const handleExportSettings = () => {
-    const settings = JSON.stringify(customization, null, 2);
-    const blob = new Blob([settings], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'nova-color-settings.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Settings Exported",
-      description: "Your color settings have been exported successfully.",
-    });
-  };
-
-  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedSettings = JSON.parse(e.target?.result as string);
-          updateCustomization(importedSettings);
-          toast({
-            title: "Settings Imported",
-            description: "Your color settings have been imported successfully.",
-          });
-        } catch (error) {
-          toast({
-            title: "Import Failed",
-            description: "Failed to import settings. Please check the file format.",
-            variant: "destructive",
-          });
-        }
-      };
-      reader.readAsText(file);
-    }
   };
 
   return (
@@ -77,7 +27,7 @@ export const ColorCustomizationSettings = () => {
       {/* Simple Header */}
       <div>
         <h3 className="text-lg font-medium text-foreground mb-2">
-          Background Theme
+          Theme
         </h3>
         <p className="text-sm text-muted-foreground">
           Choose your preferred theme
@@ -150,56 +100,39 @@ export const ColorCustomizationSettings = () => {
         </Card>
       )}
 
-      {/* Background Themes */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(BACKGROUND_THEMES).map(([key, theme]) => (
-            <button
-              key={key}
-              onClick={() => handleBackgroundThemeChange(key)}
-              className={`relative p-3 rounded-lg border transition-colors ${
-                customization.backgroundTheme === key 
-                  ? 'border-primary ring-1 ring-primary/20' 
-                  : 'border-border'
-              }`}
-              style={{
-                backgroundColor: theme.background,
-                color: theme.foreground,
-              }}
-            >
-              <div className="text-center">
-                <div className="text-sm font-medium">{theme.name}</div>
-              </div>
-              {customization.backgroundTheme === key && (
-                <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
+      {/* Theme Selection - Only Light and Dark */}
+      <div className="grid grid-cols-2 gap-4">
+        {Object.entries(BACKGROUND_THEMES).map(([key, theme]) => (
+          <button
+            key={key}
+            onClick={() => handleBackgroundThemeChange(key)}
+            className={`relative p-6 rounded-xl border-2 transition-all duration-200 ${
+              customization.backgroundTheme === key 
+                ? 'border-primary ring-2 ring-primary/20 shadow-lg' 
+                : 'border-border hover:border-primary/50'
+            }`}
+            style={{
+              backgroundColor: theme.background,
+              color: theme.foreground,
+            }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              {key === 'dark' ? (
+                <Moon className="w-8 h-8" />
+              ) : (
+                <Sun className="w-8 h-8" />
               )}
-            </button>
-          ))}
-        </div>
-        
-        {/* Custom Color */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Custom Background Color</Label>
-          <div className="flex gap-2">
-            <ColorPicker
-              value={customization.customBackgroundColor || '#000000'}
-              onChange={handleCustomBackgroundChange}
-              showCustomInput={true}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateCustomization({ customBackgroundColor: undefined })}
-              className="text-xs"
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
+              <span className="text-lg font-medium">{theme.name}</span>
+            </div>
+            {customization.backgroundTheme === key && (
+              <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                <svg className="w-4 h-4 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );

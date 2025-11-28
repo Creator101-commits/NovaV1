@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { useMobileDetection } from '@/lib/mobileDetection';
 import {
   Home,
-  Calendar,
   BookOpen,
   GraduationCap,
   StickyNote,
@@ -46,12 +45,6 @@ const dockItems: DockItem[] = [
     icon: Home,
   },
   {
-    id: 'calendar',
-    label: 'Calendar',
-    path: '/calendar',
-    icon: Calendar,
-  },
-  {
     id: 'assignments',
     label: 'Assignments',
     path: '/assignments',
@@ -79,7 +72,7 @@ const dockItems: DockItem[] = [
     id: 'todo-list',
     label: 'To-Do Board',
     path: '/todo-list',
-    icon: Trello,
+    icon: ListTodo,
   },
   {
     id: 'ai-chat',
